@@ -3,7 +3,9 @@ from zoneinfo import ZoneInfo
 from django import forms
 from django.db import models
 
-from .models import Event, EventOccurrence
+from contacts.models import Contact
+
+from .models import Event, EventOccurrence, Registration
 from .services import local_datetime, occurrence_starts
 
 
@@ -28,6 +30,7 @@ class EventForm(forms.ModelForm):
             "recurrence",
             "recurrence_interval",
             "recurrence_until",
+            "max_guests",
         )
         widgets = {
             "description": forms.Textarea(attrs={"rows": 8}),
@@ -91,7 +94,15 @@ class EventForm(forms.ModelForm):
 class EventDetailsForm(forms.ModelForm):
     class Meta:
         model = Event
-        fields = ("title", "slug", "description", "host_name", "visibility", "status")
+        fields = (
+            "title",
+            "slug",
+            "description",
+            "host_name",
+            "visibility",
+            "status",
+            "max_guests",
+        )
         widgets = {"description": forms.Textarea(attrs={"rows": 8})}
 
     def __init__(self, *args, site, **kwargs):
@@ -156,3 +167,126 @@ class OccurrenceEditForm(forms.ModelForm):
         cleaned_data["starts_at"] = starts_at
         cleaned_data["ends_at"] = ends_at
         return cleaned_data
+
+
+class InvitationForm(forms.Form):
+    contacts = forms.ModelMultipleChoiceField(
+        queryset=Contact.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        help_text="Only contacts with an email address can receive an invitation.",
+    )
+
+    def __init__(self, *args, site, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["contacts"].queryset = (
+            Contact.objects.for_site(site)
+            .filter(archived_at__isnull=True)
+            .exclude(email="")
+        )
+
+
+class GuestFieldsMixin:
+    def add_guest_fields(self, max_guests):
+        self.max_guests = max_guests
+        self.fields["guest_count"] = forms.IntegerField(
+            min_value=0,
+            max_value=max_guests,
+            initial=0,
+            help_text=f"This event allows up to {max_guests} guest(s).",
+        )
+        for index in range(1, max_guests + 1):
+            self.fields[f"guest_{index}_first_name"] = forms.CharField(
+                max_length=100, required=False, label=f"Guest {index} first name"
+            )
+            self.fields[f"guest_{index}_last_name"] = forms.CharField(
+                max_length=100, required=False, label=f"Guest {index} last name"
+            )
+            self.fields[f"guest_{index}_email"] = forms.EmailField(
+                required=False, label=f"Guest {index} email"
+            )
+            self.fields[f"guest_{index}_phone"] = forms.CharField(
+                max_length=30, required=False, label=f"Guest {index} phone"
+            )
+
+    def clean_guest_fields(self, cleaned_data):
+        guest_count = (
+            cleaned_data.get("guest_count", 0)
+            if cleaned_data.get("response") == Registration.Response.GOING
+            else 0
+        )
+        for index in range(1, guest_count + 1):
+            for suffix in ("first_name", "last_name"):
+                field = f"guest_{index}_{suffix}"
+                if not cleaned_data.get(field):
+                    self.add_error(
+                        field, "First and last name are required for each guest."
+                    )
+        cleaned_data["guest_count"] = guest_count
+        return cleaned_data
+
+    def guest_data(self):
+        return [
+            {
+                "first_name": self.cleaned_data[f"guest_{index}_first_name"],
+                "last_name": self.cleaned_data[f"guest_{index}_last_name"],
+                "email": self.cleaned_data.get(f"guest_{index}_email", ""),
+                "phone": self.cleaned_data.get(f"guest_{index}_phone", ""),
+            }
+            for index in range(1, self.cleaned_data["guest_count"] + 1)
+        ]
+
+
+class RSVPForm(GuestFieldsMixin, forms.Form):
+    response = forms.ChoiceField(choices=Registration.Response.choices)
+    first_name = forms.CharField(max_length=100)
+    last_name = forms.CharField(max_length=100)
+    email = forms.EmailField()
+
+    def __init__(self, *args, occurrence, contact=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.contact = contact
+        self.add_guest_fields(occurrence.event.max_guests)
+        if contact is not None:
+            for field, value in (
+                ("first_name", contact.first_name),
+                ("last_name", contact.last_name),
+                ("email", contact.email),
+            ):
+                self.fields[field].initial = value
+                self.fields[field].disabled = True
+            registration = (
+                Registration.objects.filter(occurrence=occurrence, contact=contact)
+                .prefetch_related("participants")
+                .first()
+            )
+            if registration is not None and not self.is_bound:
+                self.fields["response"].initial = registration.response
+                guests = list(
+                    registration.participants.filter(is_primary=False, status="active")[
+                        : self.max_guests
+                    ]
+                )
+                self.fields["guest_count"].initial = len(guests)
+                for index, guest in enumerate(guests, start=1):
+                    for field in ("first_name", "last_name", "email", "phone"):
+                        self.fields[f"guest_{index}_{field}"].initial = getattr(
+                            guest, field
+                        )
+
+    def clean(self):
+        return self.clean_guest_fields(super().clean())
+
+
+class ManagerResponseForm(GuestFieldsMixin, forms.Form):
+    contact = forms.ModelChoiceField(queryset=Contact.objects.none())
+    response = forms.ChoiceField(choices=Registration.Response.choices)
+
+    def __init__(self, *args, site, occurrence, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["contact"].queryset = Contact.objects.for_site(site).filter(
+            archived_at__isnull=True
+        )
+        self.add_guest_fields(occurrence.event.max_guests)
+
+    def clean(self):
+        return self.clean_guest_fields(super().clean())

@@ -11,6 +11,7 @@ urlpatterns = [
     path("", include("content.urls")),
     path("", include("contacts.urls")),
     path("", include("events.urls")),
+    path("", include("attendance.urls")),
     path("", include("sites.urls")),
     path("", include("core.urls")),
 ]

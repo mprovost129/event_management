@@ -91,6 +91,37 @@ On a published subscriber subdomain:
 
 Content bodies remain escaped plain text in V1. Uploaded logos, hero images, and blog images must be JPEG, PNG, or WebP, are limited to 10 MB, and are resized before storage. Production media continues to use the configured S3-compatible backend.
 
+## Phase 3 flows and workers
+
+Occurrence management adds these staff flows:
+
+- Invite contacts: `/sites/{site-id}/occurrences/{occurrence-id}/invite/`
+- Add or update a response: `/sites/{site-id}/occurrences/{occurrence-id}/responses/new/`
+- Mobile roster and check-in: `/sites/{site-id}/occurrences/{occurrence-id}/roster/`
+
+Public and invitation responses use:
+
+- Public/unlisted response: `/events/{event-slug}/{occurrence-id}/respond/`
+- Invite-only response capability: `/invitations/{random-token}/`
+
+Invitation tokens are stored only as hashes. The raw token exists temporarily in a queued message body so it can be delivered, and that body is erased after successful delivery.
+
+Start the worker and scheduler alongside the web process:
+
+```text
+celery -A config worker --loglevel=INFO
+celery -A config beat --loglevel=INFO
+```
+
+Docker Compose defines `worker` and `beat` services. The beat process drains the durable message outbox every minute and queues event reminders hourly. If the broker or worker is unavailable, committed outbox rows remain recoverable. Operational fallbacks are:
+
+```text
+python manage.py deliver_outbound_messages --limit 100
+python manage.py queue_event_reminders
+```
+
+Capacity is measured in active participant rows, including named guests. The registration service locks the occurrence row before checking and changing capacity. The authoritative simultaneous-request assertion runs in PostgreSQL CI; SQLite remains the fast local feedback database.
+
 ## Production media
 
 Production uses an S3-compatible bucket through `django-storages`. Configure `MEDIA_STORAGE_BACKEND=s3`, the bucket, its region or endpoint, and credentials supplied by the hosting platform. Local filesystem media is intentionally rejected by the deployment system check.

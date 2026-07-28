@@ -32,5 +32,35 @@ services:
       - db
       - redis
 
+  worker:
+    build:
+      context: .
+      args:
+        REQUIREMENTS_FILE: requirements-dev.txt
+    command: celery -A config worker --loglevel=INFO
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.Settings.dev
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+
+  beat:
+    build:
+      context: .
+      args:
+        REQUIREMENTS_FILE: requirements-dev.txt
+    command: celery -A config beat --loglevel=INFO
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.Settings.dev
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+
 volumes:
   postgres_data:

@@ -1,14 +1,32 @@
 from django.contrib import messages
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 
 from ops.services import record_audit_event
 from sites.permissions import site_staff_required
 
-from .forms import EventDetailsForm, EventForm, OccurrenceEditForm
-from .models import Event, EventOccurrence
+from .forms import (
+    EventDetailsForm,
+    EventForm,
+    InvitationForm,
+    ManagerResponseForm,
+    OccurrenceEditForm,
+    RSVPForm,
+)
+from .messaging import queue_confirmation, queue_invitation, queue_occurrence_notice
+from .models import Event, EventOccurrence, Registration
+from .registration import (
+    CapacityExceeded,
+    RegistrationUnavailable,
+    create_invitations,
+    invitation_for_token,
+    save_public_response,
+    save_response,
+)
+from .reporting import occurrence_metrics
 from .services import create_event_series, update_occurrences_from
 
 
@@ -23,6 +41,9 @@ def _public_site(request):
 def manage_events(request, site_id):
     site = request.authorized_site
     events = Event.objects.for_site(site).prefetch_related("occurrences")
+    for event in events:
+        for occurrence in event.occurrences.all():
+            occurrence.metrics = occurrence_metrics(occurrence)
     return render(request, "events/manage.html", {"site": site, "events": events})
 
 
@@ -44,6 +65,7 @@ def event_create(request, site_id):
                 "recurrence",
                 "recurrence_interval",
                 "recurrence_until",
+                "max_guests",
             )
         }
         event = create_event_series(
@@ -78,6 +100,13 @@ def event_create(request, site_id):
 def event_edit(request, site_id, event_id):
     site = request.authorized_site
     event = get_object_or_404(Event.objects.for_site(site), pk=event_id)
+    previous = {
+        "title": event.title,
+        "description": event.description,
+        "host_name": event.host_name,
+        "visibility": event.visibility,
+        "status": event.status,
+    }
     form = EventDetailsForm(request.POST or None, instance=event, site=site)
     if request.method == "POST" and form.is_valid():
         event = form.save()
@@ -89,6 +118,27 @@ def event_edit(request, site_id, event_id):
             summary={"status": event.status, "visibility": event.visibility},
             request=request,
         )
+        changed = any(
+            getattr(event, field) != value for field, value in previous.items()
+        )
+        if (
+            event.status == Event.Status.CANCELED
+            and previous["status"] != Event.Status.CANCELED
+        ):
+            for occurrence in event.occurrences.exclude(
+                status=EventOccurrence.Status.CANCELED
+            ):
+                occurrence.status = EventOccurrence.Status.CANCELED
+                occurrence.save(update_fields=("status", "updated_at"))
+                queue_occurrence_notice(occurrence, cancellation=True)
+        elif changed and event.status == Event.Status.PUBLISHED:
+            for occurrence in event.occurrences.filter(
+                status=EventOccurrence.Status.SCHEDULED,
+                ends_at__gte=timezone.now(),
+            ):
+                queue_occurrence_notice(
+                    occurrence, revision_key=event.updated_at.isoformat()
+                )
         messages.success(request, "Event details were saved.")
         return redirect("events:manage", site_id=site.id)
     return render(
@@ -123,6 +173,12 @@ def occurrence_edit(request, site_id, occurrence_id):
             scope=form.cleaned_data["scope"],
             values=values,
         )
+        if form.cleaned_data["status"] == EventOccurrence.Status.CANCELED:
+            for item in updated:
+                queue_occurrence_notice(item, cancellation=True)
+        else:
+            for item in updated:
+                queue_occurrence_notice(item)
         record_audit_event(
             action="event.occurrences.updated",
             actor=request.user,
@@ -138,6 +194,100 @@ def occurrence_edit(request, site_id, occurrence_id):
         "events/occurrence_form.html",
         {"site": site, "occurrence": occurrence, "form": form},
     )
+
+
+@site_staff_required
+@require_http_methods(["GET", "POST"])
+def invite_contacts(request, site_id, occurrence_id):
+    site = request.authorized_site
+    occurrence = get_object_or_404(
+        EventOccurrence.objects.for_site(site).select_related("event"), pk=occurrence_id
+    )
+    form = InvitationForm(request.POST or None, site=site)
+    if request.method == "POST" and form.is_valid():
+        invitations = create_invitations(
+            site=site,
+            occurrence=occurrence,
+            contacts=form.cleaned_data["contacts"],
+            actor=request.user,
+        )
+        hostname = site.domains.get(is_canonical=True).hostname
+        scheme = "https" if request.is_secure() else "http"
+        for invitation, token in invitations:
+            response_path = reverse(
+                "events:invitation_response", kwargs={"token": token}
+            )
+            queue_invitation(
+                invitation=invitation,
+                token=token,
+                response_url=f"{scheme}://{hostname}{response_path}",
+            )
+        messages.success(request, f"Queued {len(invitations)} invitation(s).")
+        return redirect("events:manage", site_id=site.id)
+    return render(
+        request,
+        "events/invite_form.html",
+        {"site": site, "occurrence": occurrence, "form": form},
+    )
+
+
+@site_staff_required
+@require_http_methods(["GET", "POST"])
+def manager_response(request, site_id, occurrence_id):
+    site = request.authorized_site
+    occurrence = get_object_or_404(
+        EventOccurrence.objects.for_site(site).select_related("event"), pk=occurrence_id
+    )
+    form = ManagerResponseForm(request.POST or None, site=site, occurrence=occurrence)
+    if request.method == "POST" and form.is_valid():
+        try:
+            registration, history = save_response(
+                occurrence=occurrence,
+                contact=form.cleaned_data["contact"],
+                response=form.cleaned_data["response"],
+                guests=form.guest_data(),
+                source=Registration.Source.MANAGER,
+                actor=request.user,
+            )
+        except (CapacityExceeded, RegistrationUnavailable) as exc:
+            form.add_error(None, str(exc))
+        else:
+            queue_confirmation(registration, history)
+            messages.success(request, "The response was recorded.")
+            return redirect(
+                "attendance:roster", site_id=site.id, occurrence_id=occurrence.id
+            )
+    return render(
+        request,
+        "events/manager_response_form.html",
+        {"site": site, "occurrence": occurrence, "form": form},
+    )
+
+
+@site_staff_required
+@require_POST
+def cancel_event(request, site_id, event_id):
+    site = request.authorized_site
+    event = get_object_or_404(Event.objects.for_site(site), pk=event_id)
+    event.status = Event.Status.CANCELED
+    event.save(update_fields=("status", "updated_at"))
+    occurrences = list(
+        event.occurrences.exclude(status=EventOccurrence.Status.CANCELED)
+    )
+    for occurrence in occurrences:
+        occurrence.status = EventOccurrence.Status.CANCELED
+        occurrence.save(update_fields=("status", "updated_at"))
+        queue_occurrence_notice(occurrence, cancellation=True)
+    record_audit_event(
+        action="event.canceled",
+        actor=request.user,
+        site_id=site.id,
+        target=event,
+        summary={"occurrences": len(occurrences)},
+        request=request,
+    )
+    messages.success(request, "The event was canceled and notices were queued.")
+    return redirect("events:manage", site_id=site.id)
 
 
 def calendar(request):
@@ -197,5 +347,87 @@ def occurrence_detail(request, slug, occurrence_id):
     return render(
         request,
         "public/occurrence_detail.html",
-        {"site": site, "event": occurrence.event, "occurrence": occurrence},
+        {
+            "site": site,
+            "event": occurrence.event,
+            "occurrence": occurrence,
+            "metrics": occurrence_metrics(occurrence),
+        },
+    )
+
+
+@require_http_methods(["GET", "POST"])
+def public_response(request, slug, occurrence_id):
+    site = _public_site(request)
+    occurrence = get_object_or_404(
+        EventOccurrence.objects.for_site(site).select_related("event"),
+        pk=occurrence_id,
+        event__slug=slug,
+        event__status=Event.Status.PUBLISHED,
+        event__visibility__in=(Event.Visibility.PUBLIC, Event.Visibility.UNLISTED),
+        status=EventOccurrence.Status.SCHEDULED,
+        ends_at__gte=timezone.now(),
+    )
+    form = RSVPForm(request.POST or None, occurrence=occurrence)
+    if request.method == "POST" and form.is_valid():
+        try:
+            registration, history = save_public_response(
+                site=site,
+                occurrence=occurrence,
+                response=form.cleaned_data["response"],
+                first_name=form.cleaned_data["first_name"],
+                last_name=form.cleaned_data["last_name"],
+                email=form.cleaned_data["email"],
+                guests=form.guest_data(),
+            )
+        except (CapacityExceeded, RegistrationUnavailable) as exc:
+            form.add_error(None, str(exc))
+        else:
+            queue_confirmation(registration, history)
+            return render(
+                request,
+                "public/rsvp_complete.html",
+                {"site": site, "registration": registration},
+            )
+    return render(
+        request,
+        "public/rsvp_form.html",
+        {"site": site, "occurrence": occurrence, "form": form},
+    )
+
+
+@require_http_methods(["GET", "POST"])
+def invitation_response(request, token):
+    site = _public_site(request)
+    invitation = invitation_for_token(site=site, token=token)
+    if invitation is None:
+        raise Http404("Invitation not found.")
+    form = RSVPForm(
+        request.POST or None,
+        occurrence=invitation.occurrence,
+        contact=invitation.contact,
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            registration, history = save_response(
+                occurrence=invitation.occurrence,
+                contact=invitation.contact,
+                response=form.cleaned_data["response"],
+                guests=form.guest_data(),
+                source=Registration.Source.INVITATION,
+                invitation=invitation,
+            )
+        except (CapacityExceeded, RegistrationUnavailable) as exc:
+            form.add_error(None, str(exc))
+        else:
+            queue_confirmation(registration, history)
+            return render(
+                request,
+                "public/rsvp_complete.html",
+                {"site": site, "registration": registration},
+            )
+    return render(
+        request,
+        "public/invitation_response.html",
+        {"site": site, "invitation": invitation, "form": form},
     )

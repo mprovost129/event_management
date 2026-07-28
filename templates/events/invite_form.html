@@ -1,0 +1,4 @@
+{% extends 'base.html' %}
+{% load tz %}
+{% block title %}Invite contacts · {{ occurrence.event.title }}{% endblock %}
+{% block content %}{% timezone site.timezone %}<h1>Invite contacts</h1><p class="text-secondary">{{ occurrence.event.title }} · {{ occurrence.starts_at|date:"F j, Y · g:i A" }}</p><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">Queue invitations</button> <a class="btn btn-link" href="{% url 'events:manage' site.id %}">Cancel</a></form>{% endtimezone %}{% endblock %}

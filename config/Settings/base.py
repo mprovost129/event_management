@@ -64,6 +64,8 @@ INSTALLED_APPS = [
     "content.apps.ContentConfig",
     "contacts.apps.ContactsConfig",
     "events.apps.EventsConfig",
+    "communications.apps.CommunicationsConfig",
+    "attendance.apps.AttendanceConfig",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -152,6 +154,24 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
+}
+
+CELERY_BROKER_URL = env(
+    "CELERY_BROKER_URL", env("REDIS_URL", "redis://localhost:6379/1")
+)
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BEAT_SCHEDULE = {
+    "deliver-outbound-messages": {
+        "task": "communications.tasks.deliver_queued_messages",
+        "schedule": 60.0,
+    },
+    "queue-event-reminders": {
+        "task": "communications.tasks.queue_due_event_reminders",
+        "schedule": 3600.0,
+    },
 }
 
 DATABASES = {

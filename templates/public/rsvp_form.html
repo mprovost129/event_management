@@ -1,0 +1,4 @@
+{% extends 'public/site_base.html' %}
+{% load tz %}
+{% block title %}Respond · {{ occurrence.event.title }}{% endblock %}
+{% block content %}{% timezone site.timezone %}<section class="site-theme"><h1>Respond to {{ occurrence.event.title }}</h1><p>{{ occurrence.starts_at|date:"F j, Y · g:i A" }}</p><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary btn-lg" type="submit">Save response</button></form></section>{% endtimezone %}{% endblock %}

@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block title %}Add response · {{ occurrence.event.title }}{% endblock %}
+{% block content %}<h1>Add or update a response</h1><p class="text-secondary">Manager override for {{ occurrence.event.title }}.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">Save response</button> <a class="btn btn-link" href="{% url 'attendance:roster' site.id occurrence.id %}">Cancel</a></form>{% endblock %}

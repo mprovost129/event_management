@@ -1,0 +1,3 @@
+{% extends 'public/site_base.html' %}
+{% block title %}Response saved · {{ registration.occurrence.event.title }}{% endblock %}
+{% block content %}<section class="site-theme text-center py-5"><h1>Response saved</h1><p class="lead">You're marked as <strong>{{ registration.get_response_display|lower }}</strong> for {{ registration.occurrence.event.title }}.</p>{% if registration.response == 'going' %}<h2 class="h4 mt-4">Participants</h2><ul class="list-unstyled">{% for participant in registration.participants.all %}{% if participant.status == 'active' %}<li>{{ participant.display_name }}</li>{% endif %}{% endfor %}</ul>{% endif %}<p>A confirmation has been queued for {{ registration.contact.email }}.</p></section>{% endblock %}

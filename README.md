@@ -10,7 +10,7 @@ The first customer is a country line dancing group. The product is intentionally
 
 ## Current milestone
 
-Phase 2 is complete:
+Phase 3 is complete:
 
 - Verified account signup
 - Subscriber-site onboarding
@@ -24,6 +24,11 @@ Phase 2 is complete:
 - Tenant-scoped contact management, tags, notes, search, and archive
 - Single and recurring events with one/future/all occurrence editing
 - Public calendars and public/unlisted/invite-only event visibility
+- Secure contact invitations and going/maybe/not-going responses
+- Named guests with occurrence-level capacity enforcement
+- Queued confirmations, updates, cancellations, and event reminders
+- Mobile occurrence rosters with independent participant check-in and history
+- Core invitation, response, participant, capacity, and attendance metrics
 
 See [implementation status](docs/IMPLEMENTATION_STATUS.md) for verification results and the next phase.
 

@@ -100,4 +100,43 @@ Verified locally:
 - 37 automated tests pass
 - Test settings cannot inherit Stripe secrets from `.env` or make accidental provider calls
 
-Next: Phase 3 - invitations, RSVP responses, named guests, capacity, attendance, and core event reporting.
+Completed next milestone: Phase 3 - invitations, RSVP responses, named guests, capacity, attendance, and core event reporting.
+
+## Phase 3 - Invitations, RSVP, guests, attendance, and reporting
+
+Status: Complete.
+
+Completed:
+
+- Manager-selected email invitations for occurrence-specific contact lists
+- Cryptographically random invitation capabilities stored only as SHA-256 hashes
+- Invite-only event details and response forms available only through a valid, unexpired invitation URL
+- Going, maybe, and not-going responses with one current registration per contact and occurrence
+- Low-friction public/unlisted registration that creates or updates contacts without overwriting notes or consent
+- Configurable per-event guest limits with required first and last names and optional guest email/phone
+- Independent primary and guest participant records for going responses
+- Immutable response-history records when a response or guest list changes
+- Transactional occurrence locking and participant-based capacity enforcement
+- Manager response overrides for contacts, including invite-only events
+- Durable transactional email outbox for invitations, confirmations, event updates, cancellations, and reminders
+- Celery 5.6 with Redis-backed workers and a periodic scheduler, plus management-command delivery fallbacks
+- Idempotent message deduplication, bounded retries, stale-job recovery, and post-delivery body redaction
+- Mobile-friendly searchable/filterable occurrence rosters with large check-in controls
+- Independent participant and guest check-in, undo, append-only attendance history, and audit events
+- Occurrence metrics for invitations, response states, participants, guests, remaining capacity, and attendance
+
+Verified locally:
+
+- 50 automated tests pass
+- One simultaneous-capacity test is selected automatically in authoritative PostgreSQL CI and skipped by the local SQLite feedback loop
+- Ruff lint and formatting checks pass
+- Django system and migration-drift checks pass
+- Test message delivery uses the in-memory email backend and cannot contact production providers
+
+Operational requirements:
+
+- Run one Celery worker and one Celery beat process against the configured Redis broker
+- Keep the fallback message-delivery command available for recovery and operational diagnosis
+- Monitor failed/stale outbox records and worker availability before real invitations are enabled
+
+Next: Phase 4 - Stripe Connect onboarding, paid tickets, inventory holds, orders, refunds, and member dues.

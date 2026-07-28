@@ -13,7 +13,7 @@ Email, SMS, recurrence generation, reminders, webhook follow-up, image processin
 
 Build one Django deployment divided into domain-focused Django apps. Domain state transitions use explicit service functions and database transactions. Critical cross-domain behavior must not be hidden in Django signals.
 
-Use Redis for caching, short-lived locks, rate limits, and a background queue. Celery is the default worker/scheduler candidate, subject to a small implementation ADR when queued work begins. Jobs must be idempotent, bounded, observable, and retry-safe.
+Use Redis for caching, short-lived locks, rate limits, and the background queue. Celery is the selected worker and scheduler. A durable database outbox retains transactional messages before Celery dispatch so a broker interruption cannot lose committed invitations or confirmations. Jobs must be idempotent, bounded, observable, and retry-safe.
 
 The initial web interface uses Django templates and progressive enhancement rather than a separate SPA. Internal service boundaries should permit a future API without building the deferred public API now.
 

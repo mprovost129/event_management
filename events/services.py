@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from django.db import transaction
+from django.utils import timezone
 
 from .models import Event, EventOccurrence
 
@@ -97,6 +98,7 @@ def update_occurrences_from(*, occurrence, scope, values):
         raise ValueError("Occurrence scope must be one, future, or all.")
 
     updated = []
+    updated_at = timezone.now()
     for item in occurrences.select_for_update().order_by("starts_at"):
         item.starts_at += start_delta
         item.ends_at = item.starts_at + duration
@@ -104,6 +106,7 @@ def update_occurrences_from(*, occurrence, scope, values):
         item.venue_address = values["venue_address"]
         item.capacity = values["capacity"]
         item.status = values["status"]
+        item.updated_at = updated_at
         updated.append(item)
     EventOccurrence.objects.bulk_update(
         updated,
