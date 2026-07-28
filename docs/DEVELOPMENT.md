@@ -71,6 +71,26 @@ python manage.py sync_subscription_access
 
 Stripe webhooks remain authoritative for paid activation, payment failure, recovery, and cancellation. Browser checkout redirects never change subscription access directly.
 
+Test settings deliberately blank all Stripe secrets even when a developer `.env` contains sandbox credentials. Tests that exercise the gateway supply mocked keys explicitly, preventing accidental provider calls.
+
+## Phase 2 flows
+
+From a subscriber or manager dashboard:
+
+- Website pages, blog, and publishing: `/sites/{site-id}/content/`
+- Contacts: `/sites/{site-id}/contacts/`
+- Events and occurrences: `/sites/{site-id}/events/`
+
+On a published subscriber subdomain:
+
+- Home: `/`
+- About and Contact: `/about/` and `/contact/` when those pages are published
+- Blog and posts: `/blog/` and `/blog/{post-slug}/`
+- Newsletter signup: `/newsletter/`
+- Public calendar and occurrences: `/events/` and `/events/{event-slug}/{occurrence-id}/`
+
+Content bodies remain escaped plain text in V1. Uploaded logos, hero images, and blog images must be JPEG, PNG, or WebP, are limited to 10 MB, and are resized before storage. Production media continues to use the configured S3-compatible backend.
+
 ## Production media
 
 Production uses an S3-compatible bucket through `django-storages`. Configure `MEDIA_STORAGE_BACKEND=s3`, the bucket, its region or endpoint, and credentials supplied by the hosting platform. Local filesystem media is intentionally rejected by the deployment system check.

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Website content · {{ site.display_name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div><h1>Website content</h1><p class="text-secondary mb-0">{{ site.display_name }}</p></div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-primary" href="{% url 'sites:dashboard' site.id %}">Dashboard</a>
+        <a class="btn btn-primary" href="{% url 'content:presentation' site.id %}">Appearance &amp; publishing</a>
+    </div>
+</div>
+
+<section class="mb-5">
+    <h2>Pages</h2>
+    <div class="list-group">
+        {% for page in pages %}
+        <a class="list-group-item list-group-item-action d-flex justify-content-between" href="{% url 'content:page_edit' site.id page.page_type %}">
+            <span>{{ page.title }}</span><span class="badge text-bg-secondary">{{ page.get_status_display }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Blog</h2>
+        <a class="btn btn-primary" href="{% url 'content:blog_create' site.id %}">New post</a>
+    </div>
+    {% if posts %}
+    <div class="list-group">
+        {% for post in posts %}
+        <a class="list-group-item list-group-item-action d-flex justify-content-between" href="{% url 'content:blog_edit' site.id post.id %}">
+            <span>{{ post.title }}</span><span class="badge text-bg-secondary">{{ post.get_status_display }}</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}<p class="text-secondary">No blog posts yet.</p>{% endif %}
+</section>
+{% endblock %}

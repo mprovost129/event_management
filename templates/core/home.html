@@ -1,19 +1,24 @@
-{% extends 'base.html' %}
+{% extends base_template %}
+{% load tz %}
 
 {% block title %}{% if site %}{{ site.display_name }}{% else %}{{ platform_name }}{% endif %}{% endblock %}
 {% block meta_description %}{% if site %}Events and updates from {{ site.display_name }}.{% else %}Create a home for your group's events.{% endif %}{% endblock %}
 
 {% block content %}
 {% if site %}
-    {% if site.accepts_public_traffic %}
-    <section class="py-5 text-center">
-        <p class="text-uppercase text-secondary small fw-semibold">Group website preview</p>
-        <h1 class="display-4">{{ site.display_name }}</h1>
-        <p class="lead">The event calendar and branded pages arrive in Phase 2.</p>
-    </section>
+    {% if site.accepts_public_traffic and site.is_published %}
+    <div class="site-theme">
+        <section class="py-5 text-center rounded-3 bg-light{% if site.theme.hero_image %} site-hero-image{% endif %}"{% if site.theme.hero_image %} style="background-image: linear-gradient(rgba(255,255,255,.78), rgba(255,255,255,.78)), url('{{ site.theme.hero_image.url }}'); background-size: cover; background-position: center;"{% endif %}>
+            <h1 class="display-4">{{ site.theme.hero_heading|default:site.display_name }}</h1>
+            {% if site.theme.hero_text %}<p class="lead">{{ site.theme.hero_text }}</p>{% endif %}
+        </section>
+        {% if home_page.body %}<section class="py-4">{{ home_page.body|linebreaks }}</section>{% endif %}
+        {% timezone site.timezone %}<section class="py-4"><div class="d-flex justify-content-between"><h2>Upcoming events</h2><a href="{% url 'events:calendar' %}">View calendar</a></div><div class="row g-3">{% for occurrence in upcoming_occurrences %}<div class="col-md-4"><article class="card h-100"><div class="card-body"><p class="site-accent fw-semibold">{{ occurrence.starts_at|date:"M j, Y" }}</p><h3 class="h5"><a href="{% url 'events:occurrence_detail' occurrence.event.slug occurrence.id %}">{{ occurrence.event.title }}</a></h3><p>{{ occurrence.venue_name }}</p></div></article></div>{% empty %}<p>No upcoming events yet.</p>{% endfor %}</div></section>{% endtimezone %}
+        {% if recent_posts %}<section class="py-4"><div class="d-flex justify-content-between"><h2>Latest updates</h2><a href="{% url 'content:blog_index' %}">View blog</a></div>{% for post in recent_posts %}<article class="py-2"><h3 class="h5"><a href="{% url 'content:blog_detail' post.slug %}">{{ post.title }}</a></h3><p>{{ post.excerpt }}</p></article>{% endfor %}</section>{% endif %}
+    </div>
     {% else %}
     <div class="alert alert-warning">
-        This site is temporarily unavailable. Its group leader can restore access from the billing dashboard.
+        This website is not published yet or is temporarily unavailable.
     </div>
     {% endif %}
 {% else %}

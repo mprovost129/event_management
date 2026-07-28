@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}Edit occurrence · {{ site.display_name }}{% endblock %}
+{% block content %}
+<h1>Edit {{ occurrence.event.title }} occurrence</h1>
+<p class="text-secondary">Choose whether this change applies once, from this date forward, or to the entire series.</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">Update occurrence(s)</button> <a class="btn btn-link" href="{% url 'events:manage' site.id %}">Cancel</a></form>
+{% endblock %}

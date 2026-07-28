@@ -14,7 +14,7 @@
 <body>
     <header class="border-bottom bg-white">
         <nav class="navbar navbar-expand-lg container py-3">
-            <a class="navbar-brand fw-semibold" href="{% url 'core:home' %}">{{ platform_name }}</a>
+            {% block brand %}<a class="navbar-brand fw-semibold" href="{% url 'core:home' %}">{{ platform_name }}</a>{% endblock %}
             <div class="ms-auto d-flex align-items-center gap-2">
                 {% block nav %}
                 {% if user.is_authenticated %}

@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Edit {{ event.title }} · {{ site.display_name }}{% endblock %}
+{% block content %}
+<h1>Edit event details</h1>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">Save details</button> <a class="btn btn-link" href="{% url 'events:manage' site.id %}">Cancel</a></form>
+{% endblock %}

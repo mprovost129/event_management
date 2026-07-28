@@ -103,7 +103,10 @@ class SiteDomain(models.Model):
 
 class SiteTheme(models.Model):
     site = models.OneToOneField(Site, on_delete=models.CASCADE, related_name="theme")
-    logo = models.FileField(upload_to="site-logos/%Y/%m/", blank=True)
+    logo = models.ImageField(upload_to="site-logos/%Y/%m/", blank=True)
+    hero_image = models.ImageField(upload_to="site-heroes/%Y/%m/", blank=True)
+    hero_heading = models.CharField(max_length=180, blank=True)
+    hero_text = models.CharField(max_length=320, blank=True)
     primary_color = models.CharField(
         max_length=7, default="#0D6EFD", validators=[hex_color_validator]
     )

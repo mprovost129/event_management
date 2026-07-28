@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Appearance · {{ site.display_name }}{% endblock %}
+{% block content %}
+<h1>Appearance &amp; publishing</h1>
+<p class="text-secondary">Choose a maintained template, set brand details, and control when the website is public.</p>
+<form method="post" enctype="multipart/form-data" class="mb-3">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary" type="submit">Save website settings</button>
+    <a class="btn btn-link" href="{% url 'content:manage' site.id %}">Cancel</a>
+</form>
+{% endblock %}

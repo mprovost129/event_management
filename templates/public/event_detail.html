@@ -1,0 +1,4 @@
+{% extends 'public/site_base.html' %}
+{% load tz %}
+{% block title %}{{ event.title }} · {{ site.display_name }}{% endblock %}
+{% block content %}<article class="site-theme"><h1>{{ event.title }}</h1><p>{{ event.description|linebreaks }}</p><h2 class="h4">Dates</h2>{% timezone site.timezone %}<ul>{% for occurrence in occurrences %}<li><a href="{% url 'events:occurrence_detail' event.slug occurrence.id %}">{{ occurrence.starts_at|date:"F j, Y · g:i A" }}</a></li>{% empty %}<li>No upcoming dates.</li>{% endfor %}</ul>{% endtimezone %}</article>{% endblock %}

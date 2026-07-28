@@ -51,6 +51,9 @@ def create_subscriber_site(
         trial_ends_at=now + timedelta(days=settings.SUBSCRIPTION_TRIAL_DAYS),
         stripe_price_id="",
     )
+    from content.services import initialize_site_content
+
+    initialize_site_content(site)
     record_audit_event(
         action="site.created",
         actor=owner,

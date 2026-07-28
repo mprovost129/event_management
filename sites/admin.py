@@ -24,4 +24,10 @@ class SiteAdmin(admin.ModelAdmin):
 
 @admin.register(SiteTheme)
 class SiteThemeAdmin(admin.ModelAdmin):
-    list_display = ("site", "primary_color", "secondary_color", "typography_key")
+    list_display = (
+        "site",
+        "primary_color",
+        "secondary_color",
+        "typography_key",
+        "updated_at",
+    )

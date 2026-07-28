@@ -32,11 +32,11 @@ Open placeholders:
 
 - Email, SMS, hosting, and object-storage vendors
 
-Next: Phase 1 - accounts, sites, tenancy, and the platform trial lifecycle.
+Completed next milestone: Phase 1 - accounts, sites, tenancy, and the platform trial lifecycle.
 
 ## Phase 1 - Accounts, sites, tenancy, and platform trial
 
-Status: Complete. Live Stripe calls remain disabled until secrets are configured.
+Status: Complete. Sandbox billing credentials and both recurring prices are configured and verified; live activation remains environment-specific.
 
 Completed:
 
@@ -64,9 +64,40 @@ Verified locally:
 - 23 automated tests pass
 - Python dependency consistency check passes
 
-Live activation still requires:
+Production activation still requires:
 
 - Stripe API and webhook secrets
 - A configured Stripe Billing Portal
 
-Next: Phase 2 - template site content, contacts, blog, recurring events, and the public calendar.
+Completed next milestone: Phase 2 - template site content, contacts, blog, recurring events, and the public calendar.
+
+## Phase 2 - Template site, content, contacts, blog, and calendar
+
+Status: Complete.
+
+Completed:
+
+- Classic and Social maintained presentation variants with validated color and typography tokens
+- Site name, logo, hero image/copy, template, and public-publishing controls
+- Fixed Home, About, Contact, and Newsletter pages with draft, published, and scheduled states
+- Editable public navigation labels and escaped plain-text page content
+- Blog post authoring, stable per-site slugs, draft/scheduled/published states, index, and detail pages
+- JPEG, PNG, and WebP validation plus bounded image resizing before storage
+- Tenant-scoped contacts with manual creation, editing, search, archive, tags, manager notes, and normalized per-site email uniqueness
+- Auditable email/SMS consent state and low-friction public newsletter signup without overwriting manager-owned notes
+- Single, weekly, and monthly events with materialized timezone-aware occurrences
+- One-occurrence, selected-and-future, and entire-series edit scopes
+- Public, unlisted, and invite-only visibility boundaries
+- Public responsive home, calendar, event-series, and occurrence pages on subscriber subdomains
+- Subscriber and manager dashboard links for website, contacts, and event operations
+
+Verified locally:
+
+- Configured Stripe sandbox prices are active USD recurring prices at $20 monthly and $220 yearly with the expected lookup keys
+- Ruff lint and formatting checks pass
+- Django system and production deployment checks pass
+- No model/migration drift detected
+- 37 automated tests pass
+- Test settings cannot inherit Stripe secrets from `.env` or make accidental provider calls
+
+Next: Phase 3 - invitations, RSVP responses, named guests, capacity, attendance, and core event reporting.

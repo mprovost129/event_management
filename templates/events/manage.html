@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load tz %}
+{% block title %}Events · {{ site.display_name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div><h1>Events</h1><p class="text-secondary mb-0">{{ site.display_name }}</p></div>
+    <div><a class="btn btn-outline-primary" href="{% url 'sites:dashboard' site.id %}">Dashboard</a> <a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create event</a></div>
+</div>
+{% timezone site.timezone %}
+{% for event in events %}
+<section class="card mb-3"><div class="card-body">
+    <div class="d-flex justify-content-between gap-3"><div><h2 class="h4">{{ event.title }}</h2><p>{{ event.get_status_display }} · {{ event.get_visibility_display }} · {{ event.get_recurrence_display }}</p></div><a href="{% url 'events:edit' site.id event.id %}">Edit details</a></div>
+    <ul class="list-group list-group-flush">
+        {% for occurrence in event.occurrences.all %}
+        <li class="list-group-item d-flex justify-content-between"><span>{{ occurrence.starts_at|date:"M j, Y g:i A" }} · {{ occurrence.venue_name|default:"Venue TBD" }}</span><a href="{% url 'events:occurrence_edit' site.id occurrence.id %}">Edit occurrence</a></li>
+        {% endfor %}
+    </ul>
+</div></section>
+{% empty %}<p class="text-secondary">No events yet.</p>{% endfor %}
+{% endtimezone %}
+{% endblock %}

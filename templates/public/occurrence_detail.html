@@ -1,0 +1,4 @@
+{% extends 'public/site_base.html' %}
+{% load tz %}
+{% block title %}{{ event.title }} · {{ site.display_name }}{% endblock %}
+{% block content %}{% timezone site.timezone %}<article class="site-theme"><p class="site-accent fw-semibold">{{ occurrence.starts_at|date:"l, F j, Y · g:i A" }}–{{ occurrence.ends_at|date:"g:i A" }}</p><h1>{{ event.title }}</h1><p>{{ event.description|linebreaks }}</p><dl><dt>Venue</dt><dd>{{ occurrence.venue_name|default:"To be announced" }}</dd>{% if occurrence.venue_address %}<dt>Address</dt><dd>{{ occurrence.venue_address }}</dd>{% endif %}<dt>Hosted by</dt><dd>{{ event.host_name|default:site.display_name }}</dd>{% if occurrence.capacity %}<dt>Capacity</dt><dd>{{ occurrence.capacity }}</dd>{% endif %}</dl></article>{% endtimezone %}{% endblock %}

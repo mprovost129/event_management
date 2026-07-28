@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ site.display_name }}{% endblock %}
+{% block extra_css %}
+<style>
+    :root {
+        --site-primary: {{ site.theme.primary_color }};
+        --site-secondary: {{ site.theme.secondary_color }};
+    }
+    .site-theme a { color: var(--site-primary); }
+    .site-theme .btn-primary { background-color: var(--site-primary); border-color: var(--site-primary); color: #fff; }
+    .site-theme .site-accent { color: var(--site-primary); }
+    .site-theme .site-muted { color: var(--site-secondary); }
+    {% if site.template_key == 'classic' %}
+    .site-theme h1, .site-theme h2 { letter-spacing: -.025em; }
+    .site-theme .card { border-radius: .35rem; }
+    {% elif site.template_key == 'social' %}
+    .site-theme .card { border: 0; border-radius: 1.25rem; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.08); }
+    .site-theme h1, .site-theme h2 { font-weight: 700; }
+    {% endif %}
+    {% if site.theme.typography_key == 'serif' %}.site-theme { font-family: Georgia, 'Times New Roman', serif; }{% endif %}
+    {% if site.theme.typography_key == 'rounded' %}.site-theme { font-family: 'Trebuchet MS', system-ui, sans-serif; }{% endif %}
+</style>
+{% endblock %}
+
+{% block brand %}
+<a class="navbar-brand fw-semibold d-flex align-items-center gap-2 site-theme" href="/">
+    {% if site.theme.logo %}<img src="{{ site.theme.logo.url }}" alt="" height="40">{% endif %}
+    {{ site.display_name }}
+</a>
+{% endblock %}
+
+{% block nav %}
+<div class="d-flex flex-wrap align-items-center gap-3 site-theme">
+    <a href="/">{{ site_navigation.home.navigation_label|default:"Home" }}</a>
+    {% if site_navigation.about %}<a href="{% url 'content:about' %}">{{ site_navigation.about.navigation_label }}</a>{% endif %}
+    <a href="{% url 'events:calendar' %}">Events</a>
+    <a href="{% url 'content:blog_index' %}">Blog</a>
+    <a href="{% url 'content:newsletter' %}">{{ site_navigation.newsletter.navigation_label|default:"Newsletter" }}</a>
+    {% if site_navigation.contact %}<a href="{% url 'content:contact' %}">{{ site_navigation.contact.navigation_label }}</a>{% endif %}
+</div>
+{% endblock %}
+
+{% block footer %}<small>&copy; {% now "Y" %} {{ site.display_name }} &middot; Powered by Gather HQs</small>{% endblock %}

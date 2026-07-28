@@ -4,7 +4,7 @@ python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-ra --strict-markers"
-testpaths = ["core", "ops", "sites", "subscriptions", "users"]
+testpaths = ["content", "contacts", "core", "events", "ops", "sites", "subscriptions", "users"]
 
 [tool.ruff]
 line-length = 88
@@ -16,4 +16,4 @@ select = ["E", "F", "W", "I"]
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["config", "core", "ops", "sites", "subscriptions", "users"]
+known-first-party = ["config", "contacts", "content", "core", "events", "ops", "sites", "subscriptions", "users"]

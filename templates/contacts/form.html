@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}{% if contact %}Edit contact{% else %}Add contact{% endif %} · {{ site.display_name }}{% endblock %}
+{% block content %}
+<h1>{% if contact %}Edit contact{% else %}Add contact{% endif %}</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary" type="submit">Save contact</button>
+    <a class="btn btn-link" href="{% url 'contacts:list' site.id %}">Cancel</a>
+</form>
+{% if contact and not contact.archived_at %}
+<form method="post" action="{% url 'contacts:archive' site.id contact.id %}" class="mt-4">
+    {% csrf_token %}<button class="btn btn-outline-danger" type="submit">Archive contact</button>
+</form>
+{% endif %}
+{% if contact.consent_history.exists %}
+<h2 class="h4 mt-5">Consent history</h2>
+<ul>{% for record in contact.consent_history.all %}<li>{{ record.recorded_at }} · {{ record.get_channel_display }} · {{ record.get_status_display }} · {{ record.source }}</li>{% endfor %}</ul>
+{% endif %}
+{% endblock %}

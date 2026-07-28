@@ -7,6 +7,9 @@ DEBUG = False
 ALLOWED_HOSTS = ["testserver", "localhost", ".localhost"]
 PLATFORM_DOMAIN = "localhost"
 PLATFORM_CONTROL_HOSTS = ("localhost", "www.localhost")
+STRIPE_SECRET_KEY = ""
+STRIPE_WEBHOOK_SECRET = ""
+STRIPE_BILLING_PORTAL_CONFIGURATION_ID = ""
 
 if env("TEST_DATABASE_ENGINE", "sqlite").lower() == "sqlite":
     DATABASES = {

@@ -61,6 +61,9 @@ INSTALLED_APPS = [
     "ops.apps.OpsConfig",
     "sites.apps.SitesConfig",
     "subscriptions.apps.SubscriptionsConfig",
+    "content.apps.ContentConfig",
+    "contacts.apps.ContactsConfig",
+    "events.apps.EventsConfig",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -100,6 +103,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.platform",
+                "content.context_processors.site_navigation",
             ],
         },
     },

@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Edit {{ page.title }} · {{ site.display_name }}{% endblock %}
+{% block content %}
+<h1>Edit {{ page.get_page_type_display }} page</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary" type="submit">Save page</button>
+    <a class="btn btn-link" href="{% url 'content:manage' site.id %}">Cancel</a>
+</form>
+{% endblock %}

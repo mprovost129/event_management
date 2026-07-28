@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}Create event · {{ site.display_name }}{% endblock %}
+{% block content %}
+<h1>Create event</h1>
+<p class="text-secondary">Times are entered in {{ site.timezone }}. Recurring events materialize calendar occurrences immediately.</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">Create event</button> <a class="btn btn-link" href="{% url 'events:manage' site.id %}">Cancel</a></form>
+{% endblock %}

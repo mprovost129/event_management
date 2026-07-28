@@ -10,7 +10,7 @@ The first customer is a country line dancing group. The product is intentionally
 
 ## Current milestone
 
-Phase 1 is complete:
+Phase 2 is complete:
 
 - Verified account signup
 - Subscriber-site onboarding
@@ -19,6 +19,11 @@ Phase 1 is complete:
 - Fourteen-day no-card trials
 - Platform billing and Stripe webhook boundary
 - Subscriber and manager dashboards
+- Branded, publishable subscriber websites with fixed pages and two maintained presentation variants
+- Blog authoring and public newsletter signup with consent history
+- Tenant-scoped contact management, tags, notes, search, and archive
+- Single and recurring events with one/future/all occurrence editing
+- Public calendars and public/unlisted/invite-only event visibility
 
 See [implementation status](docs/IMPLEMENTATION_STATUS.md) for verification results and the next phase.
 
