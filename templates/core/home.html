@@ -1,8 +1,30 @@
 {% extends 'base.html' %}
 
-{% block title %}Home{% endblock %}
-{% block meta_description %}Welcome to the site.{% endblock %}
+{% block title %}{% if site %}{{ site.display_name }}{% else %}{{ platform_name }}{% endif %}{% endblock %}
+{% block meta_description %}{% if site %}Events and updates from {{ site.display_name }}.{% else %}Create a home for your group's events.{% endif %}{% endblock %}
 
 {% block content %}
-<h1>Welcome</h1>
+{% if site %}
+    {% if site.accepts_public_traffic %}
+    <section class="py-5 text-center">
+        <p class="text-uppercase text-secondary small fw-semibold">Group website preview</p>
+        <h1 class="display-4">{{ site.display_name }}</h1>
+        <p class="lead">The event calendar and branded pages arrive in Phase 2.</p>
+    </section>
+    {% else %}
+    <div class="alert alert-warning">
+        This site is temporarily unavailable. Its group leader can restore access from the billing dashboard.
+    </div>
+    {% endif %}
+{% else %}
+    <section class="py-5 row align-items-center g-5">
+        <div class="col-lg-7">
+            <p class="text-uppercase text-primary small fw-semibold">Built for real-world groups</p>
+            <h1 class="display-4 fw-semibold">Give your events a home.</h1>
+            <p class="lead text-secondary">Create a branded group website, invite people, collect RSVPs, and keep every event organized.</p>
+            <a class="btn btn-primary btn-lg" href="{% url 'users:signup' %}">Start your 14-day free trial</a>
+            <p class="small text-secondary mt-2">No card required.</p>
+        </div>
+    </section>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Resend verification | {{ platform_name }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <h1>Resend verification</h1>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn btn-primary" type="submit">Send verification email</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

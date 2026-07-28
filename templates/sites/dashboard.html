@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ site.display_name }} dashboard{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+        <p class="text-uppercase text-secondary small fw-semibold mb-1">{{ site_role.get_role_display }}</p>
+        <h1>{{ site.display_name }}</h1>
+        <p class="text-secondary mb-0">{{ site.domains.first.hostname }}</p>
+    </div>
+    <a class="btn btn-outline-primary" href="//{{ site.domains.first.hostname }}">View site</a>
+</div>
+
+<div class="row g-3 mb-5">
+    <div class="col-md-4">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 text-secondary">Site status</h2>
+            <p class="h4 mb-0">{{ site.get_status_display }}</p>
+        </div></div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 text-secondary">Trial</h2>
+            <p class="h4 mb-0">{{ trial_days_remaining }} day{{ trial_days_remaining|pluralize }} remaining</p>
+        </div></div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 text-secondary">Template</h2>
+            <p class="h4 mb-0 text-capitalize">{{ site.template_key }}</p>
+        </div></div>
+    </div>
+</div>
+
+{% if site_role.role == 'subscriber_admin' %}
+<section class="mb-5">
+    <h2>Subscription</h2>
+    <p>Status: <strong>{{ subscription.get_status_display }}</strong>. The plan price is configurable and currently TBD.</p>
+    <div class="d-flex gap-2">
+        {% if not subscription.stripe_customer_id %}
+        <form method="post" action="{% url 'subscriptions:checkout' site.id %}">
+            {% csrf_token %}
+            <button class="btn btn-primary" type="submit">Add billing method</button>
+        </form>
+        {% else %}
+        <form method="post" action="{% url 'subscriptions:portal' site.id %}">
+            {% csrf_token %}
+            <button class="btn btn-outline-primary" type="submit">Manage billing</button>
+        </form>
+        {% endif %}
+    </div>
+</section>
+
+<section>
+    <h2>Site managers</h2>
+    <p class="text-secondary">Managers can operate the site but cannot change billing or manager access.</p>
+    <form method="post" action="{% url 'sites:add_manager' site.id %}" class="row g-2 align-items-end mb-3">
+        {% csrf_token %}
+        <div class="col-md-6">
+            <label class="form-label" for="{{ manager_form.email.id_for_label }}">Verified account email</label>
+            {{ manager_form.email }}
+        </div>
+        <div class="col-auto"><button class="btn btn-outline-primary" type="submit">Add manager</button></div>
+    </form>
+    {% if managers %}
+    <ul class="list-group">
+        {% for manager in managers %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ manager.user.email }}
+            <form method="post" action="{% url 'sites:remove_manager' site.id manager.id %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No site managers have been added.</p>
+    {% endif %}
+</section>
+{% endif %}
+{% endblock %}

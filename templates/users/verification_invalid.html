@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+
+{% block title %}Invalid verification link | {{ platform_name }}{% endblock %}
+{% block content %}
+<h1>This verification link is invalid or expired</h1>
+<p><a href="{% url 'users:resend_verification' %}">Request a new link</a>.</p>
+{% endblock %}

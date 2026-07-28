@@ -136,7 +136,9 @@ form p {
 
 input[type="text"],
 input[type="email"],
-input[type="password"] {
+input[type="password"],
+select,
+textarea {
     display: block;
     width: 100%;
     max-width: 400px;
@@ -146,16 +148,14 @@ input[type="password"] {
     font-size: 1rem;
 }
 
-button[type="submit"] {
-    padding: 0.5rem 1.25rem;
-    background: var(--bs-primary);
-    color: var(--bs-white);
-    border: none;
-    border-radius: var(--bs-border-radius);
-    font-size: 1rem;
-    cursor: pointer;
+.errorlist {
+    color: var(--bs-danger);
+    margin-bottom: 0.5rem;
 }
 
-button[type="submit"]:hover {
-    background: var(--bs-link-hover-color);
+.helptext {
+    display: block;
+    color: var(--bs-gray-600);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
 }

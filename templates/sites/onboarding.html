@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Create your site | {{ platform_name }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <p class="text-uppercase text-primary small fw-semibold">Step 1 of 1</p>
+        <h1>Create your group website</h1>
+        <p class="text-secondary">You can change the name and design later. The site address should be short and memorable.</p>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn btn-primary" type="submit">Create site and start trial</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

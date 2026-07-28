@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Create account | {{ platform_name }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <h1>Create your account</h1>
+        <p class="text-secondary">Start with 14 days free. No card required.</p>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn btn-primary" type="submit">Create account</button>
+        </form>
+        <p class="mt-3">Already registered? <a href="{% url 'login' %}">Sign in</a>.</p>
+    </div>
+</div>
+{% endblock %}

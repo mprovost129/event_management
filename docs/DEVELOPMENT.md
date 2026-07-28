@@ -35,14 +35,36 @@ Use `ruff check . --fix` and `ruff format .` for automated formatting. Migration
 
 Local tests use an isolated SQLite database by default for fast feedback. CI sets `TEST_DATABASE_ENGINE=postgresql` and remains the authoritative PostgreSQL integration gate.
 
-## Product placeholders
+## Product configuration
 
-The product name, platform domain, default currency, and Stripe plan price remain environment values so development can continue before the commercial values are finalized:
+The confirmed production brand is Gather HQs, expanded as Gather Headquarters. The tenant root is `gatherhqs.com`, producing addresses such as `boot-scooters.gatherhqs.com`. The following remain environment values so local, CI, staging, and production hosts stay isolated:
 
 - `PLATFORM_NAME`
+- `PLATFORM_LONG_NAME`
 - `PLATFORM_DOMAIN`
+- `PLATFORM_CONTROL_HOSTS`
 - `PLATFORM_DEFAULT_CURRENCY`
 - `STRIPE_PLATFORM_PRICE_ID`
+
+Platform billing also requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`. Keep all three blank in local development when testing non-payment flows. The dashboard will explain that billing is not configured rather than attempting a provider call.
+
+## Phase 1 flows
+
+- Account signup: `/accounts/signup/`
+- Account dashboard: `/dashboard/`
+- Subscriber onboarding: `/start/`
+- Stripe platform webhook: `/billing/stripe/`
+- Platform administration: `/platform-admin/`
+
+Subscriber sites resolve at `{slug}.{PLATFORM_DOMAIN}`. Modern browsers resolve `*.localhost` locally, so a site created as `boot-scooters` is available at `http://boot-scooters.localhost:8000` during development.
+
+Schedule the subscription access command at least hourly once trials are exposed outside development:
+
+```text
+python manage.py sync_subscription_access
+```
+
+Stripe webhooks remain authoritative for paid activation, payment failure, recovery, and cancellation. Browser checkout redirects never change subscription access directly.
 
 ## Production media
 

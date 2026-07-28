@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Check your email | {{ platform_name }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <h1>Check your email</h1>
+        <p>Use the verification link we sent before signing in and creating your site.</p>
+        <p><a href="{% url 'users:resend_verification' %}">Send another verification link</a></p>
+    </div>
+</div>
+{% endblock %}

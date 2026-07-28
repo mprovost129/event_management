@@ -2,7 +2,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from config.env import env, env_bool, env_int
+from config.env import env, env_bool, env_int, env_list
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -12,10 +12,19 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = env("SECRET_KEY")
 
-PLATFORM_NAME = env("PLATFORM_NAME", "Event Management Platform")
+PLATFORM_NAME = env("PLATFORM_NAME", "Gather HQs")
+PLATFORM_LONG_NAME = env("PLATFORM_LONG_NAME", "Gather Headquarters")
 PLATFORM_DOMAIN = env("PLATFORM_DOMAIN", "localhost")
+PLATFORM_CONTROL_HOSTS = env_list(
+    "PLATFORM_CONTROL_HOSTS", (PLATFORM_DOMAIN, f"www.{PLATFORM_DOMAIN}")
+)
 PLATFORM_DEFAULT_CURRENCY = env("PLATFORM_DEFAULT_CURRENCY", "usd").lower()
 STRIPE_PLATFORM_PRICE_ID = env("STRIPE_PLATFORM_PRICE_ID", "", allow_blank=True)
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", "", allow_blank=True)
+STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", "", allow_blank=True)
+STRIPE_BILLING_PORTAL_CONFIGURATION_ID = env(
+    "STRIPE_BILLING_PORTAL_CONFIGURATION_ID", "", allow_blank=True
+)
 SUBSCRIPTION_TRIAL_DAYS = env_int("SUBSCRIPTION_TRIAL_DAYS", 14)
 SUBSCRIPTION_GRACE_DAYS = env_int("SUBSCRIPTION_GRACE_DAYS", 7)
 SUSPENDED_DATA_RETENTION_DAYS = env_int("SUSPENDED_DATA_RETENTION_DAYS", 90)
@@ -33,6 +42,8 @@ INSTALLED_APPS = [
     "users.apps.UsersConfig",
     "core.apps.CoreConfig",
     "ops.apps.OpsConfig",
+    "sites.apps.SitesConfig",
+    "subscriptions.apps.SubscriptionsConfig",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -45,6 +56,7 @@ AUTHENTICATION_BACKENDS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "core.middleware.RequestContextMiddleware",
+    "sites.middleware.SiteResolutionMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -112,7 +124,7 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 
 CACHES = {

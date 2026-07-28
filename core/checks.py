@@ -27,6 +27,25 @@ def product_configuration_check(app_configs, **kwargs):
                 id="platform.E003",
             )
         )
+    if settings.PLATFORM_DOMAIN not in settings.PLATFORM_CONTROL_HOSTS:
+        issues.append(
+            Error(
+                "PLATFORM_CONTROL_HOSTS must include PLATFORM_DOMAIN.",
+                id="platform.E007",
+            )
+        )
+    invalid_hosts = [
+        host
+        for host in settings.PLATFORM_CONTROL_HOSTS
+        if "://" in host or "/" in host or ":" in host
+    ]
+    if invalid_hosts:
+        issues.append(
+            Error(
+                "PLATFORM_CONTROL_HOSTS entries must be hostnames without schemes, paths, or ports.",
+                id="platform.E008",
+            )
+        )
     return issues
 
 
@@ -50,6 +69,21 @@ def deployment_product_check(app_configs, **kwargs):
                 id="platform.W002",
             )
         )
+    else:
+        if not settings.STRIPE_SECRET_KEY:
+            issues.append(
+                Error(
+                    "STRIPE_SECRET_KEY is required when paid plan activation is enabled.",
+                    id="platform.E005",
+                )
+            )
+        if not settings.STRIPE_WEBHOOK_SECRET:
+            issues.append(
+                Error(
+                    "STRIPE_WEBHOOK_SECRET is required when paid plan activation is enabled.",
+                    id="platform.E006",
+                )
+            )
     if getattr(settings, "MEDIA_STORAGE_BACKEND", "filesystem") == "filesystem":
         issues.append(
             Error(

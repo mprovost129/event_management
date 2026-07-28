@@ -1,4 +1,4 @@
-# Event Management Platform V1 Specification
+# Gather HQs V1 Specification
 
 Status: Approved product baseline; ready for implementation planning  
 Last updated: July 28, 2026  
@@ -6,11 +6,11 @@ Source: `Event_Management_Platform_Project_Scope.docx` and the initial product-d
 
 ## 1. Executive summary
 
-The Event Management Platform is a low-cost, multi-tenant SaaS product for informal groups and emerging local brands. Its first real customer is a country line dancing group whose leader needs one place to publish a small branded website, schedule events, invite contacts, collect RSVPs and payments, communicate with attendees, and understand attendance and revenue.
+Gather HQs, expanded as Gather Headquarters, is a low-cost, multi-tenant SaaS product for informal groups and emerging local brands. Its first real customer is a country line dancing group whose leader needs one place to publish a small branded website, schedule events, invite contacts, collect RSVPs and payments, communicate with attendees, and understand attendance and revenue.
 
 Each paying subscriber receives one website at:
 
-`{site-slug}.{platform-domain}`
+`{site-slug}.gatherhqs.com`
 
 The subscriber does not need to operate a registered business. A site can represent a group, host, instructor, club, or emerging brand. Subscriber billing is separate from money collected for event tickets or member dues.
 
@@ -24,7 +24,8 @@ V1 will be a mobile-friendly web application built as a Django modular monolith 
 | Tenant model | One subscriber site per paid platform subscription |
 | Platform plan | One feature tier; price TBD |
 | Trial | Fourteen days, with no payment card required to start |
-| Site address | `{site-slug}.{platform-domain}`; custom domains are deferred |
+| Product/domain | Gather HQs (Gather Headquarters) at `gatherhqs.com` |
+| Site address | `{site-slug}.gatherhqs.com`; custom domains are deferred |
 | Platform revenue | Subscription fee only; no event or member-payment platform fee |
 | Paid transactions | Stripe Connect; subscriber receives ticket and member-dues revenue |
 | Event types | Single and recurring scheduled events |
@@ -811,7 +812,6 @@ A feature is complete only when:
 
 These values can remain configurable placeholders during the first phases:
 
-- Product name and root domain
 - Single-tier price and billing currency
 - Final site template visual designs
 - Email provider
