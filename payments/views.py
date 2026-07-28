@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 
 from contacts.models import MembershipPlan, MemberSubscription
+from core.rate_limits import public_write_rate_limit
 from events.models import EventOccurrence
 from ops.services import record_audit_event
 from sites.permissions import (
@@ -252,6 +253,7 @@ def ticket_type_edit(request, site_id, ticket_type_id):
 
 
 @require_http_methods(["GET", "POST"])
+@public_write_rate_limit("ticket-checkout")
 def ticket_checkout(request, token):
     site = _public_site(request)
     registration = registration_for_checkout_token(site=site, token=token)
@@ -416,6 +418,7 @@ def membership_plans(request):
 
 
 @require_http_methods(["GET", "POST"])
+@public_write_rate_limit("membership-checkout")
 def membership_join(request, plan_id):
     site = _public_site(request)
     plan = get_object_or_404(

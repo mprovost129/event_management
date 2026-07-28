@@ -257,10 +257,14 @@ Completed:
 - Suspended-tenant freeze with subscriber-admin billing/export/refund recovery and manager denial
 - End-to-end free-event regression from trial onboarding through invite, named guest RSVP, check-in, review, and reports
 - Security headers, CSP, browser capability restrictions, skip navigation, visible focus, reduced motion, responsive controls, and legal-policy draft routes
+- Redis-backed, hashed, proxy-aware throttling for public account, RSVP, newsletter, review, and checkout writes
+- Safe branded production error pages with correlation IDs and security headers
 - Pinned dependency audit in CI and weekly dependency monitoring for Python, Actions, and Docker
 - Configurable read-only launch-scale probe with 100 concurrent users, p95 and error-rate gates
 - Operations, provider recovery, backup/restore, pilot-event, load, accessibility, security, and launch runbooks
 
 Automated verification includes cross-tenant denial, suspended-site recovery boundaries, stale/recovered worker readiness, alert escalation, restore confirmation/integrity, pilot data requirements, security headers, and the primary operator journey.
+
+Verified locally: 102 tests pass, the PostgreSQL-only simultaneous-capacity assertion remains selected for CI, Ruff and formatting pass, migration drift is clean, and the strict production deployment check passes with zero warnings when all required production values are supplied.
 
 Launch remains blocked until every external-evidence item in `LAUNCH_CHECKLIST.md` is signed off, especially real provider sandbox flows, the production-like 100-user drill, manual accessibility review, legal approval, and an isolated backup restore.

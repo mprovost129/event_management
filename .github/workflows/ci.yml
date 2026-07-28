@@ -37,7 +37,7 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: config.Settings.test
-      SECRET_KEY: ci-only-secret-key-that-is-long-enough-for-deployment-checks
+      SECRET_KEY: ci-only-4Kp9xV7mQ2sN8wR5yT1cF6hJ3dL0zB7uG9aE2vM8-secret
       PLATFORM_DOMAIN: events.example.test
       PLATFORM_CONTROL_HOSTS: events.example.test,www.events.example.test
       PLATFORM_DEFAULT_CURRENCY: usd
@@ -83,9 +83,11 @@ jobs:
           STRIPE_SECRET_KEY: sk_test_ci_placeholder
           STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
           STRIPE_CONNECT_WEBHOOK_SECRET: whsec_ci_connect_placeholder
+          COMMUNICATIONS_WEBHOOK_SECRET: ci-communications-signing-secret
           EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+          SUPPORT_EMAIL: support@events.example.test
           LOG_FORMAT: json
-        run: python manage.py check --deploy
+        run: python manage.py check --deploy --fail-level WARNING
       - name: Test
         run: pytest
       - name: Build production image

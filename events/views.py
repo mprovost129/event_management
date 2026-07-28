@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
+from core.rate_limits import public_write_rate_limit
 from ops.services import record_audit_event
 from payments.services import registration_checkout_token
 from sites.permissions import site_staff_required
@@ -372,6 +373,7 @@ def occurrence_detail(request, slug, occurrence_id):
 
 
 @require_http_methods(["GET", "POST"])
+@public_write_rate_limit("public-rsvp")
 def public_response(request, slug, occurrence_id):
     site = _public_site(request)
     occurrence = get_object_or_404(
@@ -421,6 +423,7 @@ def public_response(request, slug, occurrence_id):
 
 
 @require_http_methods(["GET", "POST"])
+@public_write_rate_limit("invitation-rsvp")
 def invitation_response(request, token):
     site = _public_site(request)
     invitation = invitation_for_token(site=site, token=token)

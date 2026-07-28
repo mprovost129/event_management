@@ -6,6 +6,7 @@ from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.views.decorators.http import require_http_methods
 
+from core.rate_limits import public_write_rate_limit
 from ops.services import record_audit_event
 
 from .forms import ResendVerificationForm, SignupForm
@@ -15,6 +16,7 @@ from .tokens import email_verification_token
 
 
 @require_http_methods(["GET", "POST"])
+@public_write_rate_limit("account-signup")
 def signup(request):
     if request.user.is_authenticated:
         return redirect("sites:account_dashboard")
@@ -60,6 +62,7 @@ def verify_email(request, uidb64, token):
 
 
 @require_http_methods(["GET", "POST"])
+@public_write_rate_limit("verification-resend")
 def resend_verification(request):
     form = ResendVerificationForm(request.POST or None)
     if request.method == "POST" and form.is_valid():

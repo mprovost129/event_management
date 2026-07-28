@@ -4,6 +4,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
 
+from core.rate_limits import public_write_rate_limit
 from sites.permissions import site_staff_required
 
 from .forms import ReviewForm, ReviewReportForm, ReviewResponseForm
@@ -19,6 +20,7 @@ from .services import (
 
 
 @require_http_methods(("GET", "POST"))
+@public_write_rate_limit("attendee-review")
 def submit_review(request, token):
     site = getattr(request, "site", None)
     if site is None or not site.accepts_public_traffic:

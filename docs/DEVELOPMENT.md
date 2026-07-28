@@ -262,3 +262,5 @@ python manage.py post_restore_verify --confirm-restored-copy --json
 ```
 
 Use the last command only against an isolated restored database. See `OPERATIONS_RUNBOOK.md`, `PILOT_RUNBOOK.md`, `LOAD_TESTING.md`, `ACCESSIBILITY_REVIEW.md`, `SECURITY_REVIEW.md`, and `LAUNCH_CHECKLIST.md` for the evidence required before launch.
+
+Public write endpoints default to 30 POST attempts per 15-minute site/client/surface bucket. Configure `RATE_LIMIT_TRUSTED_PROXY_COUNT` to the exact number of trusted proxies that append `X-Forwarded-For`; leave it at zero when the application server already receives the client address as `REMOTE_ADDR`. An incorrect nonzero value can trust attacker-supplied forwarding data or group unrelated users behind one address.

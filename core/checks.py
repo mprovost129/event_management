@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.core.checks import Error, Tags, Warning, register
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 
 
 @register()
@@ -46,6 +48,27 @@ def product_configuration_check(app_configs, **kwargs):
             Error(
                 "BACKGROUND_HEARTBEAT_MAX_AGE_SECONDS must be greater than zero.",
                 id="platform.E017",
+            )
+        )
+    if settings.PUBLIC_WRITE_RATE_LIMIT_MAX <= 0:
+        issues.append(
+            Error(
+                "PUBLIC_WRITE_RATE_LIMIT_MAX must be greater than zero.",
+                id="platform.E020",
+            )
+        )
+    if settings.PUBLIC_WRITE_RATE_LIMIT_WINDOW_SECONDS <= 0:
+        issues.append(
+            Error(
+                "PUBLIC_WRITE_RATE_LIMIT_WINDOW_SECONDS must be greater than zero.",
+                id="platform.E021",
+            )
+        )
+    if settings.RATE_LIMIT_TRUSTED_PROXY_COUNT < 0:
+        issues.append(
+            Error(
+                "RATE_LIMIT_TRUSTED_PROXY_COUNT cannot be negative.",
+                id="platform.E022",
             )
         )
     if settings.PLATFORM_DOMAIN not in settings.PLATFORM_CONTROL_HOSTS:
@@ -169,6 +192,23 @@ def deployment_product_check(app_configs, **kwargs):
                 id="platform.W003",
             )
         )
+    if not settings.SUPPORT_EMAIL:
+        issues.append(
+            Error(
+                "SUPPORT_EMAIL is required for production account and policy support.",
+                id="platform.E023",
+            )
+        )
+    else:
+        try:
+            validate_email(settings.SUPPORT_EMAIL)
+        except ValidationError:
+            issues.append(
+                Error(
+                    "SUPPORT_EMAIL must be a valid email address.",
+                    id="platform.E024",
+                )
+            )
     if not settings.HEALTHCHECK_REQUIRE_BACKGROUND_WORKERS:
         issues.append(
             Error(

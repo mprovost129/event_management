@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>{{ status_code }} | {{ platform_name }}</title>
+    <style>
+        body { background: #f8f9fa; color: #212529; font-family: system-ui, sans-serif; margin: 0; }
+        main { margin: 12vh auto; max-width: 42rem; padding: 2rem; }
+        a { color: #0b5ed7; }
+        .code { color: #6c757d; font-weight: 700; letter-spacing: .08em; }
+        .request { color: #6c757d; font-family: ui-monospace, monospace; font-size: .875rem; overflow-wrap: anywhere; }
+    </style>
+</head>
+<body>
+<main>
+    <p class="code">ERROR {{ status_code }}</p>
+    <h1>{{ error_title }}</h1>
+    <p>{{ error_message }}</p>
+    <p><a href="/">Return to the home page</a></p>
+    {% if support_email %}<p><a href="mailto:{{ support_email }}">Contact support</a></p>{% endif %}
+    {% if request_id %}<p class="request">Request ID: {{ request_id }}</p>{% endif %}
+</main>
+</body>
+</html>

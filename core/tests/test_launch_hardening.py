@@ -1,4 +1,5 @@
 import pytest
+from django.test import override_settings
 from django.urls import reverse
 
 from ops.models import SystemHeartbeat
@@ -61,3 +62,27 @@ def test_global_security_headers_skip_link_and_legal_drafts_are_exposed(client):
         legal = client.get(reverse(route))
         assert legal.status_code == 200
         assert b"Pre-launch policy draft" in legal.content
+
+
+@pytest.mark.django_db
+def test_production_error_pages_are_safe_branded_and_traceable(client):
+    missing = client.get(
+        "/definitely-not-a-real-page/",
+        headers={"X-Request-ID": "launch-error-request-123"},
+    )
+
+    assert missing.status_code == 404
+    assert b"Page not found" in missing.content
+    assert b"launch-error-request-123" in missing.content
+    assert missing["X-Request-ID"] == "launch-error-request-123"
+    assert missing["Content-Security-Policy"].startswith("default-src 'self'")
+
+
+@pytest.mark.django_db
+@override_settings(SUPPORT_EMAIL="support@gatherhqs.com")
+def test_support_contact_is_published_in_policy_and_error_pages(client):
+    privacy = client.get(reverse("core:privacy"))
+    missing = client.get("/missing-support-test/")
+
+    assert b"mailto:support@gatherhqs.com" in privacy.content
+    assert b"mailto:support@gatherhqs.com" in missing.content

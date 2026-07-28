@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 from contacts.services import subscribe_to_newsletter
+from core.rate_limits import public_write_rate_limit
 from ops.services import record_audit_event
 from sites.permissions import site_staff_required
 
@@ -160,6 +161,7 @@ def blog_detail(request, slug):
 
 
 @require_http_methods(["GET", "POST"])
+@public_write_rate_limit("newsletter-signup")
 def newsletter_signup(request):
     site = _public_site(request)
     page = public_page(site, SitePage.PageType.NEWSLETTER)

@@ -19,6 +19,7 @@
 - [ ] Provider outage/recovery drill succeeds without manually changing payment or delivery state.
 - [ ] Privacy notice, terms, acceptable-use policy, review guidelines, retention policy, support contact, and subscriber refund responsibilities receive legal/business approval.
 - [ ] DNS, TLS, object-storage CORS/access, sender DNS, monitoring destinations, and alert recipients are verified.
+- [ ] `SUPPORT_EMAIL` points to a staffed, tested mailbox on the production domain.
 - [ ] Pilot group completes `PILOT_RUNBOOK.md` without database intervention.
 
 ## Go/no-go

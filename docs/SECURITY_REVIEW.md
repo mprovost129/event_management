@@ -8,6 +8,7 @@
 - Invitation and unsubscribe capabilities are random and stored as hashes. Review and checkout capabilities are signed, site-bound, expiring, and revalidate current eligibility.
 - Stripe-hosted pages collect payment details. Browser redirects do not grant paid state. Platform and Connect webhooks use separate secrets, durable idempotency records, account-context checks, and reconciliation.
 - Marketing delivery rechecks consent immediately before sending. Successful or terminal outbox records remove message bodies and raw unsubscribe links.
+- Public signup, verification resend, RSVP, newsletter, attendee review, ticket checkout, and membership checkout POSTs use hashed client/site Redis rate-limit keys. Forwarded client addresses are trusted only when the exact proxy count is configured.
 - Production media requires durable object storage; uploads are type/size checked and images are processed. Subscriber HTML, CSS, and JavaScript are not accepted as executable content.
 - CI runs lint, migration checks, PostgreSQL tests, deploy checks, a production image build, and `pip-audit` against pinned production requirements. Dependabot monitors Python, Actions, and Docker dependencies weekly.
 

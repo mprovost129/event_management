@@ -47,7 +47,7 @@
 
     <footer class="container py-4 text-secondary border-top mt-5">
         {% block footer %}<small>&copy; {% now "Y" %} {{ platform_name }}</small>{% endblock %}
-        <nav class="mt-2 d-flex flex-wrap gap-3" aria-label="Legal information"><a href="{% url 'core:privacy' %}">Privacy</a><a href="{% url 'core:terms' %}">Terms</a><a href="{% url 'core:acceptable_use' %}">Acceptable use</a><a href="{% url 'core:review_guidelines' %}">Review guidelines</a></nav>
+        <nav class="mt-2 d-flex flex-wrap gap-3" aria-label="Legal information"><a href="{% url 'core:privacy' %}">Privacy</a><a href="{% url 'core:terms' %}">Terms</a><a href="{% url 'core:acceptable_use' %}">Acceptable use</a><a href="{% url 'core:review_guidelines' %}">Review guidelines</a>{% if support_email %}<a href="mailto:{{ support_email }}">Support</a>{% endif %}</nav>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
