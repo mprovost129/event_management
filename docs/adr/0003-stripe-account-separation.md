@@ -13,7 +13,7 @@ The application must not accidentally become responsible for subscriber processi
 
 Maintain two explicit payment contexts:
 
-1. Platform subscriptions use the platform Stripe account and a single configurable price after a fourteen-day no-card trial.
+1. Platform subscriptions use the platform Stripe account and one Standard feature tier, offered with monthly and yearly prices after a fourteen-day no-card trial.
 2. Ticket and membership payments use Stripe Connect direct-charge context on the subscriber's connected account with no application fee.
 
 Stripe Connect onboarding is optional until a subscriber enables paid tickets or member dues. Use Stripe-hosted onboarding and select a supported account configuration where Stripe collects processing fees from the connected account. Confirm supported country and responsibility settings before live onboarding is enabled.

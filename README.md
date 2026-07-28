@@ -4,6 +4,8 @@ Gather HQs (Gather Headquarters) is a multi-tenant Django platform for informal 
 
 The production domain is `gatherhqs.com`. Subscriber sites use `{site-slug}.gatherhqs.com`; `gatherhqs.com` and `www.gatherhqs.com` are reserved for the platform itself.
 
+The Standard plan includes all V1 features and is offered at $20 monthly or $220 yearly after a fourteen-day no-card trial.
+
 The first customer is a country line dancing group. The product is intentionally designed around approachable group language rather than assuming every subscriber runs a registered business.
 
 ## Current milestone

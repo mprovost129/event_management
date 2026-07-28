@@ -62,10 +62,14 @@ def deployment_product_check(app_configs, **kwargs):
                 id="platform.W001",
             )
         )
-    if not settings.STRIPE_PLATFORM_PRICE_ID:
+    configured_prices = (
+        settings.STRIPE_STANDARD_MONTHLY_PRICE_ID,
+        settings.STRIPE_STANDARD_YEARLY_PRICE_ID,
+    )
+    if not all(configured_prices):
         issues.append(
             Warning(
-                "STRIPE_PLATFORM_PRICE_ID is blank; paid plan activation is disabled.",
+                "Both Standard monthly and yearly Stripe price IDs are required for paid plan activation.",
                 id="platform.W002",
             )
         )
@@ -84,6 +88,20 @@ def deployment_product_check(app_configs, **kwargs):
                     id="platform.E006",
                 )
             )
+    if settings.STANDARD_MONTHLY_AMOUNT_CENTS <= 0:
+        issues.append(
+            Error(
+                "STANDARD_MONTHLY_AMOUNT_CENTS must be greater than zero.",
+                id="platform.E009",
+            )
+        )
+    if settings.STANDARD_YEARLY_AMOUNT_CENTS <= 0:
+        issues.append(
+            Error(
+                "STANDARD_YEARLY_AMOUNT_CENTS must be greater than zero.",
+                id="platform.E010",
+            )
+        )
     if getattr(settings, "MEDIA_STORAGE_BACKEND", "filesystem") == "filesystem":
         issues.append(
             Error(

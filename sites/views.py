@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from ops.services import record_audit_event
+from subscriptions.gateway import billing_options
 
 from .forms import ExistingManagerForm, SiteOnboardingForm
 from .models import SiteRole
@@ -62,6 +63,7 @@ def dashboard(request, site_id):
             role=SiteRole.Role.SITE_MANAGER, is_active=True
         ).select_related("user"),
         "manager_form": ExistingManagerForm(),
+        "billing_options": billing_options(),
     }
     return render(request, "sites/dashboard.html", context)
 

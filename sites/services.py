@@ -49,7 +49,7 @@ def create_subscriber_site(
         status=PlatformSubscription.Status.TRIALING,
         trial_started_at=now,
         trial_ends_at=now + timedelta(days=settings.SUBSCRIPTION_TRIAL_DAYS),
-        stripe_price_id=settings.STRIPE_PLATFORM_PRICE_ID,
+        stripe_price_id="",
     )
     record_audit_event(
         action="site.created",

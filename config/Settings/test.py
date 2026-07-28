@@ -5,6 +5,8 @@ from .base import *
 
 DEBUG = False
 ALLOWED_HOSTS = ["testserver", "localhost", ".localhost"]
+PLATFORM_DOMAIN = "localhost"
+PLATFORM_CONTROL_HOSTS = ("localhost", "www.localhost")
 
 if env("TEST_DATABASE_ENGINE", "sqlite").lower() == "sqlite":
     DATABASES = {

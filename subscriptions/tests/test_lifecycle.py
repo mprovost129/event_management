@@ -116,16 +116,37 @@ def test_failed_webhook_is_retained_for_operations():
 @pytest.mark.django_db
 @override_settings(
     STRIPE_SECRET_KEY="sk_test_example",
-    STRIPE_PLATFORM_PRICE_ID="price_example",
+    STRIPE_STANDARD_MONTHLY_PRICE_ID="price_monthly",
+    STRIPE_STANDARD_YEARLY_PRICE_ID="price_yearly",
+    STRIPE_STANDARD_MONTHLY_LOOKUP_KEY="standard_monthly",
+    STRIPE_STANDARD_YEARLY_LOOKUP_KEY="standard_yearly",
 )
 @patch("subscriptions.gateway.stripe.checkout.Session.create")
-def test_checkout_preserves_remaining_local_trial(mock_create):
+@pytest.mark.parametrize(
+    ("billing_interval", "expected_price", "expected_lookup_key"),
+    (
+        (
+            PlatformSubscription.BillingInterval.MONTHLY,
+            "price_monthly",
+            "standard_monthly",
+        ),
+        (
+            PlatformSubscription.BillingInterval.YEARLY,
+            "price_yearly",
+            "standard_yearly",
+        ),
+    ),
+)
+def test_checkout_preserves_trial_and_uses_selected_billing_cadence(
+    mock_create, billing_interval, expected_price, expected_lookup_key
+):
     owner, _, subscription = create_subscription_fixture()
     mock_create.return_value.url = "https://checkout.stripe.test/session"
 
     session = create_checkout_session(
         subscription=subscription,
         owner=owner,
+        billing_interval=billing_interval,
         success_url="https://example.test/success",
         cancel_url="https://example.test/cancel",
     )
@@ -133,9 +154,11 @@ def test_checkout_preserves_remaining_local_trial(mock_create):
     assert session.url == "https://checkout.stripe.test/session"
     params = mock_create.call_args.kwargs
     assert params["mode"] == "subscription"
-    assert params["line_items"] == [{"price": "price_example", "quantity": 1}]
+    assert params["line_items"] == [{"price": expected_price, "quantity": 1}]
     assert params["subscription_data"]["trial_period_days"] == 14
     assert params["metadata"]["platform_subscription_id"] == str(subscription.id)
+    assert params["metadata"]["billing_interval"] == billing_interval
+    assert params["metadata"]["lookup_key"] == expected_lookup_key
 
 
 @pytest.mark.django_db
@@ -146,6 +169,73 @@ def test_checkout_is_disabled_until_platform_billing_is_configured():
         create_checkout_session(
             subscription=subscription,
             owner=owner,
+            billing_interval=PlatformSubscription.BillingInterval.MONTHLY,
             success_url="https://example.test/success",
             cancel_url="https://example.test/cancel",
         )
+
+
+@pytest.mark.django_db
+@override_settings(
+    STRIPE_STANDARD_MONTHLY_PRICE_ID="price_monthly",
+    STRIPE_STANDARD_YEARLY_PRICE_ID="price_yearly",
+)
+def test_checkout_webhook_persists_selected_billing_cadence():
+    _, _, subscription = create_subscription_fixture()
+
+    process_stripe_event(
+        {
+            "id": "evt_checkout_complete",
+            "type": "checkout.session.completed",
+            "data": {
+                "object": {
+                    "id": "cs_123",
+                    "customer": "cus_123",
+                    "subscription": "sub_123",
+                    "metadata": {
+                        "platform_subscription_id": str(subscription.id),
+                        "billing_interval": "yearly",
+                        "price_id": "price_yearly",
+                    },
+                }
+            },
+        }
+    )
+
+    subscription.refresh_from_db()
+    assert subscription.stripe_customer_id == "cus_123"
+    assert subscription.stripe_subscription_id == "sub_123"
+    assert subscription.stripe_price_id == "price_yearly"
+    assert subscription.billing_interval == PlatformSubscription.BillingInterval.YEARLY
+
+
+@pytest.mark.django_db
+@override_settings(
+    STRIPE_STANDARD_MONTHLY_PRICE_ID="price_monthly",
+    STRIPE_STANDARD_YEARLY_PRICE_ID="price_yearly",
+)
+def test_subscription_webhook_reconciles_a_billing_cadence_change():
+    _, _, subscription = create_subscription_fixture()
+    subscription.stripe_subscription_id = "sub_123"
+    subscription.stripe_price_id = "price_yearly"
+    subscription.billing_interval = PlatformSubscription.BillingInterval.YEARLY
+    subscription.save()
+
+    process_stripe_event(
+        {
+            "id": "evt_subscription_updated",
+            "type": "customer.subscription.updated",
+            "data": {
+                "object": {
+                    "id": "sub_123",
+                    "status": "active",
+                    "cancel_at_period_end": False,
+                    "items": {"data": [{"price": {"id": "price_monthly"}}]},
+                }
+            },
+        }
+    )
+
+    subscription.refresh_from_db()
+    assert subscription.stripe_price_id == "price_monthly"
+    assert subscription.billing_interval == PlatformSubscription.BillingInterval.MONTHLY

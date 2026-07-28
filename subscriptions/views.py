@@ -25,6 +25,7 @@ def checkout(request, site_id):
         session = create_checkout_session(
             subscription=subscription,
             owner=request.user,
+            billing_interval=request.POST.get("billing_interval", ""),
             success_url=request.build_absolute_uri(
                 reverse("sites:dashboard", kwargs={"site_id": site_id})
             )

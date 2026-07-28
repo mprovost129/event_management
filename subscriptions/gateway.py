@@ -1,36 +1,87 @@
 import math
 from datetime import timedelta
+from decimal import Decimal
 
 import stripe
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import timezone
 
+from .models import PlatformSubscription
+
 
 class BillingNotConfigured(ImproperlyConfigured):
     pass
 
 
-def _configure_stripe():
-    if not settings.STRIPE_SECRET_KEY or not settings.STRIPE_PLATFORM_PRICE_ID:
+def billing_options():
+    monthly_amount = Decimal(settings.STANDARD_MONTHLY_AMOUNT_CENTS) / 100
+    yearly_amount = Decimal(settings.STANDARD_YEARLY_AMOUNT_CENTS) / 100
+    return (
+        {
+            "interval": PlatformSubscription.BillingInterval.MONTHLY,
+            "label": "Monthly",
+            "amount": monthly_amount,
+            "price_id": settings.STRIPE_STANDARD_MONTHLY_PRICE_ID,
+            "lookup_key": settings.STRIPE_STANDARD_MONTHLY_LOOKUP_KEY,
+            "annual_savings": Decimal("0"),
+        },
+        {
+            "interval": PlatformSubscription.BillingInterval.YEARLY,
+            "label": "Yearly",
+            "amount": yearly_amount,
+            "price_id": settings.STRIPE_STANDARD_YEARLY_PRICE_ID,
+            "lookup_key": settings.STRIPE_STANDARD_YEARLY_LOOKUP_KEY,
+            "annual_savings": (monthly_amount * 12) - yearly_amount,
+        },
+    )
+
+
+def option_for_interval(billing_interval):
+    option = next(
+        (
+            candidate
+            for candidate in billing_options()
+            if candidate["interval"] == billing_interval
+        ),
+        None,
+    )
+    if option is None:
+        raise BillingNotConfigured("Choose monthly or yearly billing.")
+    if not option["price_id"]:
         raise BillingNotConfigured(
-            "Platform billing is not available until its Stripe key and price are configured."
+            f"The {option['label'].lower()} Stripe price is not configured."
+        )
+    return option
+
+
+def _configure_stripe():
+    if not settings.STRIPE_SECRET_KEY:
+        raise BillingNotConfigured(
+            "Platform billing is not available until its Stripe key is configured."
         )
     stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-def create_checkout_session(*, subscription, owner, success_url, cancel_url):
+def create_checkout_session(
+    *, subscription, owner, billing_interval, success_url, cancel_url
+):
     _configure_stripe()
+    option = option_for_interval(billing_interval)
+    metadata = {
+        "platform_subscription_id": str(subscription.id),
+        "billing_interval": option["interval"],
+        "price_id": option["price_id"],
+        "lookup_key": option["lookup_key"],
+    }
     params = {
         "mode": "subscription",
-        "line_items": [{"price": settings.STRIPE_PLATFORM_PRICE_ID, "quantity": 1}],
+        "line_items": [{"price": option["price_id"], "quantity": 1}],
         "success_url": success_url,
         "cancel_url": cancel_url,
         "client_reference_id": str(subscription.id),
-        "metadata": {"platform_subscription_id": str(subscription.id)},
-        "subscription_data": {
-            "metadata": {"platform_subscription_id": str(subscription.id)}
-        },
+        "metadata": metadata,
+        "subscription_data": {"metadata": metadata},
     }
     if subscription.stripe_customer_id:
         params["customer"] = subscription.stripe_customer_id

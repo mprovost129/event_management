@@ -76,7 +76,8 @@ jobs:
           PLATFORM_CONTROL_HOSTS: events.example.test,www.events.example.test
           MEDIA_STORAGE_BACKEND: s3
           AWS_STORAGE_BUCKET_NAME: ci-media-bucket
-          STRIPE_PLATFORM_PRICE_ID: price_ci_placeholder
+          STRIPE_STANDARD_MONTHLY_PRICE_ID: price_ci_monthly
+          STRIPE_STANDARD_YEARLY_PRICE_ID: price_ci_yearly
           STRIPE_SECRET_KEY: sk_test_ci_placeholder
           STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
           LOG_FORMAT: json

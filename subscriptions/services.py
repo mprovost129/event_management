@@ -19,6 +19,31 @@ SITE_STATUS_BY_SUBSCRIPTION = {
 }
 
 
+def _billing_interval_for_price(price_id):
+    if price_id == settings.STRIPE_STANDARD_MONTHLY_PRICE_ID:
+        return PlatformSubscription.BillingInterval.MONTHLY
+    if price_id == settings.STRIPE_STANDARD_YEARLY_PRICE_ID:
+        return PlatformSubscription.BillingInterval.YEARLY
+    return ""
+
+
+def _subscription_item_price_id(stripe_object):
+    items = stripe_object.get("items", {}).get("data", [])
+    if not items:
+        return ""
+    return items[0].get("price", {}).get("id", "")
+
+
+def _apply_billing_selection(subscription, price_id, billing_interval=""):
+    configured_interval = _billing_interval_for_price(price_id)
+    if not configured_interval:
+        return
+    if billing_interval and billing_interval != configured_interval:
+        return
+    subscription.stripe_price_id = price_id
+    subscription.billing_interval = configured_interval
+
+
 def _as_datetime(unix_timestamp):
     if not unix_timestamp:
         return None
@@ -127,10 +152,17 @@ def _apply_stripe_event(event_type, stripe_object):
         subscription.stripe_subscription_id = (
             stripe_object.get("subscription") or subscription.stripe_subscription_id
         )
+        _apply_billing_selection(
+            subscription,
+            metadata.get("price_id", ""),
+            metadata.get("billing_interval", ""),
+        )
         subscription.save(
             update_fields=(
                 "stripe_customer_id",
                 "stripe_subscription_id",
+                "stripe_price_id",
+                "billing_interval",
                 "updated_at",
             )
         )
@@ -179,6 +211,9 @@ def _apply_stripe_event(event_type, stripe_object):
         "customer.subscription.created",
         "customer.subscription.updated",
     }:
+        _apply_billing_selection(
+            subscription, _subscription_item_price_id(stripe_object)
+        )
         provider_status = stripe_object.get("status")
         subscription.cancel_at_period_end = bool(
             stripe_object.get("cancel_at_period_end")

@@ -4,7 +4,7 @@ Last updated: July 28, 2026
 
 ## Phase 0 - Foundation and decision records
 
-Status: Technically complete; commercial placeholders remain intentionally configurable.
+Status: Complete. Commercial infrastructure values remain intentionally configurable.
 
 Completed:
 
@@ -30,14 +30,13 @@ Verified locally:
 
 Open placeholders:
 
-- Subscription price and live Stripe price identifier
 - Email, SMS, hosting, and object-storage vendors
 
 Next: Phase 1 - accounts, sites, tenancy, and the platform trial lifecycle.
 
 ## Phase 1 - Accounts, sites, tenancy, and platform trial
 
-Status: Complete with live commercial values intentionally disabled until configured.
+Status: Complete. Live Stripe calls remain disabled until secrets are configured.
 
 Completed:
 
@@ -52,6 +51,7 @@ Completed:
 - Site-manager add/remove controls for existing verified accounts
 - Platform subscription, grace, suspension, cancellation, and recovery state services
 - Stripe Checkout and Billing Portal boundary, with remaining trial days preserved during early conversion
+- Standard-plan cadence selection at $20 monthly or $220 yearly, using the confirmed Stripe price IDs and lookup keys
 - Signed Stripe webhook validation, durable deduplicated event inbox, retryable failures, and audited state changes
 - Scheduled subscription-access management command
 - Initial migrations, admin screens, responsive templates, and production configuration checks
@@ -61,12 +61,11 @@ Verified locally:
 - Ruff lint and format checks pass
 - Django system and deployment checks pass
 - No model/migration drift detected
-- 18 automated tests pass
+- 23 automated tests pass
 - Python dependency consistency check passes
 
 Live activation still requires:
 
-- Subscription price and live Stripe price ID
 - Stripe API and webhook secrets
 - A configured Stripe Billing Portal
 

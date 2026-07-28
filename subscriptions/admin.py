@@ -5,8 +5,14 @@ from .models import PlatformSubscription, StripeWebhookEvent
 
 @admin.register(PlatformSubscription)
 class PlatformSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ("site", "status", "trial_ends_at", "current_period_ends_at")
-    list_filter = ("status", "cancel_at_period_end")
+    list_display = (
+        "site",
+        "status",
+        "billing_interval",
+        "trial_ends_at",
+        "current_period_ends_at",
+    )
+    list_filter = ("status", "billing_interval", "cancel_at_period_end")
     search_fields = (
         "site__display_name",
         "stripe_customer_id",

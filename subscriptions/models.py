@@ -13,6 +13,10 @@ class PlatformSubscription(models.Model):
         CANCELED = "canceled", "Canceled"
         ARCHIVED = "archived", "Archived"
 
+    class BillingInterval(models.TextChoices):
+        MONTHLY = "monthly", "Monthly"
+        YEARLY = "yearly", "Yearly"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     site = models.OneToOneField(
         "sites.Site", on_delete=models.CASCADE, related_name="platform_subscription"
@@ -25,6 +29,9 @@ class PlatformSubscription(models.Model):
         max_length=255, blank=True, unique=True, null=True
     )
     stripe_price_id = models.CharField(max_length=255, blank=True)
+    billing_interval = models.CharField(
+        max_length=10, choices=BillingInterval.choices, blank=True
+    )
     trial_started_at = models.DateTimeField()
     trial_ends_at = models.DateTimeField()
     current_period_ends_at = models.DateTimeField(null=True, blank=True)

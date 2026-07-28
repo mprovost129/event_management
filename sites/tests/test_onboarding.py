@@ -93,6 +93,28 @@ def test_site_dashboard_is_denied_across_tenants(client):
 
 
 @pytest.mark.django_db
+def test_subscriber_dashboard_offers_monthly_and_yearly_standard_billing(client):
+    owner = verified_user("owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+    client.force_login(owner)
+
+    response = client.get(reverse("sites:dashboard", kwargs={"site_id": site.id}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "$20.00" in content
+    assert "$220.00" in content
+    assert 'name="billing_interval" value="monthly"' in content
+    assert 'name="billing_interval" value="yearly"' in content
+    assert "Save $20.00 per year" in content
+
+
+@pytest.mark.django_db
 def test_subscriber_admin_can_add_manager_but_manager_cannot_add_managers(client):
     owner = verified_user("owner@example.com")
     manager = verified_user("manager@example.com")

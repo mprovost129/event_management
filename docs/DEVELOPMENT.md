@@ -44,9 +44,14 @@ The confirmed production brand is Gather HQs, expanded as Gather Headquarters. T
 - `PLATFORM_DOMAIN`
 - `PLATFORM_CONTROL_HOSTS`
 - `PLATFORM_DEFAULT_CURRENCY`
-- `STRIPE_PLATFORM_PRICE_ID`
+- `STRIPE_STANDARD_MONTHLY_PRICE_ID`
+- `STRIPE_STANDARD_YEARLY_PRICE_ID`
+- `STRIPE_STANDARD_MONTHLY_LOOKUP_KEY`
+- `STRIPE_STANDARD_YEARLY_LOOKUP_KEY`
+- `STANDARD_MONTHLY_AMOUNT_CENTS`
+- `STANDARD_YEARLY_AMOUNT_CENTS`
 
-Platform billing also requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`. Keep all three blank in local development when testing non-payment flows. The dashboard will explain that billing is not configured rather than attempting a provider call.
+The Standard plan is $20 monthly or $220 yearly. Platform billing also requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`; keep those secrets blank in local development when testing non-payment flows. Checkout fails closed with a useful message rather than attempting a provider call when its Stripe secret is unavailable.
 
 ## Phase 1 flows
 
@@ -86,4 +91,4 @@ Run Django's standard deployment checks with production settings and production-
 python manage.py check --deploy --settings=config.Settings.prod
 ```
 
-The production environment must provide a non-placeholder domain, allowed hosts, a durable media bucket, secure secrets, and the Stripe price ID before paid-plan activation is enabled.
+The production environment must provide a non-placeholder domain, allowed hosts, a durable media bucket, secure secrets, and both Standard-plan Stripe price IDs before paid-plan activation is enabled.

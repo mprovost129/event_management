@@ -22,7 +22,7 @@ V1 will be a mobile-friendly web application built as a Django modular monolith 
 | --- | --- |
 | Initial market | Country line dancing groups, with reusable terminology for other informal groups |
 | Tenant model | One subscriber site per paid platform subscription |
-| Platform plan | One feature tier; price TBD |
+| Platform plan | One Standard feature tier: $20 monthly or $220 yearly |
 | Trial | Fourteen days, with no payment card required to start |
 | Product/domain | Gather HQs (Gather Headquarters) at `gatherhqs.com` |
 | Site address | `{site-slug}.gatherhqs.com`; custom domains are deferred |
@@ -210,7 +210,7 @@ All authorization is site-scoped. A role on one site grants no access to another
 
 ### 7.3 Platform subscriptions
 
-- **SUB-01:** V1 exposes one feature tier with a configurable Stripe price identifier and display price.
+- **SUB-01:** V1 exposes one Standard feature tier with monthly billing at $20 or yearly billing at $220. The subscriber selects a billing cadence when entering Checkout.
 - **SUB-02:** A fourteen-day trial starts when the first site is created and does not require a card.
 - **SUB-03:** Trial-ending reminders are sent before expiration.
 - **SUB-04:** A trial without an active payment method is suspended at expiration; its admin can still reach billing and recovery screens.
@@ -353,7 +353,7 @@ draft -> trialing -> active -> grace -> suspended -> archived -> deletion eligib
 
 Two financial contexts must remain separate:
 
-1. **Platform subscription:** the platform charges the group leader the TBD recurring SaaS fee using the platform Stripe account.
+1. **Platform subscription:** the platform charges the group leader $20 monthly or $220 yearly for the same Standard feature tier using the platform Stripe account.
 2. **Subscriber commerce:** ticket and membership payments are created for the subscriber's connected Stripe account with no application fee.
 
 No local model or report may combine these balances as if they shared a merchant account. Provider identifiers must always include the relevant connected-account context.
@@ -639,7 +639,7 @@ The roadmap is ordered by dependency and deployable customer value, not calendar
 
 Deliverables:
 
-- Confirm product name, root domain, default currency, and subscription price placeholder
+- Confirm product name, root domain, default currency, and Standard plan billing cadences
 - Establish formatting, test, migration, environment, and CI conventions
 - Add architecture decision records for tenancy, background jobs, and Stripe Connect configuration
 - Correct production-ready media storage and secrets strategy
@@ -659,7 +659,7 @@ Deliverables:
 - Email verification and account lifecycle
 - Site, subdomain, role, theme, and lifecycle models
 - Subscriber onboarding wizard
-- Fourteen-day no-card trial and single-plan billing integration
+- Fourteen-day no-card trial and Standard-plan monthly/yearly billing integration
 - Host resolution and tenant-scoping infrastructure
 - Subscriber and manager dashboards
 
@@ -812,7 +812,7 @@ A feature is complete only when:
 
 These values can remain configurable placeholders during the first phases:
 
-- Single-tier price and billing currency
+- Billing currency beyond the initial USD launch configuration
 - Final site template visual designs
 - Email provider
 - SMS provider and customer-facing usage price
