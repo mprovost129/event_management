@@ -6,7 +6,12 @@ from .models import Invitation, Participant, Registration
 def occurrence_metrics(occurrence):
     registrations = Registration.objects.filter(occurrence=occurrence)
     active_participants = Participant.objects.filter(
-        registration__occurrence=occurrence, status=Participant.Status.ACTIVE
+        registration__occurrence=occurrence,
+        registration__payment_status__in=(
+            Registration.PaymentStatus.NOT_REQUIRED,
+            Registration.PaymentStatus.PAID,
+        ),
+        status=Participant.Status.ACTIVE,
     )
     participant_count = active_participants.count()
     capacity_remaining = None

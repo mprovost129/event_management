@@ -10,7 +10,7 @@ The first customer is a country line dancing group. The product is intentionally
 
 ## Current milestone
 
-Phase 3 is complete:
+Phase 4 is complete:
 
 - Verified account signup
 - Subscriber-site onboarding
@@ -29,6 +29,11 @@ Phase 3 is complete:
 - Queued confirmations, updates, cancellations, and event reminders
 - Mobile occurrence rosters with independent participant check-in and history
 - Core invitation, response, participant, capacity, and attendance metrics
+- Stripe-hosted connected-account onboarding and readiness controls
+- Paid event tickets with expiring inventory holds and direct connected-account Checkout
+- One ticket per named participant, payment receipts, refunds, disputes, and financial history
+- Monthly/yearly membership plans and recurring member dues in connected-account context
+- Dedicated signed Connect webhook inbox, reconciliation commands, and commerce reporting
 
 See [implementation status](docs/IMPLEMENTATION_STATUS.md) for verification results and the next phase.
 

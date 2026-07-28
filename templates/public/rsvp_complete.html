@@ -1,3 +1,18 @@
 {% extends 'public/site_base.html' %}
 {% block title %}Response saved · {{ registration.occurrence.event.title }}{% endblock %}
-{% block content %}<section class="site-theme text-center py-5"><h1>Response saved</h1><p class="lead">You're marked as <strong>{{ registration.get_response_display|lower }}</strong> for {{ registration.occurrence.event.title }}.</p>{% if registration.response == 'going' %}<h2 class="h4 mt-4">Participants</h2><ul class="list-unstyled">{% for participant in registration.participants.all %}{% if participant.status == 'active' %}<li>{{ participant.display_name }}</li>{% endif %}{% endfor %}</ul>{% endif %}<p>A confirmation has been queued for {{ registration.contact.email }}.</p></section>{% endblock %}
+{% block content %}
+<section class="site-theme text-center py-5">
+    <h1>Response saved</h1>
+    <p class="lead">You're marked as <strong>{{ registration.get_response_display|lower }}</strong> for {{ registration.occurrence.event.title }}.</p>
+    {% if registration.response == 'going' %}
+    <h2 class="h4 mt-4">Participants</h2>
+    <ul class="list-unstyled">{% for participant in registration.participants.all %}{% if participant.status == 'active' %}<li>{{ participant.display_name }}</li>{% endif %}{% endfor %}</ul>
+    {% endif %}
+    {% if checkout_token %}
+    <div class="alert alert-warning d-inline-block text-start"><strong>Payment is still required.</strong> Your spots are confirmed only after checkout succeeds.</div>
+    <p><a class="btn btn-primary btn-lg" href="{% url 'payments:ticket_checkout' checkout_token %}">Choose tickets and pay</a></p>
+    {% else %}
+    <p>A confirmation has been queued for {{ registration.contact.email }}.</p>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block title %}{% if plan %}Edit{% else %}Create{% endif %} membership plan &middot; {{ site.display_name }}{% endblock %}
+{% block content %}<a href="{% url 'payments:manage' site.id %}">&larr; Payments</a><h1>{% if plan %}Edit{% else %}Create{% endif %} membership plan</h1><p class="text-secondary">Members remain separate from event attendees and must still RSVP to events.</p><form method="post" class="card"><div class="card-body">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">{% if plan %}Save{% else %}Create{% endif %} plan</button></div></form>{% endblock %}

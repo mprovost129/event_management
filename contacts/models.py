@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -113,3 +114,115 @@ class ConsentRecord(SiteOwnedModel):
 
     def __str__(self):
         return f"{self.contact} - {self.get_channel_display()}: {self.get_status_display()}"
+
+
+class Member(SiteOwnedModel):
+    class AdministrativeStatus(models.TextChoices):
+        ACTIVE = "active", "Active"
+        INACTIVE = "inactive", "Inactive"
+
+    contact = models.OneToOneField(
+        Contact, on_delete=models.CASCADE, related_name="membership"
+    )
+    administrative_status = models.CharField(
+        max_length=20,
+        choices=AdministrativeStatus.choices,
+        default=AdministrativeStatus.ACTIVE,
+    )
+    starts_on = models.DateField(default=timezone.localdate)
+    ends_on = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ("contact__last_name", "contact__first_name")
+
+    def clean(self):
+        super().clean()
+        if self.contact_id and self.site_id != self.contact.site_id:
+            raise ValidationError("A member must belong to the contact's site.")
+        if self.ends_on and self.ends_on < self.starts_on:
+            raise ValidationError("Membership cannot end before it starts.")
+
+    @property
+    def effective_status(self):
+        if self.administrative_status == self.AdministrativeStatus.INACTIVE:
+            return "inactive"
+        subscription = self.subscriptions.order_by("-created_at").first()
+        return subscription.status if subscription else "active"
+
+    def __str__(self):
+        return str(self.contact)
+
+
+class MembershipPlan(SiteOwnedModel):
+    class Interval(models.TextChoices):
+        MONTHLY = "month", "Monthly"
+        YEARLY = "year", "Yearly"
+
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    amount_cents = models.PositiveIntegerField(validators=[MinValueValidator(50)])
+    currency = models.CharField(max_length=3)
+    interval = models.CharField(max_length=10, choices=Interval.choices)
+    stripe_product_id = models.CharField(max_length=255, blank=True)
+    stripe_price_id = models.CharField(max_length=255, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ("name", "interval")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("site", "name", "interval"),
+                name="contacts_unique_membership_plan",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        self.currency = self.currency.lower()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} ({self.get_interval_display()})"
+
+
+class MemberSubscription(SiteOwnedModel):
+    class Status(models.TextChoices):
+        INCOMPLETE = "incomplete", "Incomplete"
+        TRIALING = "trialing", "Trialing"
+        ACTIVE = "active", "Active"
+        PAST_DUE = "past_due", "Past due"
+        CANCELED = "canceled", "Canceled"
+        EXPIRED = "expired", "Expired"
+
+    member = models.ForeignKey(
+        Member, on_delete=models.CASCADE, related_name="subscriptions"
+    )
+    plan = models.ForeignKey(
+        MembershipPlan, on_delete=models.PROTECT, related_name="subscriptions"
+    )
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.INCOMPLETE
+    )
+    connected_account_id = models.CharField(max_length=255)
+    stripe_customer_id = models.CharField(max_length=255, blank=True)
+    stripe_subscription_id = models.CharField(
+        max_length=255, null=True, blank=True, unique=True
+    )
+    stripe_checkout_session_id = models.CharField(max_length=255, blank=True)
+    current_period_starts_at = models.DateTimeField(null=True, blank=True)
+    current_period_ends_at = models.DateTimeField(null=True, blank=True)
+    cancel_at_period_end = models.BooleanField(default=False)
+    canceled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def clean(self):
+        super().clean()
+        if self.member_id and self.site_id != self.member.site_id:
+            raise ValidationError("A subscription must belong to the member's site.")
+        if self.plan_id and self.site_id != self.plan.site_id:
+            raise ValidationError("A subscription must belong to the plan's site.")
+
+    def __str__(self):
+        return f"{self.member} - {self.plan}: {self.get_status_display()}"

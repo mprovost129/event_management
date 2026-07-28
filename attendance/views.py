@@ -23,6 +23,10 @@ def roster(request, site_id, occurrence_id):
         .filter(
             registration__occurrence=occurrence,
             registration__response=Registration.Response.GOING,
+            registration__payment_status__in=(
+                Registration.PaymentStatus.NOT_REQUIRED,
+                Registration.PaymentStatus.PAID,
+            ),
             status=Participant.Status.ACTIVE,
         )
         .select_related("registration__contact", "attendance_status")

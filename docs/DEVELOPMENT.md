@@ -122,6 +122,60 @@ python manage.py queue_event_reminders
 
 Capacity is measured in active participant rows, including named guests. The registration service locks the occurrence row before checking and changing capacity. The authoritative simultaneous-request assertion runs in PostgreSQL CI; SQLite remains the fast local feedback database.
 
+## Phase 4 Stripe Connect commerce
+
+The platform Stripe context and subscriber-commerce Stripe context use separate webhook endpoints and secrets:
+
+- Platform subscriptions: `https://gatherhqs.com/billing/stripe/` with `STRIPE_WEBHOOK_SECRET`
+- Events on connected accounts: `https://gatherhqs.com/commerce/stripe/connect/` with `STRIPE_CONNECT_WEBHOOK_SECRET`
+
+In Stripe Workbench, create the second destination with **Connected accounts** selected. Subscribe it to only these handled event types:
+
+```text
+account.updated
+account.application.deauthorized
+checkout.session.completed
+checkout.session.async_payment_succeeded
+checkout.session.async_payment_failed
+checkout.session.expired
+payment_intent.succeeded
+payment_intent.payment_failed
+charge.succeeded
+charge.dispute.created
+charge.dispute.updated
+charge.dispute.closed
+refund.created
+refund.updated
+refund.failed
+customer.subscription.created
+customer.subscription.updated
+customer.subscription.deleted
+customer.subscription.paused
+customer.subscription.resumed
+invoice.paid
+invoice.payment_failed
+```
+
+Sandbox and live destinations have different signing secrets. Never reuse `STRIPE_WEBHOOK_SECRET` for the Connect endpoint. Stripe CLI can forward connected-account test events locally with:
+
+```text
+stripe listen --forward-connect-to localhost:8000/commerce/stripe/connect/
+```
+
+Commerce management is at `/sites/{site-id}/commerce/`. Only subscriber admins can connect Stripe, create membership plans, or issue refunds; site managers can create ticket types and view commerce reporting. Public membership plans are at `/memberships/`. Paid RSVPs receive a short-lived checkout capability and reserve ticket inventory for 30 minutes only after Stripe Checkout begins.
+
+Ticket and dues Checkout Sessions, Products, Prices, Customers, Subscriptions, charges, and refunds are created with the connected account context. The application deliberately omits all application-fee parameters. No browser return marks an order paid; only a verified connected-account webhook or reconciliation does so.
+
+Celery beat releases expired holds every minute. Operational fallbacks and reconciliation are:
+
+```text
+python manage.py release_inventory_holds
+python manage.py reconcile_commerce
+python manage.py reconcile_commerce --site boot-scooters --retry-failed-events
+```
+
+Reconciliation refreshes account readiness, in-flight Checkout Sessions, recurring member subscriptions, and Stripe-reported charge fees when available. Financial totals are operational reports, not an accounting ledger.
+
 ## Production media
 
 Production uses an S3-compatible bucket through `django-storages`. Configure `MEDIA_STORAGE_BACKEND=s3`, the bucket, its region or endpoint, and credentials supplied by the hosting platform. Local filesystem media is intentionally rejected by the deployment system check.

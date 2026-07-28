@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}{% if ticket_type %}Edit{% else %}Add{% endif %} tickets &middot; {{ occurrence.event.title }}{% endblock %}
+{% block content %}
+<div class="mb-4"><a href="{% url 'events:manage' site.id %}">&larr; Events</a><h1>{% if ticket_type %}Edit{% else %}Add{% endif %} paid tickets</h1><p>{{ occurrence.event.title }} &middot; {{ occurrence.starts_at }}</p><p class="text-secondary">Every going participant, including each named guest, needs one ticket. Stripe must be ready before this can be saved.</p></div>
+<form method="post" class="card"><div class="card-body">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">{% if ticket_type %}Save{% else %}Create{% endif %} ticket type</button></div></form>
+{% endblock %}

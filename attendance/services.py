@@ -17,6 +17,11 @@ def set_check_in(*, participant, actor, checked_in, note=""):
     if (
         participant.status != Participant.Status.ACTIVE
         or participant.registration.response != Registration.Response.GOING
+        or participant.registration.payment_status
+        not in (
+            Registration.PaymentStatus.NOT_REQUIRED,
+            Registration.PaymentStatus.PAID,
+        )
     ):
         raise ValidationError("Only active going participants can be checked in.")
     status, _ = AttendanceStatus.objects.select_for_update().get_or_create(

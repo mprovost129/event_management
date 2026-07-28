@@ -16,7 +16,7 @@ Maintain two explicit payment contexts:
 1. Platform subscriptions use the platform Stripe account and one Standard feature tier, offered with monthly and yearly prices after a fourteen-day no-card trial.
 2. Ticket and membership payments use Stripe Connect direct-charge context on the subscriber's connected account with no application fee.
 
-Stripe Connect onboarding is optional until a subscriber enables paid tickets or member dues. Use Stripe-hosted onboarding and select a supported account configuration where Stripe collects processing fees from the connected account. Confirm supported country and responsibility settings before live onboarding is enabled.
+Stripe Connect onboarding is optional until a subscriber enables paid tickets or member dues. Use Stripe-hosted onboarding with Accounts v1 controller properties equivalent to Standard behavior: `fees.payer=account`, `losses.payments=stripe`, `requirement_collection=stripe`, and `stripe_dashboard.type=full`. This gives the subscriber a full Stripe Dashboard, makes Stripe responsible for requirement collection and negative-balance liability, and makes the connected account responsible for its Stripe fees. Confirm supported countries before live onboarding is enabled; the account country remains selectable in Stripe-hosted onboarding.
 
 All provider identifiers are stored with their Stripe account context. Webhooks enter a durable, deduplicated inbox and drive local state idempotently. Browser redirects never prove payment success.
 
@@ -32,4 +32,6 @@ All provider identifiers are stored with their Stripe account context. Webhooks 
 - [Stripe direct charges](https://docs.stripe.com/connect/direct-charges)
 - [Stripe direct-charge fee behavior](https://docs.stripe.com/connect/direct-charges-fee-payer-behavior)
 - [Stripe subscriptions with Connect](https://docs.stripe.com/connect/subscriptions)
+- [Stripe account controller properties](https://docs.stripe.com/connect/migrate-to-controller-properties)
+- [Stripe-hosted onboarding](https://docs.stripe.com/connect/hosted-onboarding)
 - [Stripe subscription trials](https://docs.stripe.com/billing/subscriptions/trials)

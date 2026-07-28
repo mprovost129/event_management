@@ -12,6 +12,8 @@ class OutboundMessage(SiteOwnedModel):
         EVENT_UPDATE = "event_update", "Event update"
         CANCELLATION = "cancellation", "Cancellation"
         REMINDER = "reminder", "Reminder"
+        TICKET_RECEIPT = "ticket_receipt", "Ticket receipt"
+        MEMBERSHIP_RECEIPT = "membership_receipt", "Membership receipt"
 
     class Status(models.TextChoices):
         QUEUED = "queued", "Queued"

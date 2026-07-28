@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib import messages
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -6,6 +8,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from ops.services import record_audit_event
+from payments.services import registration_checkout_token
 from sites.permissions import site_staff_required
 
 from .forms import (
@@ -344,6 +347,9 @@ def occurrence_detail(request, slug, occurrence_id):
         ),
         pk=occurrence_id,
     )
+    ticket_types = occurrence.ticket_types.filter(is_active=True)
+    for ticket_type in ticket_types:
+        ticket_type.price_display = Decimal(ticket_type.amount_cents) / 100
     return render(
         request,
         "public/occurrence_detail.html",
@@ -352,6 +358,7 @@ def occurrence_detail(request, slug, occurrence_id):
             "event": occurrence.event,
             "occurrence": occurrence,
             "metrics": occurrence_metrics(occurrence),
+            "ticket_types": ticket_types,
         },
     )
 
@@ -387,7 +394,16 @@ def public_response(request, slug, occurrence_id):
             return render(
                 request,
                 "public/rsvp_complete.html",
-                {"site": site, "registration": registration},
+                {
+                    "site": site,
+                    "registration": registration,
+                    "checkout_token": (
+                        registration_checkout_token(registration)
+                        if registration.payment_status
+                        == Registration.PaymentStatus.PENDING
+                        else ""
+                    ),
+                },
             )
     return render(
         request,
@@ -424,7 +440,16 @@ def invitation_response(request, token):
             return render(
                 request,
                 "public/rsvp_complete.html",
-                {"site": site, "registration": registration},
+                {
+                    "site": site,
+                    "registration": registration,
+                    "checkout_token": (
+                        registration_checkout_token(registration)
+                        if registration.payment_status
+                        == Registration.PaymentStatus.PENDING
+                        else ""
+                    ),
+                },
             )
     return render(
         request,

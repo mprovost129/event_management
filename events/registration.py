@@ -129,15 +129,32 @@ def save_response(
         .filter(occurrence=occurrence, contact=contact)
         .first()
     )
+    paid_event = occurrence.ticket_types.filter(is_active=True).exists()
+    if (
+        registration is not None
+        and registration.payment_status == Registration.PaymentStatus.PAID
+        and response != registration.response
+    ):
+        raise RegistrationUnavailable(
+            "A paid registration must be refunded before its response can change."
+        )
     active_others = Participant.objects.filter(
         site=occurrence.site,
         registration__occurrence=occurrence,
         registration__response=Registration.Response.GOING,
+        registration__payment_status__in=(
+            Registration.PaymentStatus.NOT_REQUIRED,
+            Registration.PaymentStatus.PAID,
+        ),
         status=Participant.Status.ACTIVE,
     )
     if registration is not None:
         active_others = active_others.exclude(registration=registration)
-    requested_spots = 1 + len(guests) if response == Registration.Response.GOING else 0
+    requested_spots = (
+        1 + len(guests)
+        if response == Registration.Response.GOING and not paid_event
+        else 0
+    )
     if (
         occurrence.capacity is not None
         and active_others.count() + requested_spots > occurrence.capacity
@@ -155,16 +172,27 @@ def save_response(
             invitation=invitation,
             response=response,
             source=source,
+            payment_status=(
+                Registration.PaymentStatus.PENDING
+                if paid_event and response == Registration.Response.GOING
+                else Registration.PaymentStatus.NOT_REQUIRED
+            ),
         )
     else:
         registration.response = response
         registration.source = source
+        registration.payment_status = (
+            Registration.PaymentStatus.PENDING
+            if paid_event and response == Registration.Response.GOING
+            else Registration.PaymentStatus.NOT_REQUIRED
+        )
         if invitation is not None:
             registration.invitation = invitation
         registration.save(
             update_fields=(
                 "response",
                 "source",
+                "payment_status",
                 "invitation",
                 "responded_at",
                 "updated_at",

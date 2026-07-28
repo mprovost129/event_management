@@ -39,6 +39,9 @@ STANDARD_MONTHLY_AMOUNT_CENTS = env_int("STANDARD_MONTHLY_AMOUNT_CENTS", 2000)
 STANDARD_YEARLY_AMOUNT_CENTS = env_int("STANDARD_YEARLY_AMOUNT_CENTS", 22000)
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", "", allow_blank=True)
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", "", allow_blank=True)
+STRIPE_CONNECT_WEBHOOK_SECRET = env(
+    "STRIPE_CONNECT_WEBHOOK_SECRET", "", allow_blank=True
+)
 STRIPE_BILLING_PORTAL_CONFIGURATION_ID = env(
     "STRIPE_BILLING_PORTAL_CONFIGURATION_ID", "", allow_blank=True
 )
@@ -66,6 +69,7 @@ INSTALLED_APPS = [
     "events.apps.EventsConfig",
     "communications.apps.CommunicationsConfig",
     "attendance.apps.AttendanceConfig",
+    "payments.apps.PaymentsConfig",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -171,6 +175,10 @@ CELERY_BEAT_SCHEDULE = {
     "queue-event-reminders": {
         "task": "communications.tasks.queue_due_event_reminders",
         "schedule": 3600.0,
+    },
+    "release-expired-inventory-holds": {
+        "task": "payments.tasks.release_inventory_holds",
+        "schedule": 60.0,
     },
 }
 

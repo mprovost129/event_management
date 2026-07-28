@@ -36,6 +36,7 @@
     {% if site_navigation.about %}<a href="{% url 'content:about' %}">{{ site_navigation.about.navigation_label }}</a>{% endif %}
     <a href="{% url 'events:calendar' %}">Events</a>
     <a href="{% url 'content:blog_index' %}">Blog</a>
+    <a href="{% url 'payments:membership_plans' %}">Memberships</a>
     <a href="{% url 'content:newsletter' %}">{{ site_navigation.newsletter.navigation_label|default:"Newsletter" }}</a>
     {% if site_navigation.contact %}<a href="{% url 'content:contact' %}">{{ site_navigation.contact.navigation_label }}</a>{% endif %}
 </div>

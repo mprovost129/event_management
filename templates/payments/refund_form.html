@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block title %}Refund order · {{ site.display_name }}{% endblock %}
+{% block content %}<a href="{% url 'payments:manage' site.id %}">← Payments</a><h1>Refund order</h1><p>{{ order.occurrence.event.title }} · {{ order.purchaser }} · ${{ total|floatformat:2 }} {{ order.currency|upper }}</p><div class="alert alert-warning">Refunds are submitted in the subscriber's connected Stripe account. Financial history is retained.</div><form method="post" class="card"><div class="card-body">{% csrf_token %}{{ form.as_p }}<button class="btn btn-danger" type="submit">Submit refund</button></div></form>{% endblock %}

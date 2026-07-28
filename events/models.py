@@ -166,6 +166,12 @@ class Registration(SiteOwnedModel):
         INVITATION = "invitation", "Invitation"
         MANAGER = "manager", "Manager override"
 
+    class PaymentStatus(models.TextChoices):
+        NOT_REQUIRED = "not_required", "No payment required"
+        PENDING = "pending", "Payment required"
+        PAID = "paid", "Paid"
+        REFUNDED = "refunded", "Refunded"
+
     occurrence = models.ForeignKey(
         EventOccurrence, on_delete=models.CASCADE, related_name="registrations"
     )
@@ -181,6 +187,11 @@ class Registration(SiteOwnedModel):
     )
     response = models.CharField(max_length=20, choices=Response.choices)
     source = models.CharField(max_length=20, choices=Source.choices)
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.NOT_REQUIRED,
+    )
     responded_at = models.DateTimeField(auto_now=True)
 
     class Meta:

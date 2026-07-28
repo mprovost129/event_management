@@ -1,0 +1,5 @@
+{% extends 'public/site_base.html' %}
+{% block title %}Choose tickets · {{ registration.occurrence.event.title }}{% endblock %}
+{% block content %}
+<section class="site-theme"><h1>Choose tickets</h1><p class="lead">{{ registration.occurrence.event.title }}</p><p>You need {{ participant_count }} ticket{{ participant_count|pluralize }}—one for each named participant.</p><ul>{% for participant in registration.participants.all %}{% if participant.status == 'active' %}<li>{{ participant.display_name }}</li>{% endif %}{% endfor %}</ul><form method="post" class="mt-4">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary btn-lg" type="submit">Continue to secure Stripe Checkout</button></form><p class="small text-secondary mt-3">Your tickets are held for 30 minutes after checkout starts. Gather HQs does not store card details.</p></section>
+{% endblock %}

@@ -51,6 +51,22 @@ def queue_confirmation(registration, history):
     participants = (
         f"\nParticipants:\n{participant_lines}\n" if participant_lines else ""
     )
+    if registration.payment_status == Registration.PaymentStatus.PENDING:
+        from django.urls import reverse
+
+        from payments.services import registration_checkout_token
+
+        hostname = registration.site.domains.get(is_canonical=True).hostname
+        checkout_path = reverse(
+            "payments:ticket_checkout",
+            kwargs={"token": registration_checkout_token(registration)},
+        )
+        payment_line = (
+            "Payment: Required before participants are confirmed.\n"
+            f"Pay within 30 minutes: https://{hostname}{checkout_path}"
+        )
+    else:
+        payment_line = "Payment: Free event."
     return enqueue_message(
         site=registration.site,
         kind=OutboundMessage.Kind.CONFIRMATION,
@@ -59,7 +75,7 @@ def queue_confirmation(registration, history):
         body=(
             f"Your response is {registration.get_response_display()} for "
             f"{registration.occurrence.event.title} on {_when(registration.occurrence)}."
-            f"{participants}\nPayment: Free event."
+            f"{participants}\n{payment_line}"
         ),
         dedupe_key=f"confirmation:{history.id}",
         occurrence=registration.occurrence,
@@ -105,6 +121,10 @@ def queue_due_reminders(*, now=None):
     registrations = (
         Registration.objects.filter(
             response=Registration.Response.GOING,
+            payment_status__in=(
+                Registration.PaymentStatus.NOT_REQUIRED,
+                Registration.PaymentStatus.PAID,
+            ),
             occurrence__starts_at__gte=starts_after,
             occurrence__starts_at__lt=starts_before,
         )
@@ -126,7 +146,8 @@ def queue_due_reminders(*, now=None):
                 "body": (
                     f"Reminder: {registration.occurrence.event.title} is "
                     f"{_when(registration.occurrence)}.\n\nParticipants:\n"
-                    f"{participant_lines}\n\nPayment: Free event."
+                    f"{participant_lines}\n\nPayment: "
+                    f"{'Paid' if registration.payment_status == Registration.PaymentStatus.PAID else 'Free event'}."
                 ),
                 "occurrence": registration.occurrence,
                 "registration": registration,

@@ -1,4 +1,15 @@
 {% extends 'public/site_base.html' %}
 {% load tz %}
 {% block title %}{{ event.title }} · {{ site.display_name }}{% endblock %}
-{% block content %}{% timezone site.timezone %}<article class="site-theme"><p class="site-accent fw-semibold">{{ occurrence.starts_at|date:"l, F j, Y · g:i A" }}–{{ occurrence.ends_at|date:"g:i A" }}</p><h1>{{ event.title }}</h1><p>{{ event.description|linebreaks }}</p><dl><dt>Venue</dt><dd>{{ occurrence.venue_name|default:"To be announced" }}</dd>{% if occurrence.venue_address %}<dt>Address</dt><dd>{{ occurrence.venue_address }}</dd>{% endif %}<dt>Hosted by</dt><dd>{{ event.host_name|default:site.display_name }}</dd>{% if occurrence.capacity %}<dt>Capacity</dt><dd>{{ occurrence.capacity }}{% if metrics.capacity_remaining != None %} · {{ metrics.capacity_remaining }} remaining{% endif %}</dd>{% endif %}<dt>Guest policy</dt><dd>Up to {{ event.max_guests }} guest{{ event.max_guests|pluralize }} per response</dd></dl><a class="btn btn-primary btn-lg" href="{% url 'events:public_response' event.slug occurrence.id %}">Respond</a></article>{% endtimezone %}{% endblock %}
+{% block content %}
+{% timezone site.timezone %}
+<article class="site-theme">
+    <p class="site-accent fw-semibold">{{ occurrence.starts_at|date:"l, F j, Y · g:i A" }}–{{ occurrence.ends_at|date:"g:i A" }}</p>
+    <h1>{{ event.title }}</h1>
+    {% if request.GET.checkout == 'success' %}<div class="alert alert-success">Payment submitted. Your tickets will be confirmed as soon as Stripe notifies us.</div>{% elif request.GET.checkout == 'canceled' %}<div class="alert alert-info">Checkout was canceled. Your registration still needs payment.</div>{% endif %}
+    <p>{{ event.description|linebreaks }}</p>
+    <dl><dt>Venue</dt><dd>{{ occurrence.venue_name|default:"To be announced" }}</dd>{% if occurrence.venue_address %}<dt>Address</dt><dd>{{ occurrence.venue_address }}</dd>{% endif %}<dt>Hosted by</dt><dd>{{ event.host_name|default:site.display_name }}</dd>{% if occurrence.capacity %}<dt>Capacity</dt><dd>{{ occurrence.capacity }}{% if metrics.capacity_remaining != None %} · {{ metrics.capacity_remaining }} remaining{% endif %}</dd>{% endif %}<dt>Guest policy</dt><dd>Up to {{ event.max_guests }} guest{{ event.max_guests|pluralize }} per response</dd>{% if ticket_types %}<dt>Tickets</dt><dd>{% for ticket in ticket_types %}{{ ticket.name }} — ${{ ticket.price_display|floatformat:2 }} {{ ticket.currency|upper }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</dd>{% else %}<dt>Price</dt><dd>Free</dd>{% endif %}</dl>
+    <a class="btn btn-primary btn-lg" href="{% url 'events:public_response' event.slug occurrence.id %}">Respond</a>
+</article>
+{% endtimezone %}
+{% endblock %}
