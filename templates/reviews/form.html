@@ -1,0 +1,13 @@
+{% extends 'public/site_base.html' %}
+{% block title %}Review {{ participant.registration.occurrence.event.title }}{% endblock %}
+{% block content %}
+<article class="site-theme mx-auto" style="max-width: 42rem">
+    <h1>How was {{ participant.registration.occurrence.event.title }}?</h1>
+    <p class="text-secondary">Your review will appear as {{ participant.display_name }}. You can return through this private link to edit it.</p>
+    <form method="post" class="card"><div class="card-body">
+        {% csrf_token %}{{ form.as_p }}
+        <button class="btn btn-primary" type="submit">{% if review %}Update review{% else %}Submit review{% endif %}</button>
+    </div></form>
+    {% if review and not review.deleted_at %}<form method="post" class="mt-3">{% csrf_token %}<input type="hidden" name="action" value="delete"><button class="btn btn-outline-danger" type="submit">Delete my review</button></form>{% endif %}
+</article>
+{% endblock %}

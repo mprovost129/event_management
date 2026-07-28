@@ -212,4 +212,35 @@ Production activation still requires:
 - Vendor-specific callback signature verification or a trusted translation into the normalized callback contract
 - Email and SMS sandbox deliverability tests with real provider callbacks
 
-Next: Phase 6 - reviews, reporting completion, and platform operations.
+Completed next milestone: Phase 6 - reviews, reporting completion, and platform operations.
+
+## Phase 6 - Reviews, reporting completion, and platform operations
+
+Status: Complete.
+
+Completed:
+
+- Signed, expiring, site-bound review capabilities generated only for event participants
+- Review eligibility rechecked against current check-in state and occurrence end time
+- One one-to-five-star review per participant with editable timestamps and soft-deleted public content
+- Hourly deduplicated review-request messages through the durable transactional outbox
+- Public visible-review averages/counts, review comments, and one subscriber response
+- Subscriber reporting that leaves reviews public pending platform moderation
+- Platform-only hide/restore actions with mandatory reasons, append-only moderation history, and audit events
+- Consolidated site reporting for responses, participants/guests, capacity, attendance, no-shows, reviews, campaigns, memberships, and commerce
+- Event comparison across registrations, attendance, ticket gross/refunds, and visible ratings
+- Subscriber-admin-only JSON data exports with audit history and site-manager denial
+- Platform operations search and visibility for users, sites, subscriptions, connected accounts, audits, delivery failures, stale jobs, and webhook/callback failures
+- Explicit reasoned, expiring, read-only support grants with every support snapshot view audited
+- Reasoned platform suspension and two-administrator, delayed, cancelable site-deletion retention workflows
+- Exact-slug destructive command confirmation and explicit protected financial/usage record purge ordering after retention expires
+
+Verified locally:
+
+- 89 automated tests pass; the PostgreSQL-only simultaneous-capacity test is skipped by the local SQLite feedback loop
+- Review eligibility, edit/delete, capability isolation, request deduplication, public aggregation, staff responses, reporting, platform moderation, and audit history are covered
+- Dashboard reconciliation, export authorization, support expiry, suspension authorization, distinct-admin approval, retention delay/cancellation, and final protected-record deletion are covered
+- Ruff, formatting, Django system checks, migration drift, and the full regression suite pass
+- Phase 6 migrations apply successfully to the local development database
+
+Next: Phase 7 - launch hardening, pilot readiness, and production operations.

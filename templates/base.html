@@ -18,6 +18,7 @@
             <div class="ms-auto d-flex align-items-center gap-2">
                 {% block nav %}
                 {% if user.is_authenticated %}
+                    {% if user.is_superuser %}<a class="btn btn-outline-secondary" href="{% url 'ops:dashboard' %}">Platform operations</a>{% endif %}
                     <a class="btn btn-outline-primary" href="{% url 'sites:account_dashboard' %}">Dashboard</a>
                     <form method="post" action="{% url 'logout' %}" class="d-inline">
                         {% csrf_token %}

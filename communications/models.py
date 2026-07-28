@@ -18,6 +18,7 @@ class OutboundMessage(SiteOwnedModel):
         MEMBERSHIP_RECEIPT = "membership_receipt", "Membership receipt"
         CAMPAIGN = "campaign", "Campaign"
         CAMPAIGN_TEST = "campaign_test", "Campaign test"
+        REVIEW_REQUEST = "review_request", "Review request"
 
     class Channel(models.TextChoices):
         EMAIL = "email", "Email"

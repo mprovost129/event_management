@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.contrib import messages
+from django.db.models import Avg
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -350,6 +351,10 @@ def occurrence_detail(request, slug, occurrence_id):
     ticket_types = occurrence.ticket_types.filter(is_active=True)
     for ticket_type in ticket_types:
         ticket_type.price_display = Decimal(ticket_type.amount_cents) / 100
+    public_reviews = occurrence.reviews.filter(deleted_at__isnull=True).exclude(
+        moderation_status="hidden"
+    )
+    rating_summary = public_reviews.aggregate(average=Avg("rating"))
     return render(
         request,
         "public/occurrence_detail.html",
@@ -359,6 +364,9 @@ def occurrence_detail(request, slug, occurrence_id):
             "occurrence": occurrence,
             "metrics": occurrence_metrics(occurrence),
             "ticket_types": ticket_types,
+            "reviews": public_reviews,
+            "review_average": rating_summary["average"],
+            "review_count": public_reviews.count(),
         },
     )
 

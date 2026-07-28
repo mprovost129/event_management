@@ -10,7 +10,7 @@ The first customer is a country line dancing group. The product is intentionally
 
 ## Current milestone
 
-Phase 5 is complete in provider-ready application code:
+Phase 6 is complete in provider-ready application code:
 
 - Verified account signup
 - Subscriber-site onboarding
@@ -40,6 +40,11 @@ Phase 5 is complete in provider-ready application code:
 - Background audience expansion, bounded delivery batches, retries, and post-delivery message redaction
 - SMS usage estimates, explicit confirmation, monthly allowances, reservations, and immutable usage history
 - Idempotent delivery callbacks and campaign sent/delivered/bounce/open/click/unsubscribe reporting
+- Signed review capabilities restricted to checked-in attendees after an event ends
+- Public rating aggregates, subscriber responses, reporting, and audited platform moderation
+- Consolidated site metrics and event comparison across registrations, attendance, revenue, and ratings
+- Audited subscriber-admin JSON exports and read-only, expiring platform support access
+- Reasoned suspension plus two-admin, delayed, cancelable site-retention deletion workflows
 
 Live email and SMS delivery vendors remain deployment choices. SMS is disabled by default and fails closed until a provider adapter and allowance are configured.
 

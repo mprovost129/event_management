@@ -199,6 +199,28 @@ Provider callbacks are accepted at `/communications/callbacks/{provider}/`. The 
 
 Marketing unsubscribe links are random capabilities stored only as SHA-256 hashes. Unsubscribing updates consent and suppresses already queued marketing immediately. Successful and terminal deliveries erase message bodies and raw unsubscribe URLs from the outbox.
 
+## Phase 6 reviews, reports, and platform operations
+
+Review requests are queued hourly for participants who remain checked in after an occurrence ends and have an email address. The fallback is:
+
+```text
+python manage.py queue_review_requests --limit 500
+```
+
+Each message contains a signed, site-bound participant capability. Submission rechecks current check-in status and event end time. A participant can maintain one review, edit it through the same capability, or soft-delete its public content. Subscriber staff can respond or report a review at `/sites/{site-id}/reviews/`; reporting does not hide content. Only a platform superuser can hide or restore a review, and every moderation action requires a reason and creates both moderation history and an audit event.
+
+Authoritative consolidated reports are available at `/sites/{site-id}/reports/`. Subscriber admins can download an audited JSON data export from the site dashboard; site managers cannot export. The export includes site content, contacts, memberships, events, registrations, participants, attendance history, commerce totals, and reviews without exporting Stripe secrets.
+
+Platform superusers use `/platform-ops/` to locate sites/users, inspect subscription and connected-account state, review failed webhooks/callbacks/messages, moderate reported reviews, and open explicit support access. Support access is read-only, reasoned, expires in at most eight hours, and audits every snapshot view.
+
+Site deletion is intentionally not a normal model delete. A site must first be suspended, canceled, or archived. One platform administrator requests deletion and a different administrator approves it, starting `SUSPENDED_DATA_RETENTION_DAYS`. The request can be canceled during retention. After eligibility, an operator must supply both the request UUID and exact recorded slug:
+
+```text
+python manage.py delete_retained_site REQUEST_UUID --confirm-site exact-site-slug
+```
+
+That command permanently deletes the site and its retained tenant records. Generate and secure the subscriber export before approval when policy requires it.
+
 ## Production media
 
 Production uses an S3-compatible bucket through `django-storages`. Configure `MEDIA_STORAGE_BACKEND=s3`, the bucket, its region or endpoint, and credentials supplied by the hosting platform. Local filesystem media is intentionally rejected by the deployment system check.

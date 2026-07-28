@@ -3,7 +3,9 @@ import math
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError, transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
@@ -11,9 +13,11 @@ from django.views.decorators.http import require_http_methods, require_POST
 from ops.services import record_audit_event
 from subscriptions.gateway import billing_options
 
+from .exports import site_export
 from .forms import ExistingManagerForm, SiteOnboardingForm
 from .models import SiteRole
 from .permissions import site_staff_required, subscriber_admin_required
+from .reporting import event_comparison, site_summary
 from .services import create_subscriber_site, user_site_roles
 
 
@@ -64,8 +68,35 @@ def dashboard(request, site_id):
         ).select_related("user"),
         "manager_form": ExistingManagerForm(),
         "billing_options": billing_options(),
+        "summary": site_summary(site),
     }
     return render(request, "sites/dashboard.html", context)
+
+
+@site_staff_required
+def reports(request, site_id):
+    site = request.authorized_site
+    return render(
+        request,
+        "sites/reports.html",
+        {"site": site, "summary": site_summary(site), "events": event_comparison(site)},
+    )
+
+
+@subscriber_admin_required
+def export_data(request, site_id):
+    site = request.authorized_site
+    record_audit_event(
+        action="site.data_exported",
+        actor=request.user,
+        site_id=site.id,
+        target=site,
+        summary={"format": "gather-hqs-site-export-v1"},
+        request=request,
+    )
+    response = JsonResponse(site_export(site), encoder=DjangoJSONEncoder)
+    response["Content-Disposition"] = f'attachment; filename="{site.slug}-export.json"'
+    return response
 
 
 @require_POST

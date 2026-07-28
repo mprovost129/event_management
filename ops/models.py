@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class AuditEvent(models.Model):
@@ -37,3 +38,77 @@ class AuditEvent(models.Model):
     def __str__(self):
         target = f" {self.target_type}:{self.target_id}" if self.target_type else ""
         return f"{self.action}{target}"
+
+
+class SupportAccessGrant(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    site = models.ForeignKey(
+        "sites.Site",
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="support_access_grants",
+    )
+    site_name = models.CharField(max_length=160)
+    granted_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="support_access_grants",
+    )
+    reason = models.CharField(max_length=500)
+    expires_at = models.DateTimeField(db_index=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    @property
+    def is_active(self):
+        return (
+            self.site_id is not None
+            and self.revoked_at is None
+            and self.expires_at > timezone.now()
+        )
+
+
+class SiteDeletionRequest(models.Model):
+    class Status(models.TextChoices):
+        REQUESTED = "requested", "Awaiting second approval"
+        APPROVED = "approved", "Approved for retention countdown"
+        CANCELED = "canceled", "Canceled"
+        COMPLETED = "completed", "Deleted"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    site = models.ForeignKey(
+        "sites.Site",
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="deletion_requests",
+    )
+    site_id_snapshot = models.UUIDField()
+    site_slug = models.SlugField(max_length=63)
+    site_name = models.CharField(max_length=160)
+    reason = models.CharField(max_length=500)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.REQUESTED
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="site_deletions_requested",
+    )
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="site_deletions_approved",
+    )
+    requested_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    deletion_eligible_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-requested_at",)

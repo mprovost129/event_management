@@ -27,6 +27,20 @@ def product_configuration_check(app_configs, **kwargs):
                 id="platform.E003",
             )
         )
+    if settings.SUSPENDED_DATA_RETENTION_DAYS <= 0:
+        issues.append(
+            Error(
+                "SUSPENDED_DATA_RETENTION_DAYS must be greater than zero.",
+                id="platform.E015",
+            )
+        )
+    if settings.REVIEW_TOKEN_MAX_AGE_DAYS <= 0:
+        issues.append(
+            Error(
+                "REVIEW_TOKEN_MAX_AGE_DAYS must be greater than zero.",
+                id="platform.E016",
+            )
+        )
     if settings.PLATFORM_DOMAIN not in settings.PLATFORM_CONTROL_HOSTS:
         issues.append(
             Error(

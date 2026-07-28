@@ -48,6 +48,7 @@ STRIPE_BILLING_PORTAL_CONFIGURATION_ID = env(
 SUBSCRIPTION_TRIAL_DAYS = env_int("SUBSCRIPTION_TRIAL_DAYS", 14)
 SUBSCRIPTION_GRACE_DAYS = env_int("SUBSCRIPTION_GRACE_DAYS", 7)
 SUSPENDED_DATA_RETENTION_DAYS = env_int("SUSPENDED_DATA_RETENTION_DAYS", 90)
+REVIEW_TOKEN_MAX_AGE_DAYS = env_int("REVIEW_TOKEN_MAX_AGE_DAYS", 365)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -70,6 +71,7 @@ INSTALLED_APPS = [
     "communications.apps.CommunicationsConfig",
     "attendance.apps.AttendanceConfig",
     "payments.apps.PaymentsConfig",
+    "reviews.apps.ReviewsConfig",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -183,6 +185,10 @@ CELERY_BEAT_SCHEDULE = {
     "dispatch-due-campaigns": {
         "task": "communications.tasks.dispatch_due_campaigns",
         "schedule": 60.0,
+    },
+    "queue-review-requests": {
+        "task": "reviews.tasks.queue_due_review_requests",
+        "schedule": 3600.0,
     },
 }
 

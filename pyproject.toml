@@ -4,7 +4,7 @@ python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-ra --strict-markers"
-testpaths = ["attendance", "communications", "content", "contacts", "core", "events", "ops", "payments", "sites", "subscriptions", "users"]
+testpaths = ["attendance", "communications", "content", "contacts", "core", "events", "ops", "payments", "reviews", "sites", "subscriptions", "users"]
 
 [tool.ruff]
 line-length = 88
