@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: event_management_test
+          POSTGRES_USER: event_management
+          POSTGRES_PASSWORD: test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U event_management -d event_management_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.Settings.test
+      SECRET_KEY: ci-only-secret-key-that-is-long-enough-for-deployment-checks
+      PLATFORM_DOMAIN: events.example.test
+      PLATFORM_DEFAULT_CURRENCY: usd
+      DB_NAME: event_management_test
+      DB_USER: event_management
+      DB_PASSWORD: test-password
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      TEST_DATABASE_ENGINE: postgresql
+      REDIS_URL: redis://127.0.0.1:6379/1
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Django checks
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+      - name: Deployment checks
+        env:
+          DJANGO_SETTINGS_MODULE: config.Settings.prod
+          ALLOWED_HOSTS: .events.example.test
+          CSRF_TRUSTED_ORIGINS: https://events.example.test
+          MEDIA_STORAGE_BACKEND: s3
+          AWS_STORAGE_BUCKET_NAME: ci-media-bucket
+          STRIPE_PLATFORM_PRICE_ID: price_ci_placeholder
+          LOG_FORMAT: json
+        run: python manage.py check --deploy
+      - name: Test
+        run: pytest
+      - name: Build production image
+        run: docker build --tag event-management-ci .
