@@ -102,12 +102,50 @@ def deployment_product_check(app_configs, **kwargs):
                 id="platform.E010",
             )
         )
+    if settings.STRIPE_SECRET_KEY and not settings.STRIPE_CONNECT_WEBHOOK_SECRET:
+        issues.append(
+            Error(
+                "STRIPE_CONNECT_WEBHOOK_SECRET is required for connected-account commerce.",
+                id="platform.E011",
+            )
+        )
+    if (
+        settings.STRIPE_CONNECT_WEBHOOK_SECRET
+        and settings.STRIPE_CONNECT_WEBHOOK_SECRET == settings.STRIPE_WEBHOOK_SECRET
+    ):
+        issues.append(
+            Error(
+                "Platform and Connect webhook endpoints must use different signing secrets.",
+                id="platform.E012",
+            )
+        )
     if getattr(settings, "MEDIA_STORAGE_BACKEND", "filesystem") == "filesystem":
         issues.append(
             Error(
                 "Production media must use durable object storage.",
                 hint="Set MEDIA_STORAGE_BACKEND=s3 and configure the S3-compatible bucket.",
                 id="platform.E004",
+            )
+        )
+    if settings.SMS_DELIVERY_BACKEND == "console":
+        issues.append(
+            Error(
+                "The console SMS backend cannot be used in production.",
+                id="platform.E013",
+            )
+        )
+    if settings.EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend":
+        issues.append(
+            Error(
+                "The console email backend cannot be used in production.",
+                id="platform.E014",
+            )
+        )
+    if not settings.COMMUNICATIONS_WEBHOOK_SECRET:
+        issues.append(
+            Warning(
+                "Configure COMMUNICATIONS_WEBHOOK_SECRET to receive delivery analytics callbacks.",
+                id="platform.W003",
             )
         )
     return issues

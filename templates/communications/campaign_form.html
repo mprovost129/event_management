@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}{% if campaign %}Edit{% else %}New{% endif %} campaign &middot; {{ site.display_name }}{% endblock %}
+{% block content %}
+<a href="{% url 'communications:campaign_list' site.id %}">&larr; Campaigns</a><h1>{% if campaign %}Edit{% else %}New{% endif %} campaign</h1>{% if source_post %}<div class="alert alert-info">Started from the blog post <strong>{{ source_post.title }}</strong>. The campaign is an independent copy.</div>{% endif %}<p class="text-secondary">Audience eligibility is recalculated when the campaign is sent. Email and SMS consent are enforced separately.</p>
+<form method="post" class="card"><div class="card-body">{% csrf_token %}{% if source_post %}<input type="hidden" name="source_blog_post" value="{{ source_post.id }}">{% endif %}{{ form.as_p }}<p class="small text-secondary">Choose the event, response, or tag fields only when that audience type needs them.</p><button class="btn btn-primary" type="submit">Save and preview</button></div></form>
+{% endblock %}

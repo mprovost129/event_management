@@ -24,6 +24,10 @@ def _record_consent(contact, channel, status, source):
     )
 
 
+def set_consent_status(*, contact, channel, status, source):
+    _record_consent(contact, channel, status, source)
+
+
 def update_contact_consent(
     contact, *, email_granted, sms_granted, source="manager_edit"
 ):

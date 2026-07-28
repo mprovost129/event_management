@@ -176,6 +176,29 @@ python manage.py reconcile_commerce --site boot-scooters --retry-failed-events
 
 Reconciliation refreshes account readiness, in-flight Checkout Sessions, recurring member subscriptions, and Stripe-reported charge fees when available. Financial totals are operational reports, not an accounting ledger.
 
+## Phase 5 campaigns and delivery analytics
+
+Subscriber admins and site managers manage newsletters and SMS announcements at:
+
+```text
+/sites/{site-id}/campaigns/
+```
+
+Campaigns can target all eligible contacts, members, non-members, a tag, event invitees, or a selected RSVP response. Preview and delivery both enforce the separate marketing consent state for the selected channel. Recipient expansion runs as a background task, and the durable outbox is drained in bounded batches. Beat dispatches due campaigns every minute. Recovery commands are:
+
+```text
+python manage.py dispatch_campaigns --limit 25
+python manage.py deliver_outbound_messages --limit 100
+```
+
+Email delivery uses Django's configured `EMAIL_BACKEND` through the internal `django` delivery adapter. Configure a production email backend rather than the console backend before launch.
+
+SMS fails closed by default. A deployment must provide a production SMS adapter, set `SMS_DELIVERY_BACKEND`, and assign a nonzero `SMS_MONTHLY_SEGMENT_LIMIT` or purchased segment credit before SMS campaigns can launch. Every SMS launch and test send requires explicit usage confirmation; segments are reserved before audience expansion and moved to immutable accepted/released usage records.
+
+Provider callbacks are accepted at `/communications/callbacks/{provider}/`. The current vendor-neutral adapter expects a JSON body containing `event_id`, `message_id`, `event_type`, and optional `occurred_at`, with a lowercase hexadecimal HMAC-SHA256 signature in `X-Communications-Signature` using `COMMUNICATIONS_WEBHOOK_SECRET`. Supported normalized event types are `sent`, `delivered`, `bounced`, `failed`, `opened`, `clicked`, and `unsubscribed`. A selected production vendor should translate its signed payload into this contract or add a vendor-specific verified adapter.
+
+Marketing unsubscribe links are random capabilities stored only as SHA-256 hashes. Unsubscribing updates consent and suppresses already queued marketing immediately. Successful and terminal deliveries erase message bodies and raw unsubscribe URLs from the outbox.
+
 ## Production media
 
 Production uses an S3-compatible bucket through `django-storages`. Configure `MEDIA_STORAGE_BACKEND=s3`, the bucket, its region or endpoint, and credentials supplied by the hosting platform. Local filesystem media is intentionally rejected by the deployment system check.

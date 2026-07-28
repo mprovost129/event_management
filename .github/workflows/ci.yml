@@ -80,6 +80,8 @@ jobs:
           STRIPE_STANDARD_YEARLY_PRICE_ID: price_ci_yearly
           STRIPE_SECRET_KEY: sk_test_ci_placeholder
           STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
+          STRIPE_CONNECT_WEBHOOK_SECRET: whsec_ci_connect_placeholder
+          EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
           LOG_FORMAT: json
         run: python manage.py check --deploy
       - name: Test

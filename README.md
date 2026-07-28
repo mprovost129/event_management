@@ -10,7 +10,7 @@ The first customer is a country line dancing group. The product is intentionally
 
 ## Current milestone
 
-Phase 4 is complete:
+Phase 5 is complete in provider-ready application code:
 
 - Verified account signup
 - Subscriber-site onboarding
@@ -34,6 +34,14 @@ Phase 4 is complete:
 - One ticket per named participant, payment receipts, refunds, disputes, and financial history
 - Monthly/yearly membership plans and recurring member dues in connected-account context
 - Dedicated signed Connect webhook inbox, reconciliation commands, and commerce reporting
+- Newsletter and SMS campaign drafts, audience previews, scheduling, test sends, and duplication
+- Consent-aware audiences for all contacts, members, non-members, tags, event invitees, and RSVP states
+- Blog-post-to-newsletter seeding and individualized unsubscribe capabilities
+- Background audience expansion, bounded delivery batches, retries, and post-delivery message redaction
+- SMS usage estimates, explicit confirmation, monthly allowances, reservations, and immutable usage history
+- Idempotent delivery callbacks and campaign sent/delivered/bounce/open/click/unsubscribe reporting
+
+Live email and SMS delivery vendors remain deployment choices. SMS is disabled by default and fails closed until a provider adapter and allowance are configured.
 
 See [implementation status](docs/IMPLEMENTATION_STATUS.md) for verification results and the next phase.
 

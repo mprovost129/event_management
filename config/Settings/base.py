@@ -180,6 +180,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "payments.tasks.release_inventory_holds",
         "schedule": 60.0,
     },
+    "dispatch-due-campaigns": {
+        "task": "communications.tasks.dispatch_due_campaigns",
+        "schedule": 60.0,
+    },
 }
 
 DATABASES = {
@@ -201,6 +205,14 @@ EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", "", allow_blank=True)
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "", allow_blank=True)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "webmaster@localhost")
+EMAIL_DELIVERY_BACKEND = env("EMAIL_DELIVERY_BACKEND", "django").lower()
+SMS_DELIVERY_BACKEND = env("SMS_DELIVERY_BACKEND", "disabled").lower()
+COMMUNICATIONS_WEBHOOK_SECRET = env(
+    "COMMUNICATIONS_WEBHOOK_SECRET", "", allow_blank=True
+)
+SMS_MONTHLY_SEGMENT_LIMIT = env_int("SMS_MONTHLY_SEGMENT_LIMIT", 0)
+CAMPAIGN_EXPANSION_BATCH_SIZE = env_int("CAMPAIGN_EXPANSION_BATCH_SIZE", 500)
+CAMPAIGN_DELIVERY_BATCH_SIZE = env_int("CAMPAIGN_DELIVERY_BATCH_SIZE", 100)
 
 if EMAIL_USE_TLS and EMAIL_USE_SSL:
     from django.core.exceptions import ImproperlyConfigured

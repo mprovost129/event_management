@@ -4,7 +4,7 @@ from communications.services import deliver_message, queued_message_ids
 
 
 class Command(BaseCommand):
-    help = "Deliver queued transactional messages without requiring a Celery worker."
+    help = "Deliver queued transactional and campaign messages without a Celery worker."
 
     def add_arguments(self, parser):
         parser.add_argument("--limit", type=int, default=100)

@@ -9,6 +9,7 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("billing/", include("subscriptions.urls")),
     path("", include("payments.urls")),
+    path("", include("communications.urls")),
     path("", include("content.urls")),
     path("", include("contacts.urls")),
     path("", include("events.urls")),

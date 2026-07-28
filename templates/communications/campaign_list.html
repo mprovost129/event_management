@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Campaigns &middot; {{ site.display_name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4"><div><h1>Newsletters &amp; SMS</h1><p class="text-secondary mb-0">{{ site.display_name }}</p></div><div><a class="btn btn-outline-primary" href="{% url 'sites:dashboard' site.id %}">Dashboard</a> <a class="btn btn-primary" href="{% url 'communications:campaign_create' site.id %}">New campaign</a></div></div>
+{% if campaigns %}<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Campaign</th><th>Channel</th><th>Status</th><th>Audience</th><th>Results</th></tr></thead><tbody>{% for campaign in campaigns %}<tr><td><a href="{% url 'communications:campaign_preview' site.id campaign.id %}">{{ campaign.name }}</a><br><small class="text-secondary">{{ campaign.created_at }}</small></td><td>{{ campaign.get_channel_display }}</td><td>{{ campaign.get_status_display }}</td><td>{{ campaign.get_audience_display }}</td><td>{{ campaign.metrics.sent }} sent &middot; {{ campaign.metrics.delivered }} delivered &middot; {{ campaign.metrics.failed }} failed</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-secondary">No campaigns yet.</p>{% endif %}
+{% endblock %}

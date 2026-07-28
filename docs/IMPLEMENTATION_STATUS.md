@@ -179,4 +179,37 @@ Production activation still requires:
 - `STRIPE_CONNECT_WEBHOOK_SECRET` supplied by the environment secret manager
 - One successful end-to-end sandbox onboarding, ticket purchase/refund, and member renewal using real Stripe-hosted pages before live mode
 
-Next: Phase 5 - newsletters, SMS, campaign delivery, and provider analytics.
+Completed next milestone: Phase 5 - newsletters, SMS, campaign delivery, and provider analytics.
+
+## Phase 5 - Newsletters, SMS, and delivery analytics
+
+Status: Complete in provider-ready application code. Production email and SMS vendors remain deployment decisions; SMS stays disabled until one is selected.
+
+Completed:
+
+- Tenant-scoped newsletter and SMS drafts with edit, preview, scheduling, test-send, duplicate, and reporting flows
+- Audience selection for all eligible contacts, members, non-members, tags, event invitees, and event-response states
+- Blog posts as independent starting content for newsletters
+- Channel-specific marketing consent enforcement during preview, audience expansion, and immediately before provider delivery
+- Unique hashed unsubscribe capabilities that withdraw consent and suppress queued marketing immediately
+- Background campaign expansion, bounded outbox delivery, stale-job recovery, exponential retries, and safe message-body redaction
+- Django email delivery adapter with one-click unsubscribe headers and a fail-closed SMS provider boundary
+- SMS segment estimates, explicit usage confirmation, monthly/purchased allowances, transactional reservations, hard limits, and append-only usage records
+- Signed vendor-neutral callback ingestion with durable idempotency and out-of-order-safe sent, delivered, bounce, failure, open, click, and unsubscribe processing
+- Subscriber campaign reports plus platform-admin visibility into campaigns, recipient failures, SMS allowances and history, callbacks, and unsubscribe capabilities
+
+Verified locally:
+
+- Marketing suppression, unsubscribe, delivery-time consent rechecks, audience scoping, SMS limits, metering, callback idempotency, callback ordering, large-send batching, blog seeding, and campaign duplication are covered
+- 77 automated tests pass; the PostgreSQL-only simultaneous-capacity test is skipped by the local SQLite feedback loop
+- Ruff, formatting, Django system checks, and migration drift checks pass
+- The Phase 5 migration applies successfully to the local development database
+
+Production activation still requires:
+
+- A production Django email backend and verified sender/domain configuration
+- A selected production SMS provider adapter and customer-facing segment allowance/credit policy
+- Vendor-specific callback signature verification or a trusted translation into the normalized callback contract
+- Email and SMS sandbox deliverability tests with real provider callbacks
+
+Next: Phase 6 - reviews, reporting completion, and platform operations.
