@@ -43,3 +43,27 @@ class RequestContextMiddleware(MiddlewareMixin):
         request_id_var.reset(request_id_token)
         site_id_var.reset(site_id_token)
         request._request_context_tokens = None
+
+
+class SecurityHeadersMiddleware(MiddlewareMixin):
+    """Apply the application CSP and browser capability restrictions."""
+
+    def process_response(self, request, response):
+        response.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; "
+            "base-uri 'self'; "
+            "form-action 'self'; "
+            "frame-ancestors 'none'; "
+            "object-src 'none'; "
+            "script-src 'self' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "img-src 'self' data: https:; "
+            "font-src 'self' https://cdn.jsdelivr.net; "
+            "connect-src 'self'",
+        )
+        response.setdefault(
+            "Permissions-Policy",
+            "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+        )
+        return response

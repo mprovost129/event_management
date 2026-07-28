@@ -16,7 +16,12 @@ from subscriptions.gateway import billing_options
 from .exports import site_export
 from .forms import ExistingManagerForm, SiteOnboardingForm
 from .models import SiteRole
-from .permissions import site_staff_required, subscriber_admin_required
+from .permissions import (
+    site_dashboard_required,
+    site_staff_required,
+    subscriber_admin_required,
+    subscriber_recovery_required,
+)
 from .reporting import event_comparison, site_summary
 from .services import create_subscriber_site, user_site_roles
 
@@ -51,7 +56,7 @@ def onboarding(request):
     return render(request, "sites/onboarding.html", {"form": form})
 
 
-@site_staff_required
+@site_dashboard_required
 def dashboard(request, site_id):
     site = request.authorized_site
     subscription = site.platform_subscription
@@ -83,7 +88,7 @@ def reports(request, site_id):
     )
 
 
-@subscriber_admin_required
+@subscriber_recovery_required
 def export_data(request, site_id):
     site = request.authorized_site
     record_audit_event(

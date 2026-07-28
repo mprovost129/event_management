@@ -198,3 +198,63 @@ def test_gather_hqs_root_and_www_hosts_remain_control_hosts(client):
     assert root.status_code == 200
     assert www.status_code == 200
     assert "Gather HQs" in root.content.decode()
+
+
+@pytest.mark.django_db
+def test_suspended_site_exposes_only_owner_recovery_routes(client):
+    owner = verified_user("owner@example.com")
+    manager = verified_user("manager@example.com")
+    other_owner = verified_user("other-owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+    active_site = create_subscriber_site(
+        owner=other_owner,
+        display_name="Active Dancers",
+        slug="active-dancers",
+        timezone_name="America/New_York",
+    )
+    SiteRole.objects.create(site=site, user=manager, role=SiteRole.Role.SITE_MANAGER)
+    SiteRole.objects.create(
+        site=active_site, user=manager, role=SiteRole.Role.SITE_MANAGER
+    )
+    site.status = Site.Status.SUSPENDED
+    site.save(update_fields=("status", "updated_at"))
+
+    client.force_login(owner)
+    assert (
+        client.get(reverse("sites:dashboard", kwargs={"site_id": site.id})).status_code
+        == 200
+    )
+    assert (
+        client.get(
+            reverse("sites:export_data", kwargs={"site_id": site.id})
+        ).status_code
+        == 200
+    )
+    assert (
+        client.get(reverse("sites:reports", kwargs={"site_id": site.id})).status_code
+        == 403
+    )
+    assert (
+        client.post(
+            reverse("sites:add_manager", kwargs={"site_id": site.id}),
+            {"email": manager.email},
+        ).status_code
+        == 403
+    )
+
+    client.force_login(manager)
+    assert (
+        client.get(reverse("sites:dashboard", kwargs={"site_id": site.id})).status_code
+        == 403
+    )
+    assert (
+        client.get(
+            reverse("sites:dashboard", kwargs={"site_id": active_site.id})
+        ).status_code
+        == 200
+    )

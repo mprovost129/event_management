@@ -6,6 +6,9 @@ from config.env import env, env_bool, env_int, env_list
 from .base import *
 
 DEBUG = False
+HEALTHCHECK_REQUIRE_BACKGROUND_WORKERS = env_bool(
+    "HEALTHCHECK_REQUIRE_BACKGROUND_WORKERS", True
+)
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 

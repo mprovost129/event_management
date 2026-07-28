@@ -112,3 +112,15 @@ class SiteDeletionRequest(models.Model):
 
     class Meta:
         ordering = ("-requested_at",)
+
+
+class SystemHeartbeat(models.Model):
+    key = models.CharField(max_length=50, unique=True)
+    observed_at = models.DateTimeField(default=timezone.now, db_index=True)
+    details = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ("key",)
+
+    def __str__(self):
+        return f"{self.key}: {self.observed_at}"

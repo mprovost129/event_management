@@ -1,9 +1,21 @@
+from django.http import JsonResponse
 from django.utils import timezone
 from django.views.generic import TemplateView
 
 from content.models import SitePage
 from content.services import public_blog_posts, public_page
 from events.models import Event, EventOccurrence
+
+from .health import readiness_status
+
+
+def health_live(request):
+    return JsonResponse({"ok": True, "service": "web"})
+
+
+def health_ready(request):
+    status = readiness_status()
+    return JsonResponse(status, status=200 if status["ok"] else 503)
 
 
 class HomeView(TemplateView):
@@ -28,3 +40,7 @@ class HomeView(TemplateView):
             )
             context["recent_posts"] = public_blog_posts(site)[:3]
         return context
+
+
+class LegalPageView(TemplateView):
+    template_name = "core/legal.html"

@@ -41,6 +41,13 @@ def product_configuration_check(app_configs, **kwargs):
                 id="platform.E016",
             )
         )
+    if settings.BACKGROUND_HEARTBEAT_MAX_AGE_SECONDS <= 0:
+        issues.append(
+            Error(
+                "BACKGROUND_HEARTBEAT_MAX_AGE_SECONDS must be greater than zero.",
+                id="platform.E017",
+            )
+        )
     if settings.PLATFORM_DOMAIN not in settings.PLATFORM_CONTROL_HOSTS:
         issues.append(
             Error(
@@ -160,6 +167,21 @@ def deployment_product_check(app_configs, **kwargs):
             Warning(
                 "Configure COMMUNICATIONS_WEBHOOK_SECRET to receive delivery analytics callbacks.",
                 id="platform.W003",
+            )
+        )
+    if not settings.HEALTHCHECK_REQUIRE_BACKGROUND_WORKERS:
+        issues.append(
+            Error(
+                "Production readiness must verify the Celery worker and scheduler.",
+                hint="Set HEALTHCHECK_REQUIRE_BACKGROUND_WORKERS=true.",
+                id="platform.E018",
+            )
+        )
+    if "core.middleware.SecurityHeadersMiddleware" not in settings.MIDDLEWARE:
+        issues.append(
+            Error(
+                "SecurityHeadersMiddleware is required in production.",
+                id="platform.E019",
             )
         )
     return issues

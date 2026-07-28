@@ -242,3 +242,23 @@ python manage.py check --deploy --settings=config.Settings.prod
 ```
 
 The production environment must provide a non-placeholder domain, allowed hosts, a durable media bucket, secure secrets, and both Standard-plan Stripe price IDs before paid-plan activation is enabled.
+
+## Phase 7 launch operations
+
+Production exposes separate liveness and readiness probes:
+
+```text
+/health/live/
+/health/ready/
+```
+
+Readiness checks PostgreSQL, Redis, and recent Celery worker/beat heartbeats. Beat queues the heartbeat every minute; production rejects a configuration that disables this requirement. Operational commands are:
+
+```text
+python manage.py launch_gate --json --fail-on-warning
+python manage.py alert_summary --hours 1 --json --fail-on-alert
+python manage.py pilot_readiness SITE_SLUG --json
+python manage.py post_restore_verify --confirm-restored-copy --json
+```
+
+Use the last command only against an isolated restored database. See `OPERATIONS_RUNBOOK.md`, `PILOT_RUNBOOK.md`, `LOAD_TESTING.md`, `ACCESSIBILITY_REVIEW.md`, `SECURITY_REVIEW.md`, and `LAUNCH_CHECKLIST.md` for the evidence required before launch.

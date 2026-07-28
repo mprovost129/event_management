@@ -49,6 +49,12 @@ SUBSCRIPTION_TRIAL_DAYS = env_int("SUBSCRIPTION_TRIAL_DAYS", 14)
 SUBSCRIPTION_GRACE_DAYS = env_int("SUBSCRIPTION_GRACE_DAYS", 7)
 SUSPENDED_DATA_RETENTION_DAYS = env_int("SUSPENDED_DATA_RETENTION_DAYS", 90)
 REVIEW_TOKEN_MAX_AGE_DAYS = env_int("REVIEW_TOKEN_MAX_AGE_DAYS", 365)
+HEALTHCHECK_REQUIRE_BACKGROUND_WORKERS = env_bool(
+    "HEALTHCHECK_REQUIRE_BACKGROUND_WORKERS", False
+)
+BACKGROUND_HEARTBEAT_MAX_AGE_SECONDS = env_int(
+    "BACKGROUND_HEARTBEAT_MAX_AGE_SECONDS", 180
+)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -83,6 +89,7 @@ AUTHENTICATION_BACKENDS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "core.middleware.SecurityHeadersMiddleware",
     "core.middleware.RequestContextMiddleware",
     "sites.middleware.SiteResolutionMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -189,6 +196,10 @@ CELERY_BEAT_SCHEDULE = {
     "queue-review-requests": {
         "task": "reviews.tasks.queue_due_review_requests",
         "schedule": 3600.0,
+    },
+    "record-background-heartbeat": {
+        "task": "ops.tasks.record_background_heartbeat",
+        "schedule": 60.0,
     },
 }
 

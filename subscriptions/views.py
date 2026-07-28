@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from sites.permissions import subscriber_admin_required
+from sites.permissions import subscriber_recovery_required
 
 from .gateway import (
     BillingNotConfigured,
@@ -18,7 +18,7 @@ from .services import process_stripe_event
 
 
 @require_POST
-@subscriber_admin_required
+@subscriber_recovery_required
 def checkout(request, site_id):
     subscription = request.authorized_site.platform_subscription
     try:
@@ -42,7 +42,7 @@ def checkout(request, site_id):
 
 
 @require_POST
-@subscriber_admin_required
+@subscriber_recovery_required
 def portal(request, site_id):
     subscription = request.authorized_site.platform_subscription
     try:

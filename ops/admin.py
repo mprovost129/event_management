@@ -1,6 +1,11 @@
 from django.contrib import admin
 
-from .models import AuditEvent, SiteDeletionRequest, SupportAccessGrant
+from .models import (
+    AuditEvent,
+    SiteDeletionRequest,
+    SupportAccessGrant,
+    SystemHeartbeat,
+)
 
 
 @admin.register(AuditEvent)
@@ -41,3 +46,4 @@ class AuditEventAdmin(admin.ModelAdmin):
 
 admin.site.register(SupportAccessGrant)
 admin.site.register(SiteDeletionRequest)
+admin.site.register(SystemHeartbeat)

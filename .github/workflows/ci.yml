@@ -68,6 +68,8 @@ jobs:
         run: |
           python manage.py check
           python manage.py makemigrations --check --dry-run
+      - name: Dependency vulnerability audit
+        run: pip-audit -r requirements.txt
       - name: Deployment checks
         env:
           DJANGO_SETTINGS_MODULE: config.Settings.prod

@@ -91,12 +91,66 @@ a:hover {
     color: var(--bs-link-hover-color);
 }
 
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 3px;
+}
+
+.skip-link {
+    position: fixed;
+    left: 1rem;
+    top: -5rem;
+    z-index: 2000;
+    padding: .75rem 1rem;
+    background: #fff;
+    color: #000;
+    border: 2px solid #000;
+}
+
+.skip-link:focus {
+    top: 1rem;
+}
+
+button,
+.btn,
+input[type="submit"] {
+    min-height: 44px;
+}
+
 /* =============================================================================
    Layout
    ============================================================================= */
 
 header, main, footer {
     padding: 1rem 2rem;
+}
+
+@media (max-width: 575.98px) {
+    header,
+    main,
+    footer {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .table-responsive {
+        font-size: .925rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+    }
 }
 
 nav {

@@ -17,6 +17,7 @@ from sites.reporting import site_summary
 from subscriptions.models import PlatformSubscription, StripeWebhookEvent
 from users.models import User
 
+from .health import operational_alerts
 from .models import AuditEvent, SiteDeletionRequest
 from .permissions import platform_admin_required
 from .services import (
@@ -71,6 +72,7 @@ def dashboard(request):
             status=SiteDeletionRequest.Status.COMPLETED
         )[:20],
         "audit_events": AuditEvent.objects.select_related("actor")[:30],
+        "operational_alerts": operational_alerts(),
     }
     return render(request, "ops/dashboard.html", context)
 

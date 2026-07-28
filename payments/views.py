@@ -13,7 +13,11 @@ from django.views.decorators.http import require_http_methods, require_POST
 from contacts.models import MembershipPlan, MemberSubscription
 from events.models import EventOccurrence
 from ops.services import record_audit_event
-from sites.permissions import site_staff_required, subscriber_admin_required
+from sites.permissions import (
+    site_staff_required,
+    subscriber_admin_required,
+    subscriber_recovery_required,
+)
 
 from .forms import (
     MembershipJoinForm,
@@ -305,7 +309,7 @@ def ticket_checkout(request, token):
     )
 
 
-@subscriber_admin_required
+@subscriber_recovery_required
 @require_http_methods(["GET", "POST"])
 def refund_order(request, site_id, order_id):
     site = request.authorized_site
