@@ -3,15 +3,25 @@
    ============================================================================= */
 
 :root {
+    /* Gather HQs palette, sampled from gather-hqs-social.png */
+    --gh-brand-navy: #0b1d39;
+    --gh-brand-navy-hover: #152f55;
+    --gh-brand-orange: #db5c1c;
+    --gh-brand-orange-dark: #a6400a;
+    --gh-brand-sage: #516543;
+    --gh-brand-sage-dark: #3f512f;
+    --gh-brand-cream: #fbf0db;
+    --gh-brand-paper: #fffaf0;
+
     /* Brand colors */
-    --bs-blue:    #0d6efd;
+    --bs-blue:    #0b1d39;
     --bs-indigo:  #6610f2;
     --bs-purple:  #6f42c1;
     --bs-pink:    #d63384;
     --bs-red:     #dc3545;
-    --bs-orange:  #fd7e14;
+    --bs-orange:  #db5c1c;
     --bs-yellow:  #ffc107;
-    --bs-green:   #198754;
+    --bs-green:   #516543;
     --bs-teal:    #20c997;
     --bs-cyan:    #0dcaf0;
     --bs-white:   #ffffff;
@@ -20,38 +30,38 @@
     --bs-black:   #000000;
 
     /* Theme colors */
-    --bs-primary:   #0d6efd;
-    --bs-secondary: #6c757d;
+    --bs-primary:   #0b1d39;
+    --bs-secondary: #516543;
     --bs-success:   #198754;
     --bs-info:      #0dcaf0;
-    --bs-warning:   #ffc107;
+    --bs-warning:   #db5c1c;
     --bs-danger:    #dc3545;
-    --bs-light:     #f8f9fa;
-    --bs-dark:      #212529;
+    --bs-light:     #fbf0db;
+    --bs-dark:      #0b1d39;
 
     /* Theme color RGB values (used by Bootstrap utilities) */
-    --bs-primary-rgb:   13, 110, 253;
-    --bs-secondary-rgb: 108, 117, 125;
+    --bs-primary-rgb:   11, 29, 57;
+    --bs-secondary-rgb: 81, 101, 67;
     --bs-success-rgb:   25, 135, 84;
     --bs-info-rgb:      13, 202, 240;
-    --bs-warning-rgb:   255, 193, 7;
+    --bs-warning-rgb:   219, 92, 28;
     --bs-danger-rgb:    220, 53, 69;
-    --bs-light-rgb:     248, 249, 250;
-    --bs-dark-rgb:      33, 37, 41;
+    --bs-light-rgb:     251, 240, 219;
+    --bs-dark-rgb:      11, 29, 57;
 
     /* Body */
-    --bs-body-color:      #212529;
-    --bs-body-bg:         #ffffff;
+    --bs-body-color:      #0b1d39;
+    --bs-body-bg:         #fffdf8;
     --bs-body-font-family: system-ui, -apple-system, sans-serif;
     --bs-body-font-size:  1rem;
     --bs-body-line-height: 1.5;
 
     /* Links */
-    --bs-link-color:       #0d6efd;
-    --bs-link-hover-color: #0a58ca;
+    --bs-link-color:       #3f512f;
+    --bs-link-hover-color: #a6400a;
 
     /* Borders */
-    --bs-border-color: #dee2e6;
+    --bs-border-color: #ded3c2;
     --bs-border-radius: 0.375rem;
 
     /* Grays */
@@ -96,7 +106,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-    outline: 3px solid #ffbf47;
+    outline: 3px solid var(--gh-brand-orange);
     outline-offset: 3px;
 }
 
@@ -106,9 +116,9 @@ textarea:focus-visible {
     top: -5rem;
     z-index: 2000;
     padding: .75rem 1rem;
-    background: #fff;
-    color: #000;
-    border: 2px solid #000;
+    background: var(--gh-brand-cream);
+    color: var(--gh-brand-navy);
+    border: 2px solid var(--gh-brand-navy);
 }
 
 .skip-link:focus {
@@ -121,12 +131,124 @@ input[type="submit"] {
     min-height: 44px;
 }
 
+.btn-primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--gh-brand-navy);
+    --bs-btn-border-color: var(--gh-brand-navy);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--gh-brand-navy-hover);
+    --bs-btn-hover-border-color: var(--gh-brand-navy-hover);
+    --bs-btn-focus-shadow-rgb: 219, 92, 28;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #03142e;
+    --bs-btn-active-border-color: #03142e;
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: var(--gh-brand-navy);
+    --bs-btn-disabled-border-color: var(--gh-brand-navy);
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--gh-brand-navy);
+    --bs-btn-border-color: var(--gh-brand-navy);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--gh-brand-navy);
+    --bs-btn-hover-border-color: var(--gh-brand-navy);
+    --bs-btn-focus-shadow-rgb: 11, 29, 57;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--gh-brand-navy);
+    --bs-btn-active-border-color: var(--gh-brand-navy);
+}
+
+.btn-outline-secondary {
+    --bs-btn-color: var(--gh-brand-sage-dark);
+    --bs-btn-border-color: var(--gh-brand-sage);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--gh-brand-sage);
+    --bs-btn-hover-border-color: var(--gh-brand-sage);
+    --bs-btn-focus-shadow-rgb: 81, 101, 67;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--gh-brand-sage);
+    --bs-btn-active-border-color: var(--gh-brand-sage);
+}
+
+.btn-link {
+    --bs-btn-color: var(--bs-link-color);
+    --bs-btn-hover-color: var(--bs-link-hover-color);
+}
+
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+    border-color: var(--gh-brand-sage);
+    box-shadow: 0 0 0 .25rem rgba(81, 101, 67, .2);
+}
+
+.form-check-input:checked {
+    border-color: var(--gh-brand-navy);
+    background-color: var(--gh-brand-navy);
+}
+
+.text-primary {
+    color: var(--gh-brand-navy) !important;
+}
+
+.bg-primary {
+    background-color: var(--gh-brand-navy) !important;
+}
+
+.border-primary {
+    border-color: var(--gh-brand-navy) !important;
+}
+
 /* =============================================================================
    Layout
    ============================================================================= */
 
 header, main, footer {
     padding: 1rem 2rem;
+}
+
+.gh-site-header {
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top: .25rem solid var(--gh-brand-orange);
+    border-bottom: 1px solid #e4d5bc;
+    background: var(--gh-brand-cream);
+}
+
+.gh-site-header .navbar-brand {
+    color: var(--gh-brand-navy);
+    letter-spacing: -.025em;
+}
+
+.gh-site-header .navbar-brand:not(.site-theme)::after {
+    color: var(--gh-brand-orange);
+    content: ".";
+}
+
+.gh-navbar-actions > a:not(.btn) {
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.gh-site-footer {
+    padding: 0 2rem;
+    border-top: .25rem solid var(--gh-brand-orange);
+    background: var(--gh-brand-navy);
+    color: var(--gh-brand-cream);
+}
+
+.gh-site-footer a {
+    color: var(--gh-brand-cream);
+    text-underline-offset: .2em;
+}
+
+.gh-site-footer a:hover {
+    color: #f4a171;
+}
+
+.gh-footer-brand {
+    font-weight: 650;
 }
 
 @media (max-width: 575.98px) {
@@ -147,9 +269,9 @@ header, main, footer {
    ============================================================================= */
 
 .gh-dashboard {
-    --gh-dashboard-navy: #17233c;
-    --gh-dashboard-orange: #c95e32;
-    --gh-dashboard-sage: #4f7655;
+    --gh-dashboard-navy: #0b1d39;
+    --gh-dashboard-orange: #db5c1c;
+    --gh-dashboard-sage: #516543;
     color: var(--gh-dashboard-navy);
 }
 
@@ -227,7 +349,7 @@ header, main, footer {
     margin-bottom: 2.5rem;
     padding: clamp(1.5rem, 4vw, 2.5rem);
     border-radius: 1.25rem;
-    background: #17233c;
+    background: #0b1d39;
     color: #fff;
 }
 
@@ -299,7 +421,7 @@ header, main, footer {
 .is-complete .gh-setup-check {
     border-color: #8ec397;
     background: #8ec397;
-    color: #17233c;
+    color: #0b1d39;
 }
 
 .gh-next-event {
@@ -398,8 +520,8 @@ header, main, footer {
 }
 
 .gh-workspace-grid > a:hover {
-    border-color: rgba(201, 94, 50, .55);
-    box-shadow: 0 .75rem 1.75rem rgba(23, 35, 60, .08);
+    border-color: rgba(219, 92, 28, .55);
+    box-shadow: 0 .75rem 1.75rem rgba(11, 29, 57, .08);
 }
 
 .gh-workspace-grid h3 {
@@ -484,7 +606,7 @@ header, main, footer {
     margin-bottom: 3rem;
     padding: clamp(1.5rem, 4vw, 2.75rem);
     border-radius: 1.25rem;
-    background: #17233c;
+    background: #0b1d39;
     color: #fff;
 }
 
@@ -724,22 +846,22 @@ nav {
    ============================================================================= */
 
 .gh-landing {
-    --gh-navy: #17233c;
-    --gh-cream: #fff7ec;
-    --gh-orange: #c95e32;
-    --gh-sage: #4f7655;
+    --gh-navy: #0b1d39;
+    --gh-cream: #fbf0db;
+    --gh-orange: #db5c1c;
+    --gh-sage: #516543;
     --gh-ink-muted: #5b6270;
     color: var(--gh-navy);
 }
 
 .gh-nav-link {
-    color: #3d4658;
+    color: var(--gh-brand-navy);
     font-weight: 600;
     text-decoration: none;
 }
 
 .gh-nav-link:hover {
-    color: #0a58ca;
+    color: var(--gh-brand-orange-dark);
 }
 
 .gh-hero {
@@ -755,7 +877,7 @@ nav {
     width: 100vw;
     z-index: -1;
     background:
-        radial-gradient(circle at 72% 25%, rgba(201, 94, 50, .13), transparent 28%),
+        radial-gradient(circle at 72% 25%, rgba(219, 92, 28, .13), transparent 28%),
         linear-gradient(135deg, #fff 10%, var(--gh-cream) 100%);
     content: "";
     transform: translateX(-50%);
@@ -803,10 +925,10 @@ nav {
     min-height: 28rem;
     margin-inline: auto;
     overflow: hidden;
-    border: 1px solid rgba(23, 35, 60, .12);
+    border: 1px solid rgba(11, 29, 57, .12);
     border-radius: 1.5rem;
     background: #fff;
-    box-shadow: 0 1.75rem 4rem rgba(23, 35, 60, .16);
+    box-shadow: 0 1.75rem 4rem rgba(11, 29, 57, .16);
     transform: rotate(1.5deg);
 }
 
@@ -817,7 +939,7 @@ nav {
     width: 15rem;
     height: 15rem;
     border-radius: 50%;
-    background: rgba(79, 118, 85, .12);
+    background: rgba(81, 101, 67, .12);
     content: "";
 }
 
@@ -943,8 +1065,8 @@ nav {
 }
 
 .gh-feature-card:hover {
-    border-color: rgba(201, 94, 50, .45);
-    box-shadow: 0 1rem 2rem rgba(23, 35, 60, .08);
+    border-color: rgba(219, 92, 28, .45);
+    box-shadow: 0 1rem 2rem rgba(11, 29, 57, .08);
 }
 
 .gh-feature-number {
@@ -1057,7 +1179,7 @@ nav {
 
 .gh-price-card-featured {
     border-color: #f0b091;
-    background: #fff7ec;
+    background: #fbf0db;
     color: var(--gh-navy);
 }
 
@@ -1104,7 +1226,7 @@ nav {
 
 .gh-final-cta .gh-eyebrow,
 .gh-final-cta p {
-    color: #fff7ec;
+    color: #fbf0db;
 }
 
 .gh-final-cta p {
@@ -1158,7 +1280,7 @@ nav {
 
 .gh-auth-intro {
     max-width: 39rem;
-    color: #17233c;
+    color: #0b1d39;
 }
 
 .gh-auth-intro h1 {
@@ -1202,8 +1324,8 @@ nav {
     display: grid;
     max-width: 32rem;
     padding: 1rem 1.15rem;
-    border-left: 3px solid #c95e32;
-    background: #fff7ec;
+    border-left: 3px solid #db5c1c;
+    background: #fbf0db;
 }
 
 .gh-auth-price-note span {
@@ -1219,12 +1341,12 @@ nav {
     border: 1px solid #e5ded6;
     border-radius: 1.25rem;
     background: #fff;
-    box-shadow: 0 1.25rem 3rem rgba(23, 35, 60, .1);
+    box-shadow: 0 1.25rem 3rem rgba(11, 29, 57, .1);
 }
 
 .gh-auth-card h1,
 .gh-auth-card h2 {
-    color: #17233c;
+    color: #0b1d39;
     font-size: clamp(1.8rem, 4vw, 2.35rem);
     font-weight: 750;
     letter-spacing: -.035em;
@@ -1232,7 +1354,7 @@ nav {
 
 .gh-step-label {
     margin-bottom: .45rem;
-    color: #c95e32;
+    color: #db5c1c;
     font-size: .75rem;
     font-weight: 800;
     letter-spacing: .1em;
@@ -1246,7 +1368,7 @@ nav {
 .gh-form-field label {
     display: block;
     margin-bottom: .4rem;
-    color: #17233c;
+    color: #0b1d39;
     font-weight: 700;
 }
 
@@ -1344,12 +1466,12 @@ nav {
 }
 
 .gh-onboarding-preview li.is-current {
-    color: #17233c;
+    color: #0b1d39;
 }
 
 .gh-onboarding-preview li.is-current > span {
-    border-color: #4f7655;
-    background: #4f7655;
+    border-color: #516543;
+    background: #516543;
     color: #fff;
 }
 
@@ -1473,9 +1595,9 @@ textarea {
 .gh-site-builder,
 .gh-website-hub,
 .gh-content-editor {
-    --gh-builder-navy: #17233c;
-    --gh-builder-orange: #c95e32;
-    --gh-builder-sage: #4f7655;
+    --gh-builder-navy: #0b1d39;
+    --gh-builder-orange: #db5c1c;
+    --gh-builder-sage: #516543;
     color: var(--gh-builder-navy);
 }
 
@@ -1579,7 +1701,7 @@ textarea {
 
 .gh-template-option:has(input:checked) {
     border-color: var(--gh-builder-sage);
-    box-shadow: 0 0 0 3px rgba(79, 118, 85, .12);
+    box-shadow: 0 0 0 3px rgba(81, 101, 67, .12);
 }
 
 .gh-template-option input {
@@ -1631,7 +1753,7 @@ textarea {
 
 .gh-template-thumb-social i {
     border-radius: .7rem;
-    box-shadow: 0 .25rem .6rem rgba(23, 35, 60, .08);
+    box-shadow: 0 .25rem .6rem rgba(11, 29, 57, .08);
 }
 
 .gh-color-grid {
@@ -1762,7 +1884,7 @@ textarea {
     border: 1px solid #dad6d1;
     border-radius: .45rem;
     background: #fff;
-    box-shadow: 0 1.5rem 3rem rgba(23, 35, 60, .12);
+    box-shadow: 0 1.5rem 3rem rgba(11, 29, 57, .12);
     color: #242b36;
     font-size: .65rem;
 }
@@ -1878,7 +2000,7 @@ textarea {
     border: 0;
     border-radius: .7rem;
     background: #fff;
-    box-shadow: 0 .35rem 1rem rgba(23, 35, 60, .08);
+    box-shadow: 0 .35rem 1rem rgba(11, 29, 57, .08);
 }
 
 .gh-preview-note {
@@ -1896,7 +2018,7 @@ textarea {
     margin-bottom: 3rem;
     padding: clamp(1.4rem, 3vw, 2.2rem);
     border-radius: 1rem;
-    background: #17233c;
+    background: #0b1d39;
     color: #fff;
 }
 
@@ -1951,7 +2073,7 @@ textarea {
 .gh-website-checks li.is-complete > span {
     border-color: #8ec397;
     background: #8ec397;
-    color: #17233c;
+    color: #0b1d39;
 }
 
 .gh-website-checks strong,
@@ -1978,13 +2100,13 @@ textarea {
     padding: 1.15rem;
     border: 1px solid #e3ded8;
     border-radius: .85rem;
-    color: #17233c;
+    color: #0b1d39;
     text-decoration: none;
 }
 
 .gh-page-grid > a:hover {
-    border-color: rgba(201, 94, 50, .55);
-    box-shadow: 0 .75rem 1.75rem rgba(23, 35, 60, .07);
+    border-color: rgba(219, 92, 28, .55);
+    box-shadow: 0 .75rem 1.75rem rgba(11, 29, 57, .07);
 }
 
 .gh-page-grid h3 {
@@ -2109,8 +2231,8 @@ textarea {
 .gh-editor-tip {
     margin: 0;
     padding: 1rem;
-    border-left: 3px solid #c95e32;
-    background: #fff7ec;
+    border-left: 3px solid #db5c1c;
+    background: #fbf0db;
     color: #5f6671;
     font-size: .82rem;
 }
@@ -2118,7 +2240,7 @@ textarea {
 .gh-editor-tip strong {
     display: block;
     margin-bottom: .2rem;
-    color: #17233c;
+    color: #0b1d39;
 }
 
 @media (max-width: 991.98px) {
@@ -2239,7 +2361,7 @@ textarea {
     border: 1px solid #cddccb;
     border-radius: .85rem;
     background: #f1f7f0;
-    color: #17233c;
+    color: #0b1d39;
 }
 
 .gh-source-banner > span,
@@ -2282,7 +2404,7 @@ textarea {
 
 .gh-channel-fieldset legend {
     margin-bottom: .4rem;
-    color: #17233c;
+    color: #0b1d39;
     font-size: 1rem;
     font-weight: 700;
 }
@@ -2305,9 +2427,9 @@ textarea {
 }
 
 .gh-channel-options label:has(input:checked) {
-    border-color: #4f7655;
+    border-color: #516543;
     background: #f4f8f3;
-    box-shadow: 0 0 0 3px rgba(79, 118, 85, .1);
+    box-shadow: 0 0 0 3px rgba(81, 101, 67, .1);
 }
 
 .gh-channel-options input {
@@ -2343,9 +2465,9 @@ textarea {
 
 .gh-communications-hub,
 .gh-campaign-review {
-    --gh-builder-navy: #17233c;
-    --gh-builder-orange: #c95e32;
-    --gh-builder-sage: #4f7655;
+    --gh-builder-navy: #0b1d39;
+    --gh-builder-orange: #db5c1c;
+    --gh-builder-sage: #516543;
     color: var(--gh-builder-navy);
 }
 
@@ -2413,7 +2535,7 @@ textarea {
 }
 
 .gh-row-arrow {
-    color: #4f7655;
+    color: #516543;
     font-size: 1.2rem;
     font-weight: 800;
     text-decoration: none;
@@ -2445,7 +2567,7 @@ textarea {
     margin-bottom: 1rem;
     padding: clamp(1.4rem, 3vw, 2rem);
     border-radius: 1rem;
-    background: #17233c;
+    background: #0b1d39;
     color: #fff;
 }
 
@@ -2561,7 +2683,7 @@ textarea {
     margin: 1.4rem auto;
     padding: clamp(1.4rem, 4vw, 2.4rem);
     background: #fff;
-    box-shadow: 0 .75rem 2rem rgba(23, 35, 60, .08);
+    box-shadow: 0 .75rem 2rem rgba(11, 29, 57, .08);
 }
 
 .gh-message-paper > p {
@@ -2607,7 +2729,7 @@ textarea {
 .gh-launch-card {
     padding: 1.5rem;
     border-radius: 1rem;
-    background: #17233c;
+    background: #0b1d39;
     color: #fff;
 }
 
@@ -2721,9 +2843,9 @@ textarea {
 .gh-events-hub,
 .gh-event-editor,
 .gh-invite-editor {
-    --gh-builder-navy: #17233c;
-    --gh-builder-orange: #c95e32;
-    --gh-builder-sage: #4f7655;
+    --gh-builder-navy: #0b1d39;
+    --gh-builder-orange: #db5c1c;
+    --gh-builder-sage: #516543;
     color: var(--gh-builder-navy);
 }
 
@@ -2794,9 +2916,9 @@ textarea {
 }
 
 .gh-choice-cards label:has(input:checked) {
-    border-color: #4f7655;
+    border-color: #516543;
     background: #f4f8f3;
-    box-shadow: 0 0 0 3px rgba(79, 118, 85, .1);
+    box-shadow: 0 0 0 3px rgba(81, 101, 67, .1);
 }
 
 .gh-choice-cards input {
@@ -2853,7 +2975,7 @@ textarea {
 
 .gh-event-manage-card.is-new-event {
     border-color: #76957a;
-    box-shadow: 0 1rem 2.5rem rgba(23, 35, 60, .08);
+    box-shadow: 0 1rem 2.5rem rgba(11, 29, 57, .08);
 }
 
 .gh-event-next-steps {
@@ -2862,7 +2984,7 @@ textarea {
     gap: 2rem;
     align-items: center;
     padding: clamp(1.25rem, 3vw, 2rem);
-    background: #17233c;
+    background: #0b1d39;
     color: #fff;
 }
 
@@ -3197,9 +3319,9 @@ textarea {
 
 .gh-commerce-hub,
 .gh-ticket-editor {
-    --gh-builder-navy: #17233c;
-    --gh-builder-orange: #c95e32;
-    --gh-builder-sage: #4f7655;
+    --gh-builder-navy: #0b1d39;
+    --gh-builder-orange: #db5c1c;
+    --gh-builder-sage: #516543;
     color: var(--gh-builder-navy);
 }
 
@@ -3295,7 +3417,7 @@ textarea {
 .gh-ticket-inventory-card {
     padding: 1.4rem;
     border-radius: 1rem;
-    background: #17233c;
+    background: #0b1d39;
     color: #fff;
 }
 
@@ -3518,7 +3640,7 @@ textarea {
     padding: 1rem;
     border: 1px solid #e3ded8;
     border-radius: .75rem;
-    color: #17233c;
+    color: #0b1d39;
     text-decoration: none;
 }
 
@@ -3734,7 +3856,7 @@ textarea {
 
 .gh-checkout-head > p {
     margin-bottom: .5rem;
-    color: #c95e32;
+    color: #db5c1c;
     font-size: .72rem;
     font-weight: 800;
     text-transform: uppercase;
@@ -3837,9 +3959,9 @@ textarea {
 }
 
 .gh-public-ticket-options label:has(input:checked) > span {
-    border-color: var(--site-primary, #4f7655);
+    border-color: var(--site-primary, #516543);
     background: #f7faf6;
-    box-shadow: 0 0 0 3px rgba(79, 118, 85, .1);
+    box-shadow: 0 0 0 3px rgba(81, 101, 67, .1);
 }
 
 .gh-public-ticket-options strong,
@@ -3888,7 +4010,7 @@ textarea {
 }
 
 .gh-stripe-note strong {
-    color: #17233c;
+    color: #0b1d39;
 }
 
 .gh-ticket-unavailable {
@@ -4017,9 +4139,9 @@ textarea {
 
 .gh-people-hub,
 .gh-contact-editor {
-    --gh-builder-navy: #17233c;
-    --gh-builder-orange: #c95e32;
-    --gh-builder-sage: #4f7655;
+    --gh-builder-navy: #0b1d39;
+    --gh-builder-orange: #db5c1c;
+    --gh-builder-sage: #516543;
     color: var(--gh-builder-navy);
 }
 
@@ -4036,7 +4158,7 @@ textarea {
     padding: .9rem 1rem;
     border: 1px solid #e3ded8;
     border-radius: .75rem;
-    color: #17233c;
+    color: #0b1d39;
     flex-direction: column;
     justify-content: space-between;
     text-decoration: none;
@@ -4084,7 +4206,7 @@ textarea {
     align-items: center;
     padding: 1rem .25rem;
     border-bottom: 1px solid #e3ded8;
-    color: #17233c;
+    color: #0b1d39;
     text-decoration: none;
 }
 
@@ -4094,7 +4216,7 @@ textarea {
 }
 
 .gh-people-list > a.is-new-contact {
-    box-shadow: inset 3px 0 #4f7655;
+    box-shadow: inset 3px 0 #516543;
 }
 
 .gh-person-initials {
@@ -4188,8 +4310,8 @@ textarea {
 
 .gh-consent-warning {
     padding: .75rem;
-    border-left: 3px solid #c95e32;
-    background: #fff7ec;
+    border-left: 3px solid #db5c1c;
+    background: #fbf0db;
     color: #5f6671;
     font-size: .78rem;
 }
@@ -4312,7 +4434,7 @@ textarea {
 /* Membership plans and public joining */
 
 .gh-membership-editor {
-    --gh-builder-navy: #17233c;
+    --gh-builder-navy: #0b1d39;
     color: var(--gh-builder-navy);
 }
 
@@ -4342,7 +4464,7 @@ textarea {
 }
 
 .gh-membership-interval label:has(input:checked) {
-    border-color: #4f7655;
+    border-color: #516543;
     background: #f3f7f2;
 }
 
@@ -4398,7 +4520,7 @@ textarea {
 }
 
 .gh-public-membership-grid article > p:first-child {
-    color: #c95e32;
+    color: #db5c1c;
     font-size: .7rem;
     font-weight: 800;
     text-transform: uppercase;
@@ -4479,7 +4601,7 @@ textarea {
     border: 1px solid #e0dcd7;
     border-radius: 1rem;
     background: #fff;
-    box-shadow: 0 1.25rem 3rem rgba(23, 35, 60, .09);
+    box-shadow: 0 1.25rem 3rem rgba(11, 29, 57, .09);
 }
 
 .gh-membership-join-form h2 {
@@ -4510,7 +4632,7 @@ textarea {
 
 .gh-roster,
 .gh-door-response {
-    --gh-roster-ink: #17233c;
+    --gh-roster-ink: #0b1d39;
     color: var(--gh-roster-ink);
 }
 
@@ -4821,7 +4943,7 @@ textarea {
 /* Subscriber reports */
 
 .gh-reports {
-    --gh-report-ink: #17233c;
+    --gh-report-ink: #0b1d39;
     color: var(--gh-report-ink);
 }
 
@@ -4972,8 +5094,8 @@ textarea {
 
 .gh-report-filters a[aria-current="page"] {
     background: #fff;
-    color: #17233c;
-    box-shadow: 0 .1rem .4rem rgba(23, 35, 60, .1);
+    color: #0b1d39;
+    box-shadow: 0 .1rem .4rem rgba(11, 29, 57, .1);
 }
 
 .gh-date-report-list {
@@ -5093,7 +5215,7 @@ textarea {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: #4f7655;
+    background: #516543;
 }
 
 .gh-report-row-action {
@@ -5117,7 +5239,7 @@ textarea {
 }
 
 .gh-report-empty h3 {
-    color: #17233c;
+    color: #0b1d39;
 }
 
 .gh-series-report {

@@ -23,23 +23,5 @@
 </style>
 {% endblock %}
 
-{% block brand %}
-<a class="navbar-brand fw-semibold d-flex align-items-center gap-2 site-theme" href="/">
-    {% if site.theme.logo %}<img src="{{ site.theme.logo.url }}" alt="" height="40">{% endif %}
-    {{ site.display_name }}
-</a>
-{% endblock %}
-
-{% block nav %}
-<div class="d-flex flex-wrap align-items-center gap-3 site-theme">
-    <a href="/">{{ site_navigation.home.navigation_label|default:"Home" }}</a>
-    {% if site_navigation.about %}<a href="{% url 'content:about' %}">{{ site_navigation.about.navigation_label }}</a>{% endif %}
-    <a href="{% url 'events:calendar' %}">Events</a>
-    <a href="{% url 'content:blog_index' %}">Blog</a>
-    <a href="{% url 'payments:membership_plans' %}">Memberships</a>
-    <a href="{% url 'content:newsletter' %}">{{ site_navigation.newsletter.navigation_label|default:"Newsletter" }}</a>
-    {% if site_navigation.contact %}<a href="{% url 'content:contact' %}">{{ site_navigation.contact.navigation_label }}</a>{% endif %}
-</div>
-{% endblock %}
-
-{% block footer %}<small>&copy; {% now "Y" %} {{ site.display_name }} &middot; Powered by Gather HQs</small>{% endblock %}
+{% block navbar %}{% include "partials/navbar.html" with navbar_site=site %}{% endblock %}
+{% block footer %}{% include "partials/footer.html" with footer_site=site %}{% endblock %}

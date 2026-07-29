@@ -108,10 +108,10 @@ class SiteTheme(models.Model):
     hero_heading = models.CharField(max_length=180, blank=True)
     hero_text = models.CharField(max_length=320, blank=True)
     primary_color = models.CharField(
-        max_length=7, default="#0D6EFD", validators=[hex_color_validator]
+        max_length=7, default="#0B1D39", validators=[hex_color_validator]
     )
     secondary_color = models.CharField(
-        max_length=7, default="#6C757D", validators=[hex_color_validator]
+        max_length=7, default="#516543", validators=[hex_color_validator]
     )
     typography_key = models.CharField(max_length=30, default="system")
     updated_at = models.DateTimeField(auto_now=True)

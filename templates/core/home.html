@@ -22,16 +22,9 @@
 {% endif %}
 {% endblock %}
 
-{% block nav %}
+{% block navbar %}
 {% if not site %}
-<div class="ms-auto d-flex align-items-center gap-2 gap-lg-3">
-    <div class="d-none d-md-flex align-items-center gap-3" aria-label="Page sections">
-        <a class="gh-nav-link" href="#features">Features</a>
-        <a class="gh-nav-link" href="#pricing">Pricing</a>
-    </div>
-    <a class="btn btn-link px-2" href="{% url 'users:login' %}">Sign in</a>
-    <a class="btn btn-primary" href="{% url 'users:signup' %}">Start free</a>
-</div>
+{% include "partials/navbar.html" with navbar_variant="marketing" %}
 {% else %}
 {{ block.super }}
 {% endif %}
