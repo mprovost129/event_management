@@ -24,7 +24,7 @@ from .permissions import (
     subscriber_admin_required,
     subscriber_recovery_required,
 )
-from .reporting import event_comparison, site_summary
+from .reporting import event_comparison, occurrence_comparison, site_summary
 from .services import create_subscriber_site, site_setup_progress, user_site_roles
 
 
@@ -114,10 +114,33 @@ def dashboard(request, site_id):
 @site_staff_required
 def reports(request, site_id):
     site = request.authorized_site
+    view_filter = request.GET.get("view", "all")
+    if view_filter not in {"all", "upcoming", "completed"}:
+        view_filter = "all"
+    all_occurrences = occurrence_comparison(site)
+    occurrences = all_occurrences
+    if view_filter == "upcoming":
+        occurrences = [
+            row
+            for row in occurrences
+            if not row["is_complete"] and not row["is_canceled"]
+        ]
+    elif view_filter == "completed":
+        occurrences = [
+            row
+            for row in occurrences
+            if row["is_complete"] and not row["is_canceled"]
+        ]
     return render(
         request,
         "sites/reports.html",
-        {"site": site, "summary": site_summary(site), "events": event_comparison(site)},
+        {
+            "site": site,
+            "summary": site_summary(site),
+            "occurrences": occurrences,
+            "events": event_comparison(site, occurrence_rows=all_occurrences),
+            "view_filter": view_filter,
+        },
     )
 
 

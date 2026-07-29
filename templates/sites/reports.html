@@ -1,8 +1,74 @@
 {% extends 'base.html' %}
+{% load tz %}
 {% block title %}Reports · {{ site.display_name }}{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between mb-4"><div><h1>Reports</h1><p class="text-secondary">Calculated from current transactional records.</p></div><a class="btn btn-outline-primary" href="{% url 'sites:dashboard' site.id %}">Dashboard</a></div>
-<div class="row g-3 mb-5"><div class="col-md"><div class="card"><div class="card-body"><small>Registrations</small><div class="h3">{{ summary.registrations }}</div><span>{{ summary.invite_response_rate }}% invite response</span></div></div></div><div class="col-md"><div class="card"><div class="card-body"><small>Participants</small><div class="h3">{{ summary.participants }}</div><span>{{ summary.guests }} guests</span></div></div></div><div class="col-md"><div class="card"><div class="card-body"><small>Attendance</small><div class="h3">{{ summary.checked_in }}</div><span>{{ summary.no_show_rate }}% no-show</span></div></div></div><div class="col-md"><div class="card"><div class="card-body"><small>Reviews</small><div class="h3">{{ summary.rating_average|default:0|floatformat:1 }}/5</div><span>{{ summary.review_count }} reviews</span></div></div></div></div>
-<h2>Event comparison</h2><div class="table-responsive"><table class="table"><thead><tr><th>Event</th><th>Dates</th><th>Registrations</th><th>Attendance</th><th>Ticket gross</th><th>Refunds</th><th>Rating</th></tr></thead><tbody>{% for row in events %}<tr><td>{{ row.event.title }}</td><td>{{ row.occurrences }}</td><td>{{ row.registrations }}</td><td>{{ row.checked_in }}/{{ row.participants }}</td><td>${{ row.gross_display|floatformat:2 }}</td><td>${{ row.refunds_display|floatformat:2 }}</td><td>{% if row.rating_average %}{{ row.rating_average|floatformat:1 }}/5 ({{ row.review_count }}){% else %}—{% endif %}</td></tr>{% empty %}<tr><td colspan="7">No events yet.</td></tr>{% endfor %}</tbody></table></div>
-<p class="small text-secondary">Financial values are operational reports from connected-account records and are not an accounting ledger.</p>
+{% timezone site.timezone %}
+<div class="gh-reports">
+    <header class="gh-reports-header">
+        <div>
+            <a class="gh-back-link" href="{% url 'sites:dashboard' site.id %}">&larr; Dashboard</a>
+            <p class="gh-step-label mt-3">Group performance</p>
+            <h1>See what gets people through the door.</h1>
+            <p>Follow responses, real attendance, ticket results, and participant feedback across every event date.</p>
+        </div>
+        <div class="gh-reports-header-actions"><a class="btn btn-outline-primary" href="{% url 'events:manage' site.id %}">Manage events</a><a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create event</a></div>
+    </header>
+
+    <section aria-labelledby="overview-heading">
+        <div class="gh-section-row"><div><p class="gh-step-label mb-1">All time</p><h2 id="overview-heading">Your group at a glance</h2></div><span class="gh-report-freshness">Calculated from current records</span></div>
+        <div class="gh-report-kpis">
+            <article><span>Registrations</span><strong>{{ summary.registrations }}</strong><p><b>{{ summary.going }}</b> going · {{ summary.maybe }} maybe · {{ summary.not_going }} declined</p></article>
+            <article><span>Attendance</span><strong>{{ summary.attendance_rate|floatformat:1 }}<small>%</small></strong><p>{{ summary.checked_in }} check-ins · {{ summary.no_show_rate|floatformat:1 }}% no-show</p></article>
+            <article><span>Ticket net</span><strong>${{ summary.ticket_net_display|floatformat:2 }}</strong><p>${{ summary.ticket_gross_display|floatformat:2 }} gross · ${{ summary.refunds_display|floatformat:2 }} refunded</p></article>
+            <article><span>Participant rating</span><strong>{{ summary.rating_average|default:0|floatformat:1 }}<small>/5</small></strong><p>{{ summary.review_count }} review{{ summary.review_count|pluralize }}</p></article>
+        </div>
+        <dl class="gh-report-supporting">
+            <div><dt>Invite response</dt><dd>{{ summary.invite_response_rate|floatformat:1 }}%</dd></div>
+            <div><dt>Participants</dt><dd>{{ summary.participants }}</dd></div>
+            <div><dt>Named guests</dt><dd>{{ summary.guests }}</dd></div>
+            <div><dt>Active paid members</dt><dd>{{ summary.active_members }}</dd></div>
+            <div><dt>Member dues</dt><dd>${{ summary.member_dues_display|floatformat:2 }}</dd></div>
+            <div><dt>Campaigns sent</dt><dd>{{ summary.campaigns_sent }}</dd></div>
+        </dl>
+    </section>
+
+    <section class="gh-date-report" aria-labelledby="date-report-heading">
+        <div class="gh-section-row gh-report-filter-row">
+            <div><p class="gh-step-label mb-1">Date-by-date</p><h2 id="date-report-heading">Event performance</h2><p>Recurring events stay separate so you can see which dates worked best.</p></div>
+            <nav class="gh-report-filters" aria-label="Filter event dates"><a href="?view=all"{% if view_filter == 'all' %} aria-current="page"{% endif %}>All dates</a><a href="?view=upcoming"{% if view_filter == 'upcoming' %} aria-current="page"{% endif %}>Upcoming</a><a href="?view=completed"{% if view_filter == 'completed' %} aria-current="page"{% endif %}>Completed</a></nav>
+        </div>
+
+        <div class="gh-date-report-list">
+            {% for row in occurrences %}
+            <article class="gh-date-report-row{% if row.is_canceled %} is-canceled{% endif %}">
+                <div class="gh-report-date"><span>{{ row.occurrence.starts_at|date:"M" }}</span><strong>{{ row.occurrence.starts_at|date:"j" }}</strong><small>{{ row.occurrence.starts_at|date:"Y" }}</small></div>
+                <div class="gh-report-event">
+                    <div class="gh-report-event-title"><h3>{{ row.occurrence.event.title }}</h3>{% if row.is_canceled %}<span class="gh-content-status gh-content-status-archived">Canceled</span>{% elif row.is_complete %}<span class="gh-content-status">Completed</span>{% else %}<span class="gh-content-status gh-content-status-published">Upcoming</span>{% endif %}</div>
+                    <p>{{ row.occurrence.starts_at|date:"l · g:i A" }}{% if row.occurrence.venue_name %} · {{ row.occurrence.venue_name }}{% endif %}</p>
+                    <div class="gh-report-response-mix"><span><b>{{ row.going }}</b> going</span><span>{{ row.maybe }} maybe</span><span>{{ row.not_going }} declined</span>{% if row.payment_pending %}<span class="is-warning">{{ row.payment_pending }} awaiting payment</span>{% endif %}</div>
+                </div>
+                <div class="gh-report-stat">
+                    <span>{% if row.is_complete %}Attendance{% else %}Ready to attend{% endif %}</span>
+                    <strong>{% if row.is_complete %}{{ row.checked_in }}/{{ row.participants }}{% else %}{{ row.participants }}{% endif %}</strong>
+                    {% if row.is_complete %}<div class="gh-report-progress" role="progressbar" aria-label="Attendance rate" aria-valuenow="{{ row.attendance_rate }}" aria-valuemin="0" aria-valuemax="100"><i style="width: {{ row.attendance_rate }}%"></i></div><small>{{ row.attendance_rate|floatformat:1 }}% attended</small>{% else %}<small>{{ row.guests }} guest{{ row.guests|pluralize }}</small>{% endif %}
+                </div>
+                <div class="gh-report-stat"><span>Ticket net</span><strong>${{ row.net_display|floatformat:2 }}</strong><small>${{ row.gross_display|floatformat:2 }} gross{% if row.refunds_display %} · ${{ row.refunds_display|floatformat:2 }} refunded{% endif %}</small></div>
+                <div class="gh-report-stat"><span>Reviews</span><strong>{% if row.rating_average %}{{ row.rating_average|floatformat:1 }}<small>/5</small>{% else %}—{% endif %}</strong><small>{{ row.review_count }} review{{ row.review_count|pluralize }}</small></div>
+                <a class="gh-report-row-action" href="{% url 'attendance:roster' site.id row.occurrence.id %}" aria-label="Open {{ row.occurrence.event.title }} roster">Open roster <span aria-hidden="true">&rarr;</span></a>
+            </article>
+            {% empty %}
+            <div class="gh-report-empty"><h3>No event dates in this view</h3><p>{% if view_filter == 'completed' %}Completed events will appear here after their scheduled end time.{% elif view_filter == 'upcoming' %}Create or schedule another event to see it here.{% else %}Create your first event to begin tracking responses and attendance.{% endif %}</p>{% if view_filter == 'all' %}<a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create an event</a>{% else %}<a href="?view=all">View all dates</a>{% endif %}</div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% if events %}
+    <details class="gh-series-report">
+        <summary><span><strong>Compare recurring event series</strong><small>Roll multiple dates into one total.</small></span><b aria-hidden="true">+</b></summary>
+        <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Event series</th><th>Dates</th><th>Registrations</th><th>Attendance</th><th>Ticket gross</th><th>Refunds</th><th>Rating</th></tr></thead><tbody>{% for row in events %}<tr><td><strong>{{ row.event.title }}</strong></td><td>{{ row.occurrences }}</td><td>{{ row.registrations }}</td><td>{{ row.checked_in }}/{{ row.participants }}</td><td>${{ row.gross_display|floatformat:2 }}</td><td>${{ row.refunds_display|floatformat:2 }}</td><td>{% if row.rating_average %}{{ row.rating_average|floatformat:1 }}/5 <small>({{ row.review_count }})</small>{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+    </details>
+    {% endif %}
+    <p class="gh-report-disclaimer">Financial values are operational reports from connected-account records and are not an accounting ledger.</p>
+</div>
+{% endtimezone %}
 {% endblock %}

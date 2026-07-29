@@ -4640,3 +4640,447 @@ textarea {
         width: 100%;
     }
 }
+
+/* Subscriber reports */
+
+.gh-reports {
+    --gh-report-ink: #17233c;
+    color: var(--gh-report-ink);
+}
+
+.gh-reports-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    align-items: flex-end;
+    margin-bottom: 3rem;
+}
+
+.gh-reports-header > div:first-child {
+    max-width: 48rem;
+}
+
+.gh-reports-header h1 {
+    margin: 0;
+    font-size: clamp(2.3rem, 6vw, 4.2rem);
+    font-weight: 760;
+    letter-spacing: -.055em;
+}
+
+.gh-reports-header p:last-child,
+.gh-report-filter-row > div > p:last-child {
+    margin: .75rem 0 0;
+    color: #626b78;
+    font-size: 1.02rem;
+}
+
+.gh-reports-header-actions {
+    display: flex;
+    gap: .5rem;
+    flex: 0 0 auto;
+}
+
+.gh-report-freshness {
+    color: #737b86;
+    font-size: .75rem;
+}
+
+.gh-report-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .75rem;
+}
+
+.gh-report-kpis article {
+    display: flex;
+    min-height: 10rem;
+    padding: 1.25rem;
+    border: 1px solid #dedbd6;
+    border-radius: .85rem;
+    background: #fff;
+    flex-direction: column;
+}
+
+.gh-report-kpis article > span,
+.gh-report-stat > span {
+    color: #68717d;
+    font-size: .7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .055em;
+}
+
+.gh-report-kpis article > strong {
+    margin: auto 0 .4rem;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    line-height: 1;
+    letter-spacing: -.05em;
+}
+
+.gh-report-kpis strong small,
+.gh-report-stat strong small {
+    color: #68717d;
+    font-size: .45em;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.gh-report-kpis article > p {
+    margin: 0;
+    color: #68717d;
+    font-size: .75rem;
+}
+
+.gh-report-kpis article > p b {
+    color: #315f38;
+}
+
+.gh-report-supporting {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    margin: .75rem 0 0;
+    padding: 1rem 0;
+    border-block: 1px solid #e2dfda;
+}
+
+.gh-report-supporting > div {
+    padding: .25rem 1rem;
+    border-right: 1px solid #e2dfda;
+}
+
+.gh-report-supporting > div:first-child {
+    padding-left: 0;
+}
+
+.gh-report-supporting > div:last-child {
+    border-right: 0;
+}
+
+.gh-report-supporting dt {
+    color: #737b86;
+    font-size: .67rem;
+    font-weight: 700;
+}
+
+.gh-report-supporting dd {
+    margin: .2rem 0 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.gh-date-report {
+    margin-top: 3.5rem;
+}
+
+.gh-report-filter-row {
+    align-items: flex-end;
+}
+
+.gh-report-filters {
+    display: flex;
+    gap: .25rem;
+    padding: .25rem;
+    border-radius: .65rem;
+    background: #eef0f3;
+}
+
+.gh-report-filters a {
+    padding: .48rem .75rem;
+    border-radius: .48rem;
+    color: #596476;
+    font-size: .8rem;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.gh-report-filters a[aria-current="page"] {
+    background: #fff;
+    color: #17233c;
+    box-shadow: 0 .1rem .4rem rgba(23, 35, 60, .1);
+}
+
+.gh-date-report-list {
+    display: grid;
+    gap: .65rem;
+    margin-top: 1rem;
+}
+
+.gh-date-report-row {
+    display: grid;
+    grid-template-columns: 3.7rem minmax(14rem, 1.4fr) repeat(3, minmax(7.5rem, .65fr)) auto;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #dedbd6;
+    border-radius: .8rem;
+    background: #fff;
+    align-items: center;
+}
+
+.gh-date-report-row.is-canceled {
+    opacity: .7;
+    background: #f6f6f5;
+}
+
+.gh-report-date {
+    display: flex;
+    min-height: 4.4rem;
+    padding: .45rem;
+    border-radius: .6rem;
+    background: #edf0f5;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    line-height: 1;
+}
+
+.gh-report-date span,
+.gh-report-date small {
+    color: #657084;
+    font-size: .6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.gh-report-date strong {
+    margin: .2rem 0;
+    font-size: 1.5rem;
+}
+
+.gh-report-event-title {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    align-items: center;
+}
+
+.gh-report-event h3 {
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 780;
+}
+
+.gh-report-event > p {
+    margin: .2rem 0 .5rem;
+    color: #6b7481;
+    font-size: .75rem;
+}
+
+.gh-report-response-mix {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem .65rem;
+    color: #68717d;
+    font-size: .67rem;
+}
+
+.gh-report-response-mix b {
+    color: #315f38;
+}
+
+.gh-report-response-mix .is-warning {
+    color: #96651f;
+    font-weight: 750;
+}
+
+.gh-report-stat {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.gh-report-stat > strong {
+    margin: .25rem 0;
+    font-size: 1.3rem;
+    letter-spacing: -.035em;
+}
+
+.gh-report-stat > small {
+    overflow: hidden;
+    color: #737b86;
+    font-size: .65rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gh-report-progress {
+    overflow: hidden;
+    width: 100%;
+    max-width: 7rem;
+    height: .3rem;
+    margin-bottom: .25rem;
+    border-radius: 999px;
+    background: #e4e8e4;
+}
+
+.gh-report-progress i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #4f7655;
+}
+
+.gh-report-row-action {
+    color: #315f72;
+    font-size: .75rem;
+    font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.gh-report-row-action span {
+    margin-left: .25rem;
+}
+
+.gh-report-empty {
+    padding: 3rem 1.5rem;
+    border: 1px dashed #cdd2d8;
+    border-radius: .8rem;
+    color: #68717d;
+    text-align: center;
+}
+
+.gh-report-empty h3 {
+    color: #17233c;
+}
+
+.gh-series-report {
+    margin-top: 2rem;
+    border: 1px solid #dedbd6;
+    border-radius: .8rem;
+    background: #fff;
+}
+
+.gh-series-report summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    cursor: pointer;
+    align-items: center;
+}
+
+.gh-series-report summary span,
+.gh-series-report summary small {
+    display: block;
+}
+
+.gh-series-report summary small {
+    margin-top: .15rem;
+    color: #737b86;
+    font-size: .7rem;
+}
+
+.gh-series-report summary > b {
+    font-size: 1.4rem;
+}
+
+.gh-series-report[open] summary > b {
+    transform: rotate(45deg);
+}
+
+.gh-series-report .table-responsive {
+    padding: 0 1.2rem 1rem;
+}
+
+.gh-report-disclaimer {
+    margin: 1rem 0 0;
+    color: #777f89;
+    font-size: .68rem;
+}
+
+@media (max-width: 1199.98px) {
+    .gh-date-report-row {
+        grid-template-columns: 3.7rem minmax(14rem, 1fr) repeat(2, minmax(7rem, .5fr)) auto;
+    }
+
+    .gh-date-report-row > .gh-report-stat:nth-of-type(5) {
+        display: none;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .gh-report-kpis,
+    .gh-report-supporting {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .gh-report-supporting > div {
+        padding: .65rem;
+        border-right: 0;
+        border-bottom: 1px solid #e2dfda;
+    }
+
+    .gh-date-report-row {
+        grid-template-columns: 3.7rem minmax(0, 1fr) minmax(7rem, .35fr) auto;
+    }
+
+    .gh-date-report-row > .gh-report-stat:nth-of-type(4),
+    .gh-date-report-row > .gh-report-stat:nth-of-type(5) {
+        display: none;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .gh-reports-header,
+    .gh-report-filter-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .gh-reports-header-actions,
+    .gh-report-filters {
+        width: 100%;
+    }
+
+    .gh-reports-header-actions > *,
+    .gh-report-filters > * {
+        flex: 1;
+        text-align: center;
+    }
+
+    .gh-date-report-row {
+        grid-template-columns: 3.7rem minmax(0, 1fr) auto;
+    }
+
+    .gh-date-report-row > .gh-report-stat {
+        display: none;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .gh-report-kpis,
+    .gh-report-supporting {
+        grid-template-columns: 1fr;
+    }
+
+    .gh-report-kpis article {
+        min-height: 8.5rem;
+    }
+
+    .gh-report-supporting > div:first-child {
+        padding-left: .65rem;
+    }
+
+    .gh-report-filters {
+        overflow-x: auto;
+    }
+
+    .gh-report-filters a {
+        white-space: nowrap;
+    }
+
+    .gh-date-report-row {
+        grid-template-columns: 3.2rem minmax(0, 1fr);
+    }
+
+    .gh-report-date {
+        min-height: 4rem;
+    }
+
+    .gh-report-row-action {
+        grid-column: 1 / -1;
+        padding-top: .7rem;
+        border-top: 1px solid #e4e1dc;
+        text-align: right;
+    }
+}
