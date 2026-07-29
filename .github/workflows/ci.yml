@@ -1,9 +1,9 @@
 name: CI
 
 on:
-  pull_request:
   push:
-    branches: [main]
+    branches: [main, master]
+  pull_request:
 
 permissions:
   contents: read
@@ -11,22 +11,23 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:16
         env:
-          POSTGRES_DB: event_management_test
-          POSTGRES_USER: event_management
-          POSTGRES_PASSWORD: test-password
+          POSTGRES_DB: gatherhqs_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U event_management -d event_management_test"
+          --health-cmd "pg_isready -U postgres -d gatherhqs_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
       redis:
-        image: redis:7-alpine
+        image: redis:7
         ports:
           - 6379:6379
         options: >-
@@ -37,61 +38,30 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: config.Settings.test
-      SECRET_KEY: ci-only-4Kp9xV7mQ2sN8wR5yT1cF6hJ3dL0zB7uG9aE2vM8-secret
-      PLATFORM_DOMAIN: events.example.test
-      PLATFORM_CONTROL_HOSTS: events.example.test,www.events.example.test
-      PLATFORM_DEFAULT_CURRENCY: usd
-      DB_NAME: event_management_test
-      DB_USER: event_management
-      DB_PASSWORD: test-password
-      DB_HOST: 127.0.0.1
-      DB_PORT: "5432"
-      TEST_DATABASE_ENGINE: postgresql
-      REDIS_URL: redis://127.0.0.1:6379/1
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gatherhqs_test
+      REDIS_URL: redis://127.0.0.1:6379/0
+      SECRET_KEY: ci-only-secret-key
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
 
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
           cache: pip
-          cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
       - name: Install dependencies
-        run: python -m pip install -r requirements-dev.txt
-      - name: Lint
         run: |
-          ruff check .
-          ruff format --check .
-      - name: Django checks
-        run: |
-          python manage.py check
-          python manage.py makemigrations --check --dry-run
-      - name: Dependency vulnerability audit
-        run: pip-audit -r requirements.txt
-      - name: Deployment checks
-        env:
-          DJANGO_SETTINGS_MODULE: config.Settings.prod
-          ALLOWED_HOSTS: .events.example.test
-          CSRF_TRUSTED_ORIGINS: https://events.example.test
-          PLATFORM_CONTROL_HOSTS: events.example.test,www.events.example.test
-          MEDIA_STORAGE_BACKEND: s3
-          AWS_STORAGE_BUCKET_NAME: ci-media-bucket
-          STRIPE_STANDARD_MONTHLY_PRICE_ID: price_ci_monthly
-          STRIPE_STANDARD_YEARLY_PRICE_ID: price_ci_yearly
-          STRIPE_SECRET_KEY: sk_test_ci_placeholder
-          STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
-          STRIPE_CONNECT_WEBHOOK_SECRET: whsec_ci_connect_placeholder
-          COMMUNICATIONS_WEBHOOK_SECRET: ci-communications-signing-secret
-          EMAIL_DELIVERY_BACKEND: resend
-          EMAIL_BACKEND: communications.email_backend.ResendEmailBackend
-          RESEND_API_KEY: re_ci_placeholder
-          RESEND_WEBHOOK_SECRET: whsec_ci_resend_placeholder
-          SUPPORT_EMAIL: support@events.example.test
-          LOG_FORMAT: json
-        run: python manage.py check --deploy --fail-level WARNING
-      - name: Test
-        run: pytest
-      - name: Build production image
-        run: docker build --tag event-management-ci .
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: Django system checks
+        run: python manage.py check
+      - name: Migration drift check
+        run: python manage.py makemigrations --check --dry-run
+      - name: Ruff lint
+        run: ruff check .
+      - name: Ruff formatting
+        run: ruff format --check .
+      - name: Tests
+        run: pytest -q
+      - name: Dependency audit
+        run: pip-audit

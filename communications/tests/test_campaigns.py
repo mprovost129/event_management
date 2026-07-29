@@ -343,6 +343,41 @@ def test_provider_callbacks_are_idempotent_and_terminal_statuses_do_not_regress(
 
 
 @pytest.mark.django_db
+def test_out_of_order_callback_does_not_move_recipient_activity_backward():
+    owner, site = campaign_fixture()
+    contact_for(site, email_consent=True)
+    campaign = draft_campaign(site)
+    launch_campaign(campaign=campaign, actor=owner)
+    expand_campaign(campaign.id)
+    message = OutboundMessage.objects.get(campaign=campaign)
+    deliver_message(message.id)
+    message.refresh_from_db()
+
+    newer_time = timezone.now()
+    older_time = newer_time - timedelta(hours=2)
+    process_provider_callback(
+        provider=message.provider,
+        provider_event_id="evt-newer-delivered",
+        provider_message_id=message.provider_message_id,
+        event_type="delivered",
+        occurred_at=newer_time,
+    )
+    process_provider_callback(
+        provider=message.provider,
+        provider_event_id="evt-older-opened",
+        provider_message_id=message.provider_message_id,
+        event_type="opened",
+        occurred_at=older_time,
+    )
+
+    recipient = CampaignRecipient.objects.get(campaign=campaign)
+    message.refresh_from_db()
+    assert message.status == OutboundMessage.Status.OPENED
+    assert message.opened_at == older_time
+    assert recipient.last_event_at == newer_time
+
+
+@pytest.mark.django_db
 @override_settings(COMMUNICATIONS_WEBHOOK_SECRET="callback-secret")
 def test_callback_endpoint_verifies_signature():
     payload = json.dumps(

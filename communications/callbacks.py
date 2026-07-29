@@ -120,8 +120,13 @@ def process_provider_callback(
                 )
                 if status_advanced:
                     recipient.status = RECIPIENT_STATUS[event_type]
-                recipient.last_event_at = event_time
-                recipient_updates = ["status", "last_event_at", "updated_at"]
+                recipient_updates = ["status", "updated_at"]
+                if (
+                    recipient.last_event_at is None
+                    or event_time > recipient.last_event_at
+                ):
+                    recipient.last_event_at = event_time
+                    recipient_updates.append("last_event_at")
                 if timestamp_field and getattr(recipient, timestamp_field) is None:
                     setattr(recipient, timestamp_field, event_time)
                     recipient_updates.append(timestamp_field)
