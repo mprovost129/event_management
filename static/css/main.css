@@ -3833,3 +3833,498 @@ textarea {
         text-align: left;
     }
 }
+
+/* =============================================================================
+   People directory and member tracking
+   ============================================================================= */
+
+.gh-people-hub,
+.gh-contact-editor {
+    --gh-builder-navy: #17233c;
+    --gh-builder-orange: #c95e32;
+    --gh-builder-sage: #4f7655;
+    color: var(--gh-builder-navy);
+}
+
+.gh-people-filters {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .7rem;
+    margin-bottom: 1rem;
+}
+
+.gh-people-filters > a {
+    display: flex;
+    min-height: 5.3rem;
+    padding: .9rem 1rem;
+    border: 1px solid #e3ded8;
+    border-radius: .75rem;
+    color: #17233c;
+    flex-direction: column;
+    justify-content: space-between;
+    text-decoration: none;
+}
+
+.gh-people-filters > a:hover,
+.gh-people-filters > a.is-active {
+    border-color: #66826a;
+    background: #f3f7f2;
+}
+
+.gh-people-filters span {
+    color: #626a77;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.gh-people-filters strong {
+    font-size: 1.65rem;
+    letter-spacing: -.035em;
+}
+
+.gh-people-search {
+    display: flex;
+    gap: .5rem;
+    margin-bottom: 1.25rem;
+}
+
+.gh-people-search input[type="search"] {
+    flex: 1;
+    min-width: 0;
+    padding: .65rem .8rem;
+    border: 1px solid #cfd3d9;
+    border-radius: .5rem;
+}
+
+.gh-people-list {
+    border-top: 1px solid #e3ded8;
+}
+
+.gh-people-list > a {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem .25rem;
+    border-bottom: 1px solid #e3ded8;
+    color: #17233c;
+    text-decoration: none;
+}
+
+.gh-people-list > a:hover,
+.gh-people-list > a.is-new-contact {
+    background: #fbfaf8;
+}
+
+.gh-people-list > a.is-new-contact {
+    box-shadow: inset 3px 0 #4f7655;
+}
+
+.gh-person-initials {
+    display: grid;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    background: #eef3ed;
+    color: #426548;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    place-items: center;
+}
+
+.gh-person-main > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    align-items: center;
+}
+
+.gh-person-main h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 750;
+}
+
+.gh-person-main p {
+    margin: .2rem 0 .3rem;
+    color: #626a77;
+    font-size: .8rem;
+}
+
+.gh-person-tag {
+    display: inline-flex;
+    margin-right: .25rem;
+    padding: .12rem .4rem;
+    border-radius: 99rem;
+    background: #f1eff4;
+    color: #625d6a;
+    font-size: .65rem;
+}
+
+.gh-person-consent {
+    display: grid;
+    gap: .3rem;
+    min-width: 9rem;
+}
+
+.gh-person-consent span {
+    padding: .25rem .5rem;
+    border-radius: .4rem;
+    background: #f1f2f4;
+    color: #6b727d;
+    font-size: .65rem;
+}
+
+.gh-person-consent span.is-granted {
+    background: #e8f2e8;
+    color: #35613b;
+}
+
+.gh-people-empty {
+    max-width: 42rem;
+    margin: 3rem auto;
+    padding: 2.5rem;
+    text-align: center;
+}
+
+.gh-people-empty .gh-person-initials {
+    margin: 0 auto 1rem;
+    font-size: 1.1rem;
+}
+
+.gh-people-empty h2 {
+    font-size: 1.5rem;
+    font-weight: 750;
+}
+
+.gh-name-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+[data-member-fields][hidden] {
+    display: none;
+}
+
+.gh-consent-warning {
+    padding: .75rem;
+    border-left: 3px solid #c95e32;
+    background: #fff7ec;
+    color: #5f6671;
+    font-size: .78rem;
+}
+
+.gh-consent-choice {
+    display: flex;
+    gap: .7rem;
+    align-items: flex-start;
+    margin-bottom: .6rem;
+    padding: .85rem;
+    border: 1px solid #dedad5;
+    border-radius: .7rem;
+    cursor: pointer;
+}
+
+.gh-consent-choice:has(input:checked) {
+    border-color: #7a9b7f;
+    background: #f2f7f1;
+}
+
+.gh-consent-choice input {
+    flex: 0 0 auto;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-top: .15rem;
+}
+
+.gh-consent-choice strong,
+.gh-consent-choice small {
+    display: block;
+}
+
+.gh-consent-choice small {
+    color: #68707c;
+    font-size: .73rem;
+}
+
+.gh-consent-history {
+    display: grid;
+    gap: .5rem;
+}
+
+.gh-consent-history > div {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: .75rem;
+    align-items: center;
+    padding: .7rem 0;
+    border-bottom: 1px solid #ebe7e2;
+}
+
+.gh-consent-history > div:last-child {
+    border-bottom: 0;
+}
+
+.gh-consent-history p {
+    margin: 0;
+    color: #747b86;
+    font-size: .72rem;
+}
+
+.gh-archive-contact {
+    padding: 1rem;
+    border: 1px solid #e4c6c6;
+    border-radius: .75rem;
+    background: #fff8f8;
+}
+
+.gh-archive-contact h2 {
+    font-size: 1rem;
+}
+
+.gh-archive-contact p {
+    color: #716464;
+    font-size: .76rem;
+}
+
+@media (max-width: 991.98px) {
+    .gh-people-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .gh-people-list > a {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .gh-person-consent {
+        grid-column: 2;
+        min-width: 0;
+    }
+
+    .gh-people-list .gh-row-arrow {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .gh-people-filters,
+    .gh-name-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gh-people-search {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .gh-consent-history > div {
+        grid-template-columns: auto 1fr;
+    }
+
+    .gh-consent-history p {
+        grid-column: 2;
+    }
+}
+
+/* Membership plans and public joining */
+
+.gh-membership-editor {
+    --gh-builder-navy: #17233c;
+    color: var(--gh-builder-navy);
+}
+
+.gh-membership-interval {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .6rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.gh-membership-interval legend {
+    grid-column: 1 / -1;
+    margin-bottom: .2rem;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.gh-membership-interval label {
+    display: flex;
+    gap: .6rem;
+    padding: .8rem;
+    border: 2px solid #e0ddd9;
+    border-radius: .7rem;
+    cursor: pointer;
+}
+
+.gh-membership-interval label:has(input:checked) {
+    border-color: #4f7655;
+    background: #f3f7f2;
+}
+
+.gh-membership-interval input {
+    flex: 0 0 auto;
+    width: 1.05rem;
+    height: 1.05rem;
+    margin-top: .15rem;
+}
+
+.gh-membership-interval strong,
+.gh-membership-interval small {
+    display: block;
+}
+
+.gh-membership-interval small {
+    color: #68707c;
+    font-size: .7rem;
+}
+
+.gh-public-memberships > header {
+    max-width: 50rem;
+    margin: 1.5rem auto 2.5rem;
+    text-align: center;
+}
+
+.gh-public-memberships > header h1 {
+    font-size: clamp(2.3rem, 6vw, 4rem);
+    font-weight: 750;
+    letter-spacing: -.05em;
+}
+
+.gh-public-memberships > header > p:last-child {
+    color: #59616e;
+    font-size: 1.05rem;
+}
+
+.gh-public-membership-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    max-width: 58rem;
+    margin: 0 auto;
+}
+
+.gh-public-membership-grid article {
+    display: flex;
+    padding: clamp(1.4rem, 4vw, 2.2rem);
+    border: 1px solid #dcd8d3;
+    border-radius: 1rem;
+    background: #fff;
+    flex-direction: column;
+}
+
+.gh-public-membership-grid article > p:first-child {
+    color: #c95e32;
+    font-size: .7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+}
+
+.gh-public-membership-grid h2 {
+    font-size: 1.55rem;
+    font-weight: 750;
+}
+
+.gh-public-membership-grid article > div {
+    color: #626a77;
+}
+
+.gh-public-membership-grid article > strong {
+    margin: auto 0 1.25rem;
+    padding-top: 1rem;
+    font-size: 2.2rem;
+    letter-spacing: -.04em;
+}
+
+.gh-public-membership-grid article > strong > span {
+    font-size: 1rem;
+    vertical-align: super;
+}
+
+.gh-public-membership-grid article > strong > small {
+    color: #68707c;
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+.gh-membership-join {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, .7fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: center;
+    max-width: 68rem;
+    margin: 2rem auto;
+}
+
+.gh-membership-join > div:first-child h1 {
+    font-size: clamp(2.3rem, 6vw, 4rem);
+    font-weight: 750;
+    letter-spacing: -.05em;
+}
+
+.gh-membership-description {
+    color: #59616e;
+    font-size: 1.05rem;
+}
+
+.gh-membership-price {
+    display: flex;
+    align-items: baseline;
+    gap: .25rem;
+    margin: 1.5rem 0;
+}
+
+.gh-membership-price > span {
+    font-size: 1.2rem;
+}
+
+.gh-membership-price strong {
+    font-size: 3rem;
+    letter-spacing: -.06em;
+}
+
+.gh-membership-price small {
+    color: #68707c;
+    font-size: .75rem;
+}
+
+.gh-membership-join-form {
+    padding: clamp(1.4rem, 4vw, 2.2rem);
+    border: 1px solid #e0dcd7;
+    border-radius: 1rem;
+    background: #fff;
+    box-shadow: 0 1.25rem 3rem rgba(23, 35, 60, .09);
+}
+
+.gh-membership-join-form h2 {
+    margin-bottom: 1.25rem;
+    font-size: 1.35rem;
+    font-weight: 750;
+}
+
+@media (max-width: 991.98px) {
+    .gh-membership-join {
+        grid-template-columns: 1fr;
+        max-width: 42rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .gh-membership-interval,
+    .gh-public-membership-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gh-membership-price {
+        flex-wrap: wrap;
+    }
+}

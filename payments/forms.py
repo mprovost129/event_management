@@ -163,22 +163,45 @@ class RefundForm(forms.Form):
 
 class MembershipPlanForm(forms.ModelForm):
     price = forms.DecimalField(
-        max_digits=10, decimal_places=2, min_value=Decimal("0.50")
+        max_digits=10,
+        decimal_places=2,
+        min_value=Decimal("0.50"),
+        label="Dues amount",
     )
 
     class Meta:
         model = MembershipPlan
         fields = ("name", "description", "interval", "is_active")
-        widgets = {"description": forms.Textarea(attrs={"rows": 3})}
+        widgets = {
+            "description": forms.Textarea(
+                attrs={
+                    "rows": 4,
+                    "placeholder": "Explain what membership supports or includes.",
+                }
+            ),
+            "interval": forms.RadioSelect,
+        }
 
     def __init__(self, *args, site, **kwargs):
         self.site = site
         super().__init__(*args, **kwargs)
+        self.fields["name"].help_text = (
+            "Examples: Supporting member, Annual club member, or Dance family."
+        )
+        self.fields["is_active"].help_text = (
+            "Inactive plans are hidden from new members but keep their history."
+        )
         if not self.instance._state.adding:
             self.fields["price"].initial = Decimal(self.instance.amount_cents) / 100
             if self.instance.stripe_price_id:
                 self.fields["price"].disabled = True
                 self.fields["interval"].disabled = True
+                self.fields["price"].help_text = (
+                    "Price is locked after Stripe creates the recurring plan."
+                )
+                self.fields["interval"].help_text = (
+                    "Billing frequency is locked after Stripe creates the plan."
+                )
 
     def save(self, commit=True):
         plan = super().save(commit=False)

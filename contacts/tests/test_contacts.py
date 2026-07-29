@@ -1,8 +1,15 @@
 import pytest
 from django.db import IntegrityError, transaction
+from django.urls import reverse
 from django.utils import timezone
 
-from contacts.models import ConsentStatus, Contact
+from contacts.models import (
+    ConsentStatus,
+    Contact,
+    Member,
+    MembershipPlan,
+    MemberSubscription,
+)
 from contacts.services import replace_contact_tags, subscribe_to_newsletter
 from sites.services import create_subscriber_site
 from users.models import User
@@ -82,3 +89,92 @@ def test_contact_tags_are_scoped_to_the_contact_site():
     assert first_contact.tags.get().site == first
     assert second_contact.tags.get().site == second
     assert first_contact.tags.get().pk != second_contact.tags.get().pk
+
+
+@pytest.mark.django_db
+def test_manager_can_add_contact_as_member_without_inventing_consent(client):
+    site = create_site("first-group", "owner@example.com")
+    owner = User.objects.get(email="owner@example.com")
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("contacts:create", args=(site.id,)),
+        {
+            "first_name": "Pat",
+            "last_name": "Dancer",
+            "email": "pat@example.com",
+            "phone": "+15551234567",
+            "notes": "Prefers beginner dances.",
+            "tag_names": "Beginner, Volunteer",
+            "member_tracking": "active",
+            "member_starts_on": "2026-07-01",
+            "member_ends_on": "",
+            "member_notes": "Pays dues offline.",
+        },
+    )
+
+    contact = Contact.objects.get(email="pat@example.com")
+    member = Member.objects.get(contact=contact)
+    assert response.status_code == 302
+    assert response.url.endswith(f"?created={contact.id}")
+    assert member.administrative_status == Member.AdministrativeStatus.ACTIVE
+    assert member.notes == "Pays dues offline."
+    assert contact.email_consent_status == ConsentStatus.UNKNOWN
+    assert contact.sms_consent_status == ConsentStatus.UNKNOWN
+    assert set(contact.tags.values_list("name", flat=True)) == {
+        "Beginner",
+        "Volunteer",
+    }
+
+    followup = client.get(response.url)
+    content = followup.content.decode()
+    assert "Active member" in content
+    assert "Email Unknown" in content
+
+
+@pytest.mark.django_db
+def test_member_with_subscription_history_cannot_be_changed_to_contact_only(client):
+    site = create_site("first-group", "owner@example.com")
+    owner = User.objects.get(email="owner@example.com")
+    contact = Contact.objects.create(
+        site=site,
+        first_name="Pat",
+        last_name="Dancer",
+        email="pat@example.com",
+    )
+    member = Member.objects.create(site=site, contact=contact)
+    plan = MembershipPlan.objects.create(
+        site=site,
+        name="Annual member",
+        amount_cents=10000,
+        currency="usd",
+        interval=MembershipPlan.Interval.YEARLY,
+    )
+    MemberSubscription.objects.create(
+        site=site,
+        member=member,
+        plan=plan,
+        status=MemberSubscription.Status.ACTIVE,
+        connected_account_id="acct_site",
+    )
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("contacts:edit", args=(site.id, contact.id)),
+        {
+            "first_name": contact.first_name,
+            "last_name": contact.last_name,
+            "email": contact.email,
+            "phone": "",
+            "notes": "",
+            "tag_names": "",
+            "member_tracking": "contact_only",
+            "member_starts_on": "",
+            "member_ends_on": "",
+            "member_notes": "",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Mark them inactive instead" in response.content.decode()
+    assert Member.objects.filter(pk=member.pk).exists()

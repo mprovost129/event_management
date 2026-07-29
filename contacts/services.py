@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.utils.text import slugify
 
-from .models import ConsentRecord, ConsentStatus, Contact, ContactTag
+from .models import ConsentRecord, ConsentStatus, Contact, ContactTag, Member
 
 
 def _record_consent(contact, channel, status, source):
@@ -65,12 +65,48 @@ def save_contact_from_form(*, form, site, source="manager_edit"):
     contact.site = site
     contact.save()
     replace_contact_tags(contact, form.cleaned_data["tag_names"].split(","))
-    update_contact_consent(
-        contact,
-        email_granted=form.cleaned_data["email_consent"],
-        sms_granted=form.cleaned_data["sms_consent"],
-        source=source,
-    )
+    if source == "manager_create":
+        if form.cleaned_data["email_consent"]:
+            _record_consent(
+                contact,
+                ConsentRecord.Channel.EMAIL,
+                ConsentStatus.GRANTED,
+                source,
+            )
+        if form.cleaned_data["sms_consent"]:
+            _record_consent(
+                contact,
+                ConsentRecord.Channel.SMS,
+                ConsentStatus.GRANTED,
+                source,
+            )
+    else:
+        update_contact_consent(
+            contact,
+            email_granted=form.cleaned_data["email_consent"],
+            sms_granted=form.cleaned_data["sms_consent"],
+            source=source,
+        )
+    member = Member.objects.select_for_update().filter(contact=contact).first()
+    member_tracking = form.cleaned_data["member_tracking"]
+    if member_tracking == form.MemberTracking.CONTACT_ONLY:
+        if member is not None:
+            if member.subscriptions.exists():
+                member.administrative_status = Member.AdministrativeStatus.INACTIVE
+                member.save(update_fields=("administrative_status", "updated_at"))
+            else:
+                member.delete()
+    else:
+        Member.objects.update_or_create(
+            contact=contact,
+            defaults={
+                "site": site,
+                "administrative_status": member_tracking,
+                "starts_on": form.cleaned_data["member_starts_on"],
+                "ends_on": form.cleaned_data["member_ends_on"],
+                "notes": form.cleaned_data["member_notes"],
+            },
+        )
     return contact
 
 

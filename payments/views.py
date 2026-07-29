@@ -390,6 +390,7 @@ def refund_order(request, site_id, order_id):
 def membership_plan_create(request, site_id):
     site = request.authorized_site
     form = MembershipPlanForm(request.POST or None, site=site)
+    connected = ConnectedAccount.objects.filter(site=site).first()
     if request.method == "POST" and form.is_valid():
         try:
             require_commerce_ready(site)
@@ -408,7 +409,9 @@ def membership_plan_create(request, site_id):
             messages.success(request, "Membership plan created.")
             return redirect("payments:manage", site_id=site.id)
     return render(
-        request, "payments/membership_plan_form.html", {"site": site, "form": form}
+        request,
+        "payments/membership_plan_form.html",
+        {"site": site, "form": form, "connected": connected},
     )
 
 
@@ -418,6 +421,7 @@ def membership_plan_edit(request, site_id, plan_id):
     site = request.authorized_site
     plan = get_object_or_404(MembershipPlan.objects.for_site(site), pk=plan_id)
     form = MembershipPlanForm(request.POST or None, instance=plan, site=site)
+    connected = ConnectedAccount.objects.filter(site=site).first()
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Membership plan updated.")
@@ -425,7 +429,7 @@ def membership_plan_edit(request, site_id, plan_id):
     return render(
         request,
         "payments/membership_plan_form.html",
-        {"site": site, "plan": plan, "form": form},
+        {"site": site, "plan": plan, "form": form, "connected": connected},
     )
 
 

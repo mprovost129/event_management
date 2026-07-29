@@ -1,20 +1,20 @@
 {% extends 'base.html' %}
-{% block title %}{% if contact %}Edit contact{% else %}Add contact{% endif %} · {{ site.display_name }}{% endblock %}
+{% block title %}{% if contact %}Edit {{ contact.display_name }}{% else %}Add contact{% endif %} | {{ site.display_name }}{% endblock %}
 {% block content %}
-<h1>{% if contact %}Edit contact{% else %}Add contact{% endif %}</h1>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn btn-primary" type="submit">Save contact</button>
-    <a class="btn btn-link" href="{% url 'contacts:list' site.id %}">Cancel</a>
-</form>
-{% if contact and not contact.archived_at %}
-<form method="post" action="{% url 'contacts:archive' site.id contact.id %}" class="mt-4">
-    {% csrf_token %}<button class="btn btn-outline-danger" type="submit">Archive contact</button>
-</form>
-{% endif %}
-{% if contact.consent_history.exists %}
-<h2 class="h4 mt-5">Consent history</h2>
-<ul>{% for record in contact.consent_history.all %}<li>{{ record.recorded_at }} · {{ record.get_channel_display }} · {{ record.get_status_display }} · {{ record.source }}</li>{% endfor %}</ul>
-{% endif %}
+<div class="gh-content-editor gh-contact-editor">
+    <div class="gh-editor-head"><div><a class="gh-back-link" href="{% url 'contacts:list' site.id %}">&larr; People</a><p class="gh-step-label mt-3">{% if contact %}Contact record{% else %}New contact{% endif %}</p><h1>{% if contact %}{{ contact.display_name }}{% else %}Add someone to your group directory{% endif %}</h1><p>Contact details, member status, and communication permission stay together while remaining independent from event RSVPs.</p></div>{% if contact.membership %}<span class="gh-content-status {% if contact.membership.administrative_status == 'active' %}gh-content-status-published{% else %}gh-content-status-archived{% endif %}">{{ contact.membership.get_administrative_status_display }} member</span>{% endif %}</div>
+
+    <form method="post" class="gh-editor-layout" data-contact-editor>{% csrf_token %}
+        <div class="gh-editor-main">{% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}<section class="gh-editor-card" aria-labelledby="contact-details-heading"><p class="gh-step-label">Contact details</p><h2 id="contact-details-heading">Who is this person?</h2><div class="gh-name-grid"><div class="gh-form-field">{{ form.first_name.label_tag }}{{ form.first_name }}{% for error in form.first_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.last_name.label_tag }}{{ form.last_name }}{% for error in form.last_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div><div class="gh-name-grid"><div class="gh-form-field">{{ form.email.label_tag }}{{ form.email }}{% for error in form.email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.phone.label_tag }}{{ form.phone }}{% for error in form.phone.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div><div class="gh-form-field">{{ form.tag_names.label_tag }}{{ form.tag_names }}<div class="gh-field-help">{{ form.tag_names.help_text }} Try Beginner, Volunteer, or Board.</div>{% for error in form.tag_names.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.notes.label_tag }}{{ form.notes }}<div class="gh-field-help">Private to the group leaders and site managers.</div>{% for error in form.notes.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></section>
+
+        {% if contact.consent_history.exists %}<section class="gh-editor-card" aria-labelledby="consent-history-heading"><p class="gh-step-label">Audit trail</p><h2 id="consent-history-heading">Communication permission history</h2><div class="gh-consent-history">{% for record in contact.consent_history.all %}<div><span class="gh-content-status {% if record.status == 'granted' %}gh-content-status-published{% else %}gh-content-status-archived{% endif %}">{{ record.get_status_display }}</span><strong>{{ record.get_channel_display }}</strong><p>{{ record.recorded_at }} &middot; {{ record.source }}</p></div>{% endfor %}</div></section>{% endif %}</div>
+
+        <aside class="gh-editor-sidebar"><section class="gh-editor-card"><p class="gh-step-label">Member tracking</p><h2>Contact or member?</h2><div class="gh-form-field">{{ form.member_tracking.label_tag }}{{ form.member_tracking }}<div class="gh-field-help">{{ form.member_tracking.help_text }}</div>{% for error in form.member_tracking.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div data-member-fields{% if form.member_tracking.value == 'contact_only' or not form.member_tracking.value %} hidden{% endif %}><div class="gh-form-field">{{ form.member_starts_on.label_tag }}{{ form.member_starts_on }}{% for error in form.member_starts_on.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.member_ends_on.label_tag }}{{ form.member_ends_on }}{% for error in form.member_ends_on.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.member_notes.label_tag }}{{ form.member_notes }}{% for error in form.member_notes.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div></section>
+
+        <section class="gh-editor-card"><p class="gh-step-label">Communication permission</p><h2>What did they agree to?</h2><p class="gh-consent-warning">Only enable a channel when the person directly agreed to receive marketing through it.</p><label class="gh-consent-choice">{{ form.email_consent }}<span><strong>Marketing email</strong><small>Newsletters and promotional updates.</small></span></label>{% for error in form.email_consent.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}<label class="gh-consent-choice">{{ form.sms_consent }}<span><strong>Marketing SMS</strong><small>Text announcements and promotions.</small></span></label>{% for error in form.sms_consent.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}<button class="btn btn-primary w-100 mt-3" type="submit">Save contact</button><a class="btn btn-link w-100" href="{% url 'contacts:list' site.id %}">Cancel</a></section>
+
+        {% if contact and not contact.archived_at %}<section class="gh-archive-contact"><h2>Archive contact</h2><p>Removes this person from active directory and invitation choices. Historical event and payment records remain.</p><button class="btn btn-outline-danger" type="submit" form="archive-contact-form">Archive contact</button></section>{% endif %}</aside>
+    </form>
+    {% if contact and not contact.archived_at %}<form method="post" action="{% url 'contacts:archive' site.id contact.id %}" id="archive-contact-form">{% csrf_token %}</form>{% endif %}
+</div>
 {% endblock %}

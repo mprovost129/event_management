@@ -220,3 +220,16 @@
     });
     updateCount();
 })();
+
+(() => {
+    const editor = document.querySelector("[data-contact-editor]");
+    if (!editor) return;
+    const memberStatus = editor.elements.namedItem("member_tracking");
+    const updateMemberFields = () => {
+        editor.querySelectorAll("[data-member-fields]").forEach((section) => {
+            section.hidden = memberStatus.value === "contact_only";
+        });
+    };
+    memberStatus.addEventListener("change", updateMemberFields);
+    updateMemberFields();
+})();

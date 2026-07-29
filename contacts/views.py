@@ -1,13 +1,14 @@
 from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
 from ops.services import record_audit_event
 from sites.permissions import site_staff_required
 
 from .forms import ContactForm
-from .models import Contact
+from .models import ConsentStatus, Contact, Member
 from .services import save_contact_from_form
 
 
@@ -15,7 +16,29 @@ from .services import save_contact_from_form
 def contact_list(request, site_id):
     site = request.authorized_site
     query = request.GET.get("q", "").strip()
-    contacts = Contact.objects.for_site(site).filter(archived_at__isnull=True)
+    selected_filter = request.GET.get("filter", "all")
+    base_contacts = Contact.objects.for_site(site).filter(archived_at__isnull=True)
+    summary = {
+        "all": base_contacts.count(),
+        "members": base_contacts.filter(
+            membership__administrative_status=Member.AdministrativeStatus.ACTIVE
+        ).count(),
+        "email": base_contacts.filter(
+            email_consent_status=ConsentStatus.GRANTED
+        ).count(),
+        "sms": base_contacts.filter(sms_consent_status=ConsentStatus.GRANTED).count(),
+    }
+    contacts = base_contacts
+    if selected_filter == "members":
+        contacts = contacts.filter(
+            membership__administrative_status=Member.AdministrativeStatus.ACTIVE
+        )
+    elif selected_filter == "email":
+        contacts = contacts.filter(email_consent_status=ConsentStatus.GRANTED)
+    elif selected_filter == "sms":
+        contacts = contacts.filter(sms_consent_status=ConsentStatus.GRANTED)
+    else:
+        selected_filter = "all"
     if query:
         contacts = contacts.filter(
             Q(first_name__icontains=query)
@@ -24,10 +47,20 @@ def contact_list(request, site_id):
             | Q(phone__icontains=query)
             | Q(tags__name__icontains=query)
         ).distinct()
+    contacts = list(contacts.select_related("membership").prefetch_related("tags"))
+    created_contact_id = request.GET.get("created", "")
+    for contact in contacts:
+        contact.just_created = str(contact.id) == created_contact_id
     return render(
         request,
         "contacts/list.html",
-        {"site": site, "contacts": contacts.prefetch_related("tags"), "query": query},
+        {
+            "site": site,
+            "contacts": contacts,
+            "query": query,
+            "selected_filter": selected_filter,
+            "summary": summary,
+        },
     )
 
 
@@ -47,7 +80,9 @@ def contact_create(request, site_id):
             request=request,
         )
         messages.success(request, "Contact was created.")
-        return redirect("contacts:list", site_id=site.id)
+        return redirect(
+            f"{reverse('contacts:list', kwargs={'site_id': site.id})}?created={contact.id}"
+        )
     return render(request, "contacts/form.html", {"site": site, "form": form})
 
 

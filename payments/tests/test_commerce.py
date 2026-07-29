@@ -690,6 +690,20 @@ def test_ticket_setup_explains_when_stripe_is_not_ready(client):
 
 
 @pytest.mark.django_db
+def test_new_membership_plan_form_renders_for_ready_connected_account(client):
+    owner, site, _, _, _, _ = commerce_fixture()
+    client.force_login(owner)
+
+    response = client.get(reverse("payments:membership_plan_create", args=(site.id,)))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Create a membership plan" in content
+    assert "Stripe ready" in content
+    assert "RSVPs remain separate" in content
+
+
+@pytest.mark.django_db
 def test_ticket_checkout_only_shows_options_that_cover_the_whole_party(client):
     _, site, _, occurrence, ticket_type, registration = commerce_fixture(guests=1)
     TicketType.objects.create(
