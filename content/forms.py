@@ -31,7 +31,12 @@ class SitePageForm(PublishingFormMixin, forms.ModelForm):
             "meta_description",
         )
         widgets = {
-            "body": forms.Textarea(attrs={"rows": 12}),
+            "body": forms.Textarea(
+                attrs={
+                    "rows": 12,
+                    "placeholder": "Tell visitors what they should know about your group.",
+                }
+            ),
             "publish_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "meta_description": forms.Textarea(attrs={"rows": 3}),
         }
@@ -78,23 +83,47 @@ class BlogPostForm(PublishingFormMixin, forms.ModelForm):
 
 
 class SitePresentationForm(forms.Form):
-    display_name = forms.CharField(max_length=160, label="Site name")
-    template_key = forms.ChoiceField(choices=Site.Template.choices)
+    display_name = forms.CharField(
+        max_length=160,
+        label="Group or brand name",
+        help_text="This appears in the website header and browser title.",
+    )
+    template_key = forms.ChoiceField(
+        choices=Site.Template.choices, widget=forms.RadioSelect
+    )
     is_published = forms.BooleanField(
         required=False,
         help_text="Make the public website available on its Gather HQs subdomain.",
     )
-    logo = forms.FileField(required=False)
-    hero_image = forms.FileField(required=False)
-    hero_heading = forms.CharField(max_length=180, required=False)
+    logo = forms.FileField(
+        required=False,
+        help_text="A square or wide PNG, JPG, or WebP works best.",
+        widget=forms.ClearableFileInput(attrs={"accept": "image/*"}),
+    )
+    hero_image = forms.FileField(
+        required=False,
+        help_text="Choose a wide image with room for readable text.",
+        widget=forms.ClearableFileInput(attrs={"accept": "image/*"}),
+    )
+    hero_heading = forms.CharField(
+        max_length=180,
+        required=False,
+        help_text="The first message visitors see. Your group name is used if left blank.",
+    )
     hero_text = forms.CharField(
         max_length=320, required=False, widget=forms.Textarea(attrs={"rows": 3})
     )
     primary_color = forms.RegexField(
-        regex=r"^#[0-9A-Fa-f]{6}$", max_length=7, help_text="Example: #336699"
+        regex=r"^#[0-9A-Fa-f]{6}$",
+        max_length=7,
+        help_text="Used for links, buttons, and highlights.",
+        widget=forms.TextInput(attrs={"type": "color"}),
     )
     secondary_color = forms.RegexField(
-        regex=r"^#[0-9A-Fa-f]{6}$", max_length=7, help_text="Example: #6C757D"
+        regex=r"^#[0-9A-Fa-f]{6}$",
+        max_length=7,
+        help_text="Used for supporting text and accents.",
+        widget=forms.TextInput(attrs={"type": "color"}),
     )
     typography_key = forms.ChoiceField(
         choices=(

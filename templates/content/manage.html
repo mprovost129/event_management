@@ -1,37 +1,76 @@
 {% extends 'base.html' %}
 
-{% block title %}Website content · {{ site.display_name }}{% endblock %}
+{% block title %}Website | {{ site.display_name }}{% endblock %}
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-    <div><h1>Website content</h1><p class="text-secondary mb-0">{{ site.display_name }}</p></div>
-    <div class="d-flex gap-2">
-        <a class="btn btn-outline-primary" href="{% url 'sites:dashboard' site.id %}">Dashboard</a>
-        <a class="btn btn-primary" href="{% url 'content:presentation' site.id %}">Appearance &amp; publishing</a>
+<div class="gh-website-hub">
+    <div class="gh-builder-head">
+        <div>
+            <a class="gh-back-link" href="{% url 'sites:dashboard' site.id %}">&larr; Dashboard</a>
+            <p class="gh-step-label mt-3">Your website</p>
+            <h1>Give your group a welcoming front door.</h1>
+            <p>Design the homepage, publish useful pages, and share updates from one place.</p>
+        </div>
+        <div class="gh-builder-status">
+            <span class="gh-status-pill {% if site.is_published %}gh-status-ready{% else %}gh-status-trialing{% endif %}">{% if site.is_published %}Live{% else %}Not published{% endif %}</span>
+            {% if canonical_domain %}<span>{{ canonical_domain.hostname }}</span>{% endif %}
+            {% if site.is_published and canonical_domain %}<a class="btn btn-outline-primary" href="//{{ canonical_domain.hostname }}">View live site &nearr;</a>{% endif %}
+        </div>
     </div>
+
+    <section class="gh-website-setup" aria-labelledby="website-setup-title">
+        <div class="gh-website-setup-summary">
+            <p class="gh-step-label">Three simple steps</p>
+            <h2 id="website-setup-title">Website setup</h2>
+            <p>{{ website_setup.completed }} of {{ website_setup.total }} complete</p>
+            <div class="progress" role="progressbar" aria-label="Website setup progress" aria-valuenow="{{ website_setup.percent }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: {{ website_setup.percent }}%"></div></div>
+        </div>
+        <ol class="gh-website-checks">
+            {% for check in website_setup.checks %}
+            <li class="{% if check.complete %}is-complete{% endif %}">
+                <span aria-hidden="true">{% if check.complete %}&#10003;{% else %}{{ forloop.counter }}{% endif %}</span>
+                <div><strong>{{ check.label }}</strong><small>{{ check.description }}</small></div>
+                <a href="{{ check.url }}">{% if check.complete %}Edit{% else %}Start{% endif %} &rarr;</a>
+            </li>
+            {% endfor %}
+        </ol>
+    </section>
+
+    <section class="gh-page-section" aria-labelledby="pages-title">
+        <div class="gh-section-row">
+            <div><p class="gh-step-label mb-1">Main navigation</p><h2 id="pages-title">Website pages</h2></div>
+            <a class="btn btn-primary" href="{% url 'content:presentation' site.id %}">Design website</a>
+        </div>
+        <div class="gh-page-grid">
+            {% for page in pages %}
+            <a href="{% url 'content:page_edit' site.id page.page_type %}">
+                <div class="gh-page-icon" aria-hidden="true">{% if page.page_type == 'home' %}HM{% elif page.page_type == 'about' %}AB{% elif page.page_type == 'contact' %}CT{% else %}NL{% endif %}</div>
+                <div>
+                    <h3>{{ page.title }}</h3>
+                    <p>{% if page.page_type == 'home' %}Introduce your group below the welcome banner.{% elif page.page_type == 'about' %}Tell the story and purpose behind your group.{% elif page.page_type == 'contact' %}Explain how visitors can get in touch.{% else %}Invite visitors to receive group updates.{% endif %}</p>
+                </div>
+                <span class="gh-content-status gh-content-status-{{ page.status }}">{{ page.get_status_display }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="gh-blog-section" aria-labelledby="blog-title">
+        <div class="gh-section-row">
+            <div><p class="gh-step-label mb-1">Keep people informed</p><h2 id="blog-title">Blog and news</h2></div>
+            <a class="btn btn-outline-primary" href="{% url 'content:blog_create' site.id %}">Write a post</a>
+        </div>
+        {% if posts %}
+        <div class="gh-post-list">
+            {% for post in posts %}
+            <article>
+                <div><span class="gh-content-status gh-content-status-{{ post.status }}">{{ post.get_status_display }}</span><h3><a href="{% url 'content:blog_edit' site.id post.id %}">{{ post.title }}</a></h3><p>{{ post.excerpt|default:"No excerpt yet."|truncatechars:140 }}</p></div>
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'communications:campaign_create' site.id %}?blog_post={{ post.id }}">Use in newsletter</a>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="gh-empty-note"><h3>Share your first update</h3><p>Post announcements, event recaps, or news, then reuse the post in a newsletter.</p><a href="{% url 'content:blog_create' site.id %}">Write a blog post &rarr;</a></div>
+        {% endif %}
+    </section>
 </div>
-
-<section class="mb-5">
-    <h2>Pages</h2>
-    <div class="list-group">
-        {% for page in pages %}
-        <a class="list-group-item list-group-item-action d-flex justify-content-between" href="{% url 'content:page_edit' site.id page.page_type %}">
-            <span>{{ page.title }}</span><span class="badge text-bg-secondary">{{ page.get_status_display }}</span>
-        </a>
-        {% endfor %}
-    </div>
-</section>
-
-<section>
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0">Blog</h2>
-        <a class="btn btn-primary" href="{% url 'content:blog_create' site.id %}">New post</a>
-    </div>
-    {% if posts %}
-    <div class="list-group">
-        {% for post in posts %}
-        <div class="list-group-item d-flex justify-content-between align-items-center gap-3"><a href="{% url 'content:blog_edit' site.id post.id %}">{{ post.title }}</a><span><span class="badge text-bg-secondary">{{ post.get_status_display }}</span> <a class="btn btn-sm btn-outline-primary" href="{% url 'communications:campaign_create' site.id %}?blog_post={{ post.id }}">Start newsletter</a></span></div>
-        {% endfor %}
-    </div>
-    {% else %}<p class="text-secondary">No blog posts yet.</p>{% endif %}
-</section>
 {% endblock %}

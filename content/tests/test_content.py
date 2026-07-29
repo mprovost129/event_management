@@ -122,3 +122,63 @@ def test_uploaded_images_are_validated_and_resized():
 
     assert max(resized.size) == 1200
     assert resized.format == "JPEG"
+
+
+@pytest.mark.django_db
+def test_website_hub_guides_owner_through_three_setup_steps(client):
+    owner, site = create_site()
+    client.force_login(owner)
+
+    response = client.get(reverse("content:manage", args=(site.id,)))
+
+    content = response.content.decode()
+    assert response.status_code == 200
+    assert "Website setup" in content
+    assert "0 of 3 complete" in content
+    assert "boot-scooters.localhost" in content
+    assert "Write your homepage" in content
+
+
+@pytest.mark.django_db
+def test_owner_can_design_and_publish_site_from_guided_builder(client):
+    owner, site = create_site()
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("content:presentation", args=(site.id,)),
+        {
+            "display_name": "Boot Scooters Dance Club",
+            "template_key": "social",
+            "is_published": "on",
+            "hero_heading": "Dance with us",
+            "hero_text": "Friendly lessons and social dances every week.",
+            "primary_color": "#234567",
+            "secondary_color": "#567890",
+            "typography_key": "rounded",
+        },
+    )
+
+    site.refresh_from_db()
+    site.theme.refresh_from_db()
+    assert response.status_code == 302
+    assert response.url == reverse("content:manage", args=(site.id,))
+    assert site.display_name == "Boot Scooters Dance Club"
+    assert site.template_key == "social"
+    assert site.is_published is True
+    assert site.theme.hero_heading == "Dance with us"
+    assert site.theme.primary_color == "#234567"
+
+
+@pytest.mark.django_db
+def test_design_builder_includes_live_preview_controls(client):
+    owner, site = create_site()
+    client.force_login(owner)
+
+    response = client.get(reverse("content:presentation", args=(site.id,)))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Homepage preview" in content
+    assert 'data-site-builder-form' in content
+    assert 'type="color"' in content
+    assert "Your content moves with you if you switch later" in content

@@ -1,11 +1,48 @@
 {% extends 'base.html' %}
-{% block title %}Edit {{ page.title }} · {{ site.display_name }}{% endblock %}
+{% block title %}Edit {{ page.title }} | {{ site.display_name }}{% endblock %}
 {% block content %}
-<h1>Edit {{ page.get_page_type_display }} page</h1>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn btn-primary" type="submit">Save page</button>
-    <a class="btn btn-link" href="{% url 'content:manage' site.id %}">Cancel</a>
-</form>
+<div class="gh-content-editor">
+    <div class="gh-editor-head">
+        <div>
+            <a class="gh-back-link" href="{% url 'content:manage' site.id %}">&larr; Website</a>
+            <p class="gh-step-label mt-3">{{ page.get_page_type_display }} page</p>
+            <h1>{% if page.page_type == 'home' %}Introduce your group{% elif page.page_type == 'about' %}Tell your group's story{% elif page.page_type == 'contact' %}Help people reach you{% else %}Invite people to stay connected{% endif %}</h1>
+            <p>{% if page.page_type == 'home' %}This content appears below the large welcome banner on your homepage.{% elif page.page_type == 'about' %}Share who the group is for, what you do, and why people gather.{% elif page.page_type == 'contact' %}Add the best email, phone number, or instructions for getting in touch.{% else %}Explain what subscribers will receive and how often you plan to write.{% endif %}</p>
+        </div>
+        <span class="gh-content-status gh-content-status-{{ page.status }}">{{ page.get_status_display }}</span>
+    </div>
+
+    <form method="post" class="gh-editor-layout">
+        {% csrf_token %}
+        <div class="gh-editor-main">
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+            <section class="gh-editor-card" aria-labelledby="page-content-heading">
+                <h2 id="page-content-heading">Page content</h2>
+                <div class="gh-form-field">{{ form.title.label_tag }}{{ form.title }}{% for error in form.title.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.navigation_label.label_tag }}{{ form.navigation_label }}<div class="gh-field-help">Keep this short so it fits comfortably in the website menu.</div>{% for error in form.navigation_label.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.body.label_tag }}{{ form.body }}{% for error in form.body.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+            </section>
+
+            <details class="gh-editor-details">
+                <summary>Search and sharing details</summary>
+                <div class="gh-editor-details-body">
+                    <p class="text-secondary">Optional titles and descriptions help search engines and shared links explain this page.</p>
+                    <div class="gh-form-field">{{ form.meta_title.label_tag }}{{ form.meta_title }}{% for error in form.meta_title.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                    <div class="gh-form-field">{{ form.meta_description.label_tag }}{{ form.meta_description }}{% for error in form.meta_description.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                </div>
+            </details>
+        </div>
+
+        <aside class="gh-editor-sidebar">
+            <section class="gh-editor-card">
+                <h2>Publish</h2>
+                <div class="gh-form-field">{{ form.status.label_tag }}{{ form.status }}{% for error in form.status.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.publish_at.label_tag }}{{ form.publish_at }}<div class="gh-field-help">Required only when status is Scheduled. Times use {{ site.timezone }}.</div>{% for error in form.publish_at.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <button class="btn btn-primary w-100" type="submit">Save page</button>
+                <a class="btn btn-link w-100" href="{% url 'content:manage' site.id %}">Cancel</a>
+            </section>
+            <p class="gh-editor-tip"><strong>Good to know</strong> Publishing this page controls whether it appears in the website navigation. The whole website must also be public.</p>
+        </aside>
+    </form>
+</div>
 {% endblock %}

@@ -1,12 +1,135 @@
 {% extends 'base.html' %}
-{% block title %}Appearance · {{ site.display_name }}{% endblock %}
+{% block title %}Website design | {{ site.display_name }}{% endblock %}
 {% block content %}
-<h1>Appearance &amp; publishing</h1>
-<p class="text-secondary">Choose a maintained template, set brand details, and control when the website is public.</p>
-<form method="post" enctype="multipart/form-data" class="mb-3">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn btn-primary" type="submit">Save website settings</button>
-    <a class="btn btn-link" href="{% url 'content:manage' site.id %}">Cancel</a>
-</form>
+<div class="gh-site-builder">
+    <div class="gh-builder-head">
+        <div>
+            <a class="gh-back-link" href="{% url 'content:manage' site.id %}">&larr; Website</a>
+            <p class="gh-step-label mt-3">Design and publishing</p>
+            <h1>Shape your group website</h1>
+            <p>Choose a starting style, add your identity, and decide when visitors can see it.</p>
+        </div>
+        <div class="gh-builder-status">
+            <span class="gh-status-pill {% if site.is_published %}gh-status-ready{% else %}gh-status-trialing{% endif %}">{% if site.is_published %}Live{% else %}Not published{% endif %}</span>
+            {% if canonical_domain %}<span>{{ canonical_domain.hostname }}</span>{% endif %}
+            {% if site.is_published and canonical_domain %}<a href="//{{ canonical_domain.hostname }}">View live site &nearr;</a>{% endif %}
+        </div>
+    </div>
+
+    <div class="gh-builder-layout">
+        <form method="post" enctype="multipart/form-data" class="gh-builder-form" data-site-builder-form>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+            <section class="gh-builder-section" aria-labelledby="look-heading">
+                <div class="gh-builder-section-number">1</div>
+                <div class="gh-builder-section-body">
+                    <p class="gh-step-label">Starting point</p>
+                    <h2 id="look-heading">Choose your look</h2>
+                    <p class="text-secondary">Both layouts stay maintained by Gather HQs. Your content moves with you if you switch later.</p>
+                    <div class="gh-template-options">
+                        {% for radio in form.template_key %}
+                        <label class="gh-template-option">
+                            {{ radio.tag }}
+                            <span class="gh-template-thumb gh-template-thumb-{{ radio.data.value }}" aria-hidden="true"><i></i><i></i><i></i></span>
+                            <span><strong>{{ radio.choice_label }}</strong><small>{% if radio.data.value == 'classic' %}Clear, structured, and familiar. Good for information-first groups.{% else %}Warm, spacious, and conversational. Good for community-led groups.{% endif %}</small></span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% for error in form.template_key.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </div>
+            </section>
+
+            <section class="gh-builder-section" aria-labelledby="brand-heading">
+                <div class="gh-builder-section-number">2</div>
+                <div class="gh-builder-section-body">
+                    <p class="gh-step-label">Identity</p>
+                    <h2 id="brand-heading">Make it yours</h2>
+                    <div class="gh-form-field">
+                        {{ form.display_name.label_tag }}{{ form.display_name }}
+                        <div class="gh-field-help">{{ form.display_name.help_text }}</div>
+                        {% for error in form.display_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="gh-color-grid">
+                        <div class="gh-form-field">
+                            {{ form.primary_color.label_tag }}
+                            <div class="gh-color-control">{{ form.primary_color }}<output data-color-output="{{ form.primary_color.id_for_label }}">{{ form.primary_color.value }}</output></div>
+                            <div class="gh-field-help">{{ form.primary_color.help_text }}</div>
+                            {% for error in form.primary_color.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="gh-form-field">
+                            {{ form.secondary_color.label_tag }}
+                            <div class="gh-color-control">{{ form.secondary_color }}<output data-color-output="{{ form.secondary_color.id_for_label }}">{{ form.secondary_color.value }}</output></div>
+                            <div class="gh-field-help">{{ form.secondary_color.help_text }}</div>
+                            {% for error in form.secondary_color.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="gh-form-field">
+                        {{ form.typography_key.label_tag }}{{ form.typography_key }}
+                        {% for error in form.typography_key.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="gh-form-field">
+                        {{ form.logo.label_tag }}
+                        {% if site.theme.logo %}<div class="gh-current-image"><img src="{{ site.theme.logo.url }}" alt="Current logo"><span>Current logo</span></div>{% endif %}
+                        {{ form.logo }}<div class="gh-field-help">{{ form.logo.help_text }}</div>
+                        {% for error in form.logo.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="gh-builder-section" aria-labelledby="welcome-heading">
+                <div class="gh-builder-section-number">3</div>
+                <div class="gh-builder-section-body">
+                    <p class="gh-step-label">First impression</p>
+                    <h2 id="welcome-heading">Welcome your visitors</h2>
+                    <div class="gh-form-field">
+                        {{ form.hero_heading.label_tag }}{{ form.hero_heading }}
+                        <div class="gh-field-help">{{ form.hero_heading.help_text }}</div>
+                        {% for error in form.hero_heading.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="gh-form-field">
+                        {{ form.hero_text.label_tag }}{{ form.hero_text }}
+                        {% for error in form.hero_text.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="gh-form-field">
+                        {{ form.hero_image.label_tag }}
+                        {% if site.theme.hero_image %}<div class="gh-current-image gh-current-hero"><img src="{{ site.theme.hero_image.url }}" alt="Current welcome image"><span>Current welcome image</span></div>{% endif %}
+                        {{ form.hero_image }}<div class="gh-field-help">{{ form.hero_image.help_text }}</div>
+                        {% for error in form.hero_image.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="gh-publish-card" aria-labelledby="publish-heading">
+                <div>
+                    <p class="gh-step-label">Visibility</p>
+                    <h2 id="publish-heading">Ready for your people?</h2>
+                    <p>Publishing makes the website available at {% if canonical_domain %}<strong>{{ canonical_domain.hostname }}</strong>{% else %}its Gather HQs address{% endif %}. You can keep editing after it is live.</p>
+                </div>
+                <label class="gh-publish-toggle">{{ form.is_published }} <span><strong>Make website public</strong><small>{{ form.is_published.help_text }}</small></span></label>
+                {% for error in form.is_published.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </section>
+
+            <div class="gh-builder-actions">
+                <button class="btn btn-primary btn-lg" type="submit">Save website design</button>
+                <a class="btn btn-link" href="{% url 'content:manage' site.id %}">Cancel</a>
+            </div>
+        </form>
+
+        <aside class="gh-live-preview-wrap" aria-labelledby="preview-heading">
+            <div class="gh-live-preview-label"><span id="preview-heading">Homepage preview</span><small>Updates as you type</small></div>
+            <div class="gh-site-preview gh-site-preview-{{ form.template_key.value|default:'classic' }}" data-site-preview style="--preview-primary: {{ form.primary_color.value|default:'#0D6EFD' }}; --preview-secondary: {{ form.secondary_color.value|default:'#6C757D' }};">
+                <div class="gh-site-preview-nav"><strong data-preview-name>{{ form.display_name.value|default:site.display_name }}</strong><span>Home&nbsp;&nbsp; Events&nbsp;&nbsp; Blog</span></div>
+                <div class="gh-site-preview-hero" data-preview-hero{% if site.theme.hero_image %} style="background-image: linear-gradient(rgba(255,255,255,.78), rgba(255,255,255,.78)), url('{{ site.theme.hero_image.url }}')"{% endif %}>
+                    <p>WELCOME TO</p>
+                    <h2 data-preview-heading>{{ form.hero_heading.value|default:form.display_name.value|default:site.display_name }}</h2>
+                    <span data-preview-text>{{ form.hero_text.value|default:'Your events, updates, and community all in one place.' }}</span>
+                    <i>See upcoming events</i>
+                </div>
+                <div class="gh-site-preview-content"><span></span><span></span><span></span><strong>Upcoming events</strong><div><i></i><i></i></div></div>
+            </div>
+            <p class="gh-preview-note">This is a quick design preview. Event cards and page content are filled from the rest of your Gather HQs workspace.</p>
+        </aside>
+    </div>
+</div>
 {% endblock %}

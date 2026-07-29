@@ -30,6 +30,32 @@ def _public_site(request):
 def manage_content(request, site_id):
     site = request.authorized_site
     pages = initialize_site_content(site)
+    home_page = next(page for page in pages if page.page_type == SitePage.PageType.HOME)
+    website_checks = (
+        {
+            "label": "Choose your look",
+            "description": "Set the template, colors, name, and welcome message.",
+            "complete": bool(
+                site.theme.hero_heading or site.theme.logo or site.theme.hero_image
+            ),
+            "url": reverse("content:presentation", args=(site.id,)),
+        },
+        {
+            "label": "Write your homepage",
+            "description": "Introduce the group below the welcome banner.",
+            "complete": bool(home_page.body.strip()),
+            "url": reverse(
+                "content:page_edit", args=(site.id, SitePage.PageType.HOME)
+            ),
+        },
+        {
+            "label": "Publish your website",
+            "description": "Make the site available at its Gather HQs address.",
+            "complete": site.is_published,
+            "url": reverse("content:presentation", args=(site.id,)),
+        },
+    )
+    completed_checks = sum(check["complete"] for check in website_checks)
     return render(
         request,
         "content/manage.html",
@@ -37,6 +63,13 @@ def manage_content(request, site_id):
             "site": site,
             "pages": pages,
             "posts": BlogPost.objects.for_site(site).select_related("author"),
+            "canonical_domain": site.domains.filter(is_canonical=True).first(),
+            "website_setup": {
+                "checks": website_checks,
+                "completed": completed_checks,
+                "total": len(website_checks),
+                "percent": round(completed_checks / len(website_checks) * 100),
+            },
         },
     )
 
@@ -61,7 +94,13 @@ def presentation(request, site_id):
         )
         return redirect("content:manage", site_id=site.id)
     return render(
-        request, "content/presentation_form.html", {"site": site, "form": form}
+        request,
+        "content/presentation_form.html",
+        {
+            "site": site,
+            "form": form,
+            "canonical_domain": site.domains.filter(is_canonical=True).first(),
+        },
     )
 
 
