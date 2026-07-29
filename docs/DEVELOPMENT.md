@@ -137,11 +137,10 @@ The platform Stripe context and subscriber-commerce Stripe context use separate 
 - Platform subscriptions: `https://gatherhqs.com/billing/stripe/` with `STRIPE_WEBHOOK_SECRET`
 - Events on connected accounts: `https://gatherhqs.com/commerce/stripe/connect/` with `STRIPE_CONNECT_WEBHOOK_SECRET`
 
-In Stripe Workbench, create the second destination with **Connected accounts** selected. Subscribe it to only these handled event types:
+In Stripe Workbench, create the second destination with **Connected accounts** selected. Subscribe it to these required event types:
 
 ```text
 account.updated
-account.application.deauthorized
 checkout.session.completed
 checkout.session.async_payment_succeeded
 checkout.session.async_payment_failed
@@ -164,6 +163,8 @@ invoice.paid
 invoice.payment_failed
 ```
 
+Also select `account.application.deauthorized` when Stripe exposes it for the account. Its absence is non-blocking because the scheduled account-access reconciliation provides the fallback described below.
+
 Sandbox and live destinations have different signing secrets. Never reuse `STRIPE_WEBHOOK_SECRET` for the Connect endpoint. Stripe CLI can forward connected-account test events locally with:
 
 ```text
@@ -183,6 +184,8 @@ python manage.py reconcile_commerce --site boot-scooters --retry-failed-events
 ```
 
 Reconciliation refreshes account readiness, in-flight Checkout Sessions, recurring member subscriptions, and Stripe-reported charge fees when available. Financial totals are operational reports, not an accounting ledger.
+
+Beat also refreshes connected-account access every six hours. This provides a bounded fallback when a sandbox does not expose `account.application.deauthorized` in its event selector. Only three consecutive permanent account-access errors mark an account disconnected; temporary provider failures remain retryable and visible to operations.
 
 ## Phase 5 campaigns and delivery analytics
 

@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
+import stripe
 from django.core.exceptions import ValidationError
 from django.test import override_settings
 from django.urls import reverse
@@ -32,11 +33,13 @@ from payments.services import (
     mark_order_paid,
     prepare_refund,
     process_connect_event,
+    refresh_connected_account,
     reserve_ticket_order,
     start_member_subscription,
     synchronize_connected_account,
     ticket_inventory,
 )
+from payments.tasks import reconcile_connected_accounts
 from sites.services import create_subscriber_site
 from users.models import User
 
@@ -396,6 +399,77 @@ def test_connected_account_readiness_and_disconnect_follow_provider_state():
     connected.refresh_from_db()
     assert connected.status == ConnectedAccount.Status.DISCONNECTED
     assert connected.disconnected_at is not None
+
+
+@pytest.mark.django_db
+@patch("payments.gateway.retrieve_account")
+def test_reconciliation_disconnects_after_three_permanent_account_failures(
+    retrieve_account,
+):
+    _, _, connected, _, _, _ = commerce_fixture()
+    retrieve_account.side_effect = stripe.InvalidRequestError(
+        "No such account", param="id", code="resource_missing"
+    )
+
+    for expected_failures in (1, 2):
+        result = reconcile_connected_accounts()
+        connected.refresh_from_db()
+        assert result == {"refreshed": 0, "failed": 1}
+        assert connected.sync_failure_count == expected_failures
+        assert connected.permanent_sync_failure_count == expected_failures
+        assert connected.status == ConnectedAccount.Status.READY
+
+    result = reconcile_connected_accounts()
+    connected.refresh_from_db()
+
+    assert result == {"refreshed": 0, "failed": 1}
+    assert connected.sync_failure_count == 3
+    assert connected.permanent_sync_failure_count == 3
+    assert connected.status == ConnectedAccount.Status.DISCONNECTED
+    assert connected.disconnected_at is not None
+    assert not connected.charges_enabled
+    assert not connected.payouts_enabled
+
+
+@pytest.mark.django_db
+@patch("payments.gateway.retrieve_account")
+def test_transient_account_sync_failures_do_not_disconnect(retrieve_account):
+    _, _, connected, _, _, _ = commerce_fixture()
+    retrieve_account.side_effect = stripe.APIConnectionError("Temporary outage")
+
+    for _ in range(3):
+        with pytest.raises(stripe.APIConnectionError):
+            refresh_connected_account(connected)
+
+    connected.refresh_from_db()
+    assert connected.sync_failure_count == 3
+    assert connected.permanent_sync_failure_count == 0
+    assert connected.status == ConnectedAccount.Status.READY
+    assert connected.disconnected_at is None
+
+
+@pytest.mark.django_db
+@patch("payments.gateway.retrieve_account")
+def test_transient_failure_resets_permanent_disconnect_streak(retrieve_account):
+    _, _, connected, _, _, _ = commerce_fixture()
+    permanent = stripe.InvalidRequestError(
+        "No such account", param="id", code="resource_missing"
+    )
+    retrieve_account.side_effect = [
+        permanent,
+        stripe.APIConnectionError("Temporary outage"),
+        permanent,
+        permanent,
+    ]
+
+    for _ in range(4):
+        with pytest.raises(stripe.StripeError):
+            refresh_connected_account(connected)
+
+    connected.refresh_from_db()
+    assert connected.sync_failure_count == 4
+    assert connected.permanent_sync_failure_count == 2
+    assert connected.status == ConnectedAccount.Status.READY
 
 
 @pytest.mark.django_db

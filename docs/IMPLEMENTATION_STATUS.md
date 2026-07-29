@@ -260,6 +260,7 @@ Completed:
 - Redis-backed, hashed, proxy-aware throttling for public account, RSVP, newsletter, review, and checkout writes
 - Safe branded production error pages with correlation IDs and security headers
 - Read-only Stripe environment validator for account mode, plan prices, lookup keys, billing intervals, and required platform/Connect webhook coverage
+- Six-hour connected-account reconciliation with three-strike permanent-access disconnect fallback when Stripe does not expose the deauthorization event selector
 - Pinned dependency audit in CI and weekly dependency monitoring for Python, Actions, and Docker
 - Configurable read-only launch-scale probe with 100 concurrent users, p95 and error-rate gates
 - Operations, provider recovery, backup/restore, pilot-event, load, accessibility, security, and launch runbooks

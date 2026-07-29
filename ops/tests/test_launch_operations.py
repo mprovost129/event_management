@@ -122,6 +122,14 @@ def test_stripe_sandbox_validator_checks_prices_and_both_webhook_destinations(
     assert payload["mode"] == "test"
     assert all(all(price["checks"].values()) for price in payload["prices"])
     assert all(webhook["found"] for webhook in payload["webhooks"])
+    connect_webhook = next(
+        webhook for webhook in payload["webhooks"] if webhook["label"] == "connect"
+    )
+    assert connect_webhook["missing_events"] == []
+    assert connect_webhook["recommended_missing_events"] == [
+        "account.application.deauthorized"
+    ]
+    assert len(payload["warnings"]) == 1
 
 
 @override_settings(STRIPE_SECRET_KEY="sk_live_validation")

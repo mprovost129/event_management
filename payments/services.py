@@ -1,6 +1,7 @@
 import secrets
 from datetime import datetime, timedelta
 
+import stripe
 from django.core import signing
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -120,7 +121,11 @@ def synchronize_connected_account(account, *, site=None):
     connected.details_submitted = details
     connected.requirements_due = due
     connected.last_synced_at = timezone.now()
+    connected.last_sync_attempted_at = connected.last_synced_at
     connected.disconnected_at = None
+    connected.sync_failure_count = 0
+    connected.permanent_sync_failure_count = 0
+    connected.last_sync_error = ""
     connected.save()
     return connected
 
@@ -140,10 +145,64 @@ def start_connected_account(*, site):
     return connected
 
 
-def refresh_connected_account(connected):
-    return synchronize_connected_account(
-        gateway.retrieve_account(connected.stripe_account_id), site=connected.site
+@transaction.atomic
+def mark_connected_account_disconnected(connected, *, reason):
+    connected = ConnectedAccount.objects.select_for_update().get(pk=connected.pk)
+    changed = connected.status != ConnectedAccount.Status.DISCONNECTED
+    connected.status = ConnectedAccount.Status.DISCONNECTED
+    connected.charges_enabled = False
+    connected.payouts_enabled = False
+    connected.disconnected_at = connected.disconnected_at or timezone.now()
+    connected.last_sync_error = reason[:500]
+    connected.save()
+    if changed:
+        record_audit_event(
+            action="commerce.connected_account.disconnected",
+            site_id=connected.site_id,
+            target=connected,
+            summary={"reason": reason[:200]},
+        )
+    return connected
+
+
+@transaction.atomic
+def record_connected_account_sync_failure(connected, exception):
+    connected = ConnectedAccount.objects.select_for_update().get(pk=connected.pk)
+    connected.sync_failure_count += 1
+    connected.last_sync_attempted_at = timezone.now()
+    connected.last_sync_error = str(exception)[:500]
+    permanent_error = isinstance(
+        exception, (stripe.PermissionError, stripe.InvalidRequestError)
+    ) and getattr(exception, "code", "") in {
+        "account_invalid",
+        "resource_missing",
+    }
+    connected.permanent_sync_failure_count = (
+        connected.permanent_sync_failure_count + 1 if permanent_error else 0
     )
+    connected.save(
+        update_fields=(
+            "sync_failure_count",
+            "permanent_sync_failure_count",
+            "last_sync_attempted_at",
+            "last_sync_error",
+            "updated_at",
+        )
+    )
+    if connected.permanent_sync_failure_count >= 3:
+        return mark_connected_account_disconnected(
+            connected, reason="Stripe account access was permanently rejected"
+        )
+    return connected
+
+
+def refresh_connected_account(connected):
+    try:
+        account = gateway.retrieve_account(connected.stripe_account_id)
+    except stripe.StripeError as exc:
+        record_connected_account_sync_failure(connected, exc)
+        raise
+    return synchronize_connected_account(account, site=connected.site)
 
 
 def require_commerce_ready(site):
@@ -815,13 +874,13 @@ def _apply_connect_event(event_type, stripe_object, account_id, event_id):
         synchronize_connected_account(stripe_object)
         return
     if event_type == "account.application.deauthorized":
-        ConnectedAccount.objects.filter(stripe_account_id=account_id).update(
-            status=ConnectedAccount.Status.DISCONNECTED,
-            charges_enabled=False,
-            payouts_enabled=False,
-            disconnected_at=timezone.now(),
-            updated_at=timezone.now(),
-        )
+        connected = ConnectedAccount.objects.filter(
+            stripe_account_id=account_id
+        ).first()
+        if connected is not None:
+            mark_connected_account_disconnected(
+                connected, reason="Stripe application deauthorized"
+            )
         return
     order = _order_from_object(stripe_object)
     if order and order.connected_account_id != account_id:

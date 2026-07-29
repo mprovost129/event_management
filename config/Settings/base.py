@@ -194,6 +194,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "payments.tasks.release_inventory_holds",
         "schedule": 60.0,
     },
+    "reconcile-connected-accounts": {
+        "task": "payments.tasks.reconcile_connected_accounts",
+        "schedule": 21600.0,
+    },
     "dispatch-due-campaigns": {
         "task": "communications.tasks.dispatch_due_campaigns",
         "schedule": 60.0,

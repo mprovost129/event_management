@@ -9,21 +9,13 @@ The read-only `validate_stripe_sandbox` command reached the configured US test-m
 - Monthly price is active, test mode, USD 20.00, recurring every month, and uses `standard_monthly`.
 - Yearly price is active, test mode, USD 220.00, recurring every year, and uses `standard_yearly`.
 - The platform webhook destination ending in `/billing/stripe/` is enabled and contains every required platform-subscription event.
-- The Connect webhook destination ending in `/commerce/stripe/connect/` is enabled and contains all required events except the item below.
+- The Connect webhook destination ending in `/commerce/stripe/connect/` is enabled and contains every event exposed and required for this sandbox configuration.
 - The application uses distinct configured signing secrets for platform and Connect webhook handlers.
 
-## Action required in Stripe Workbench
+## Deauthorization limitation and fallback
 
-Add this event to the **Connected accounts** destination:
+Stripe documents `account.application.deauthorized` for Standard connected accounts, but it is not exposed in this sandbox's Workbench event selector. The application still accepts that event if it becomes available later.
 
-```text
-account.application.deauthorized
-```
+As a fallback, Celery refreshes connected-account access every six hours. A temporary network, authentication, or Stripe service error is retained as an operational failure and does not disconnect the subscriber. Three consecutive permanent `account_invalid` or `resource_missing` responses mark the account disconnected, disable local commerce readiness, and create an audit event.
 
-Then rerun:
-
-```text
-python manage.py validate_stripe_sandbox --json --use-system-trust
-```
-
-The command must return `"ok": true`. API inspection cannot prove possession of the endpoint signing secret; the sandbox delivery drills in `LAUNCH_CHECKLIST.md` remain required.
+API inspection cannot prove possession of the endpoint signing secret; the sandbox delivery drills in `LAUNCH_CHECKLIST.md` remain required.

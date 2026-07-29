@@ -61,6 +61,12 @@ def operational_alerts(*, hours=24):
         ).count(),
         severity="warning",
     )
+    add(
+        "connected_account_sync_failures",
+        "Connected accounts with recent synchronization failures",
+        ConnectedAccount.objects.filter(sync_failure_count__gt=0).count(),
+        severity="warning",
+    )
     if settings.HEALTHCHECK_REQUIRE_BACKGROUND_WORKERS:
         threshold = timezone.now() - timedelta(
             seconds=settings.BACKGROUND_HEARTBEAT_MAX_AGE_SECONDS

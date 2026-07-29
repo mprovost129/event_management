@@ -22,10 +22,19 @@ class ConnectedAccountAdmin(admin.ModelAdmin):
         "status",
         "charges_enabled",
         "payouts_enabled",
+        "sync_failure_count",
+        "permanent_sync_failure_count",
         "last_synced_at",
     )
     list_filter = ("status", "charges_enabled", "payouts_enabled")
-    readonly_fields = ("stripe_account_id", "requirements_due")
+    readonly_fields = (
+        "stripe_account_id",
+        "requirements_due",
+        "sync_failure_count",
+        "permanent_sync_failure_count",
+        "last_sync_attempted_at",
+        "last_sync_error",
+    )
 
 
 class OrderLineInline(admin.TabularInline):

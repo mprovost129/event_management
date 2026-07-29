@@ -18,7 +18,6 @@ PLATFORM_EVENTS = {
 
 CONNECT_EVENTS = {
     "account.updated",
-    "account.application.deauthorized",
     "checkout.session.completed",
     "checkout.session.async_payment_succeeded",
     "checkout.session.async_payment_failed",
@@ -40,6 +39,8 @@ CONNECT_EVENTS = {
     "invoice.paid",
     "invoice.payment_failed",
 }
+
+RECOMMENDED_CONNECT_EVENTS = {"account.application.deauthorized"}
 
 
 def _value(item, key, default=None):
@@ -91,6 +92,7 @@ class Command(BaseCommand):
                 "Refusing a non-test Stripe key without the explicit --allow-live flag."
             )
         errors = []
+        warnings = []
         stripe.api_key = secret_key
         try:
             account = stripe.Account.retrieve()
@@ -166,6 +168,18 @@ class Command(BaseCommand):
                             "missing_events": missing,
                         }
                     )
+                    if label == "connect":
+                        recommended_missing = sorted(
+                            RECOMMENDED_CONNECT_EVENTS.difference(enabled)
+                        )
+                        if recommended_missing:
+                            warnings.append(
+                                "Connect webhook omits account.application.deauthorized; "
+                                "scheduled account reconciliation remains the fallback"
+                            )
+                        webhooks[-1]["recommended_missing_events"] = (
+                            recommended_missing
+                        )
         except stripe.StripeError as exc:
             raise CommandError(f"Stripe sandbox validation failed: {exc}") from exc
 
@@ -179,6 +193,7 @@ class Command(BaseCommand):
             "prices": prices,
             "webhooks": webhooks,
             "errors": errors,
+            "warnings": warnings,
         }
         if options["json"]:
             self.stdout.write(json.dumps(payload, sort_keys=True))
@@ -190,5 +205,7 @@ class Command(BaseCommand):
             )
             for error in errors:
                 self.stdout.write(self.style.ERROR(error))
+            for warning in warnings:
+                self.stdout.write(self.style.WARNING(warning))
         if errors:
             raise CommandError("Stripe configuration did not pass validation.")

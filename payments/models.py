@@ -30,6 +30,10 @@ class ConnectedAccount(SiteOwnedModel):
     requirements_due = models.JSONField(default=list, blank=True)
     last_synced_at = models.DateTimeField(null=True, blank=True)
     disconnected_at = models.DateTimeField(null=True, blank=True)
+    sync_failure_count = models.PositiveSmallIntegerField(default=0)
+    permanent_sync_failure_count = models.PositiveSmallIntegerField(default=0)
+    last_sync_attempted_at = models.DateTimeField(null=True, blank=True)
+    last_sync_error = models.CharField(max_length=500, blank=True)
 
     @property
     def commerce_ready(self):
