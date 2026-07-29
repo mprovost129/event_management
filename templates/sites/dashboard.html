@@ -15,6 +15,7 @@
             {% if canonical_domain %}<p class="gh-dashboard-domain mb-0">{{ canonical_domain.hostname }}</p>{% endif %}
         </div>
         <div class="d-flex flex-wrap gap-2">
+            {% if site_role.role == 'subscriber_admin' %}<a class="btn btn-outline-primary" href="{% url 'sites:launch_center' site.id %}">Pilot launch center</a>{% endif %}
             {% if site.accepts_public_traffic %}<a class="btn btn-outline-primary" href="{% url 'content:presentation' site.id %}">Website settings</a>{% endif %}
             {% if site.is_published and canonical_domain %}<a class="btn btn-primary" href="//{{ canonical_domain.hostname }}">View live site</a>{% endif %}
         </div>
@@ -102,6 +103,7 @@
                 <a href="{% url 'payments:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">PA</span><div><h3>Payments &amp; memberships</h3><p>Stripe, tickets, orders, refunds, and dues</p></div><span aria-hidden="true">→</span></a>
                 <a href="{% url 'communications:campaign_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">NE</span><div><h3>Newsletters &amp; SMS</h3><p>Campaigns, audiences, schedules, and results</p></div><span aria-hidden="true">→</span></a>
                 <a href="{% url 'reviews:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">RE</span><div><h3>Reviews</h3><p>Participant feedback and responses</p></div><span aria-hidden="true">→</span></a>
+                {% if site_role.role == 'subscriber_admin' %}<a href="{% url 'sites:launch_center' site.id %}"><span class="gh-tool-mark" aria-hidden="true">LA</span><div><h3>Pilot launch center</h3><p>Readiness, rehearsal, and event-day safeguards</p></div><span aria-hidden="true">→</span></a>{% endif %}
             </div>
         </section>
     {% endif %}
@@ -130,7 +132,7 @@
     </section>
 
         {% if site.accepts_public_traffic %}
-        <section class="gh-admin-section" aria-labelledby="managers-title">
+        <section class="gh-admin-section" id="managers" aria-labelledby="managers-title">
             <div class="gh-section-row"><div><p class="gh-step-label mb-1">Team access</p><h2 id="managers-title">Site managers</h2></div></div>
             <p class="text-secondary">Managers can operate the site but cannot change billing or manager access. They must already have a verified Gather HQs account.</p>
             <form method="post" action="{% url 'sites:add_manager' site.id %}" class="row g-2 align-items-end mb-3">

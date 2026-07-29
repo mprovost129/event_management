@@ -71,9 +71,7 @@ def site_summary(site, *, now=None):
         "capacity": capacity,
         "checked_in": checked_in.count(),
         "attendance_rate": (
-            round(checked_in_ended_count * 100 / ended_count, 1)
-            if ended_count
-            else 0
+            round(checked_in_ended_count * 100 / ended_count, 1) if ended_count else 0
         ),
         "no_show_rate": (
             round((ended_count - checked_in_ended_count) * 100 / ended_count, 1)
@@ -130,9 +128,7 @@ def occurrence_comparison(site, *, now=None):
             registrations=Count("id"),
             going=Count("id", filter=Q(response=Registration.Response.GOING)),
             maybe=Count("id", filter=Q(response=Registration.Response.MAYBE)),
-            not_going=Count(
-                "id", filter=Q(response=Registration.Response.NOT_GOING)
-            ),
+            not_going=Count("id", filter=Q(response=Registration.Response.NOT_GOING)),
             payment_pending=Count(
                 "id", filter=Q(payment_status=Registration.PaymentStatus.PENDING)
             ),
@@ -246,11 +242,7 @@ def occurrence_comparison(site, *, now=None):
                 "gross_display": Decimal(gross) / 100,
                 "refunds_display": Decimal(refunds) / 100,
                 "net_display": Decimal(
-                    gross
-                    - refunds
-                    - fees
-                    - application_fees
-                    + application_fee_refunds
+                    gross - refunds - fees - application_fees + application_fee_refunds
                 )
                 / 100,
                 "review_count": reviews.get("review_count", 0),

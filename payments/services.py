@@ -997,10 +997,7 @@ def commerce_summary(site):
             Order.Status.DISPUTED,
         )
     )
-    gross = (
-        settled_orders.aggregate(total=Sum("total_cents"))["total"]
-        or 0
-    )
+    gross = settled_orders.aggregate(total=Sum("total_cents"))["total"] or 0
     refunds = settled_orders.aggregate(total=Sum("refunded_cents"))["total"] or 0
     fees = settled_orders.aggregate(total=Sum("stripe_fee_cents"))["total"] or 0
     application_fees = (

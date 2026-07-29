@@ -49,9 +49,7 @@ TICKET_APPLICATION_FEE_BPS = env_int("TICKET_APPLICATION_FEE_BPS", 300)
 if not 0 <= TICKET_APPLICATION_FEE_BPS < 10_000:
     from django.core.exceptions import ImproperlyConfigured
 
-    raise ImproperlyConfigured(
-        "TICKET_APPLICATION_FEE_BPS must be between 0 and 9999."
-    )
+    raise ImproperlyConfigured("TICKET_APPLICATION_FEE_BPS must be between 0 and 9999.")
 SUBSCRIPTION_TRIAL_DAYS = env_int("SUBSCRIPTION_TRIAL_DAYS", 14)
 SUBSCRIPTION_GRACE_DAYS = env_int("SUBSCRIPTION_GRACE_DAYS", 7)
 SUSPENDED_DATA_RETENTION_DAYS = env_int("SUSPENDED_DATA_RETENTION_DAYS", 90)

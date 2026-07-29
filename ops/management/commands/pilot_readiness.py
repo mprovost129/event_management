@@ -2,9 +2,8 @@ import json
 
 from django.core.management.base import BaseCommand, CommandError
 
-from contacts.models import Contact
-from events.models import Event
-from sites.models import Site, SiteRole
+from sites.models import Site
+from sites.readiness import pilot_readiness
 
 
 class Command(BaseCommand):
@@ -20,20 +19,17 @@ class Command(BaseCommand):
         site = Site.objects.filter(slug=options["site_slug"]).first()
         if site is None:
             raise CommandError("Pilot site not found.")
-        checks = {
-            "subscriber_admin": SiteRole.objects.filter(
-                site=site,
-                role=SiteRole.Role.SUBSCRIBER_ADMIN,
-                is_active=True,
-            ).exists(),
-            "site_published": site.is_published,
-            "active_access": site.accepts_public_traffic,
-            "contacts_entered": Contact.objects.for_site(site).exists(),
-            "published_event": Event.objects.for_site(site)
-            .filter(status=Event.Status.PUBLISHED)
-            .exists(),
+        readiness = pilot_readiness(site)
+        checks = {check["key"]: check["complete"] for check in readiness["required"]}
+        recommendations = {
+            check["key"]: check["complete"] for check in readiness["recommended"]
         }
-        payload = {"ok": all(checks.values()), "site": site.slug, "checks": checks}
+        payload = {
+            "ok": readiness["ok"],
+            "site": site.slug,
+            "checks": checks,
+            "recommendations": recommendations,
+        }
         self.stdout.write(json.dumps(payload, sort_keys=True))
         if not payload["ok"]:
             raise CommandError("Pilot site is not ready.")

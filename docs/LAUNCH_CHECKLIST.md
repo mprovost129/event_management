@@ -6,6 +6,7 @@
 - [ ] `python manage.py launch_gate --json --fail-on-warning` passes on the release environment.
 - [ ] `/health/live/` and `/health/ready/` are monitored externally.
 - [ ] Primary onboarding-to-review journey passes on the release commit.
+- [ ] The pilot subscriber's in-product Pilot Launch Center shows every required item complete.
 - [ ] Platform and Connect webhook secrets are distinct and current.
 - [ ] Production email/SMS backends are not console adapters; SMS remains disabled if no vendor is selected.
 

@@ -167,9 +167,10 @@ def test_ticket_platform_fee_can_be_disabled_without_changing_checkout(mock_crea
     )
 
     assert order.application_fee_cents == 0
-    assert "application_fee_amount" not in mock_create.call_args.kwargs[
-        "payment_intent_data"
-    ]
+    assert (
+        "application_fee_amount"
+        not in mock_create.call_args.kwargs["payment_intent_data"]
+    )
 
 
 @pytest.mark.django_db

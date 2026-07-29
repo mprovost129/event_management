@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load tz %}
+
+{% block title %}Pilot launch center | {{ site.display_name }}{% endblock %}
+{% block content %}
+<main class="gh-dashboard gh-launch-center">
+    <header class="gh-dashboard-head">
+        <div>
+            <p class="gh-step-label mb-2">Pilot launch center</p>
+            <h1>Get {{ site.display_name }} event-ready.</h1>
+            <p class="gh-dashboard-domain mb-0">A live checklist for your first real gathering.</p>
+        </div>
+        <a class="btn btn-outline-primary" href="{% url 'sites:dashboard' site.id %}">Back to workspace</a>
+    </header>
+
+    <section class="gh-launch-summary {% if readiness.ok %}is-ready{% endif %}" aria-labelledby="launch-summary-title">
+        <div>
+            <p class="gh-step-label">Event-ready essentials</p>
+            {% if readiness.ok %}
+            <h2 id="launch-summary-title">The essentials are ready.</h2>
+            <p>Review the rehearsal items below, then follow the day-before and event-day runbook with your team.</p>
+            {% else %}
+            <h2 id="launch-summary-title">{{ readiness.required_remaining }} essential{{ readiness.required_remaining|pluralize }} left.</h2>
+            <p>Finish the required items before inviting the full pilot group.</p>
+            {% endif %}
+            <div class="progress gh-launch-progress" role="progressbar" aria-label="Pilot launch essentials" aria-valuenow="{{ readiness.required_percent }}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" style="width: {{ readiness.required_percent }}%"></div>
+            </div>
+            <p class="gh-launch-count mb-0">{{ readiness.required_complete }} of {{ readiness.required_total }} complete</p>
+        </div>
+        <div class="gh-launch-focus">
+            {% if readiness.occurrence %}
+            {% timezone site.timezone %}
+            <span>Next pilot event</span>
+            <strong>{{ readiness.occurrence.event.title }}</strong>
+            <time datetime="{{ readiness.occurrence.starts_at|date:'c' }}">{{ readiness.occurrence.starts_at|date:"D, M j, Y" }} at {{ readiness.occurrence.starts_at|date:"g:i A" }}</time>
+            {% endtimezone %}
+            <small>{% if readiness.ticketed %}Paid event{% else %}Free event{% endif %} · {% if readiness.invite_only %}Invite only{% else %}Shareable signup{% endif %}</small>
+            {% elif readiness.next %}
+            <span>Best next step</span>
+            <strong>{{ readiness.next.label }}</strong>
+            <p>{{ readiness.next.description }}</p>
+            <a class="btn btn-light" href="{{ readiness.next.action_url }}">{{ readiness.next.action_label }}</a>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="gh-launch-section" aria-labelledby="essentials-title">
+        <div class="gh-section-row">
+            <div><p class="gh-step-label mb-1">Required</p><h2 id="essentials-title">Ready to invite</h2></div>
+            <span class="gh-status-pill {% if readiness.ok %}gh-status-ready{% else %}gh-status-restricted{% endif %}">{% if readiness.ok %}Ready{% else %}Action needed{% endif %}</span>
+        </div>
+        <div class="gh-launch-checks">
+            {% for check in readiness.required %}
+            <article class="gh-launch-check {% if check.complete %}is-complete{% endif %}">
+                <span class="gh-launch-checkmark" aria-hidden="true">{% if check.complete %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+                <div>
+                    <div class="gh-launch-check-title"><h3>{{ check.label }}</h3><span>{{ check.status_label }}</span></div>
+                    <p>{{ check.description }}</p>
+                    {% if not check.complete %}<a href="{{ check.action_url }}">{{ check.action_label }} →</a>{% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="gh-launch-section" aria-labelledby="rehearsal-title">
+        <div class="gh-section-row">
+            <div><p class="gh-step-label mb-1">Recommended</p><h2 id="rehearsal-title">Rehearse before event day</h2></div>
+            <span class="text-secondary">{{ readiness.recommended_complete }} of {{ readiness.recommended_total }} complete</span>
+        </div>
+        <div class="gh-launch-checks">
+            {% for check in readiness.recommended %}
+            <article class="gh-launch-check {% if check.complete %}is-complete{% endif %}">
+                <span class="gh-launch-checkmark" aria-hidden="true">{% if check.complete %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+                <div>
+                    <div class="gh-launch-check-title"><h3>{{ check.label }}</h3><span>{{ check.status_label }}</span></div>
+                    <p>{{ check.description }}</p>
+                    {% if not check.complete %}<a href="{{ check.action_url }}">{{ check.action_label }} →</a>{% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <aside class="gh-launch-note">
+        <div><p class="gh-step-label mb-1">Keep the first event calm</p><h2>Use normal screens only.</h2></div>
+        <p>Run the roster on the phone you will use at the door, keep one trusted backup manager available, and escalate payment discrepancies instead of editing records manually.</p>
+    </aside>
+</main>
+{% endblock %}

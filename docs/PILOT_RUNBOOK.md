@@ -9,7 +9,8 @@ This runbook is for the first country line dancing group. It deliberately uses o
 3. Enter contacts manually under Contacts. Record marketing permission only when it was actually given.
 4. Create and publish the event, venue, capacity, guest allowance, and ticket type if paid.
 5. Send invitations or verify the public RSVP link in a private browser.
-6. Run `python manage.py pilot_readiness SITE_SLUG --json`; every check must be true.
+6. Open **Pilot launch center** from the subscriber workspace. Complete every required item and as many rehearsal items as practical.
+7. The platform operator runs `python manage.py pilot_readiness SITE_SLUG --json`; every required check must be true.
 
 ## Day before
 

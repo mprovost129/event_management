@@ -1,5 +1,6 @@
 import io
 import json
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
@@ -9,6 +10,7 @@ from django.test import override_settings
 from django.utils import timezone
 
 from contacts.models import Member, MembershipPlan, MemberSubscription
+from events.models import EventOccurrence
 from ops.management.commands.validate_stripe_sandbox import (
     CONNECT_EVENTS,
     PLATFORM_EVENTS,
@@ -43,13 +45,20 @@ def test_restore_verification_is_read_only_and_requires_explicit_copy_confirmati
 
 @pytest.mark.django_db
 def test_pilot_readiness_requires_operable_site_contact_and_published_event():
-    _, site, _ = operations_fixture()
+    _, site, event = operations_fixture()
     output = io.StringIO()
     with pytest.raises(CommandError, match="not ready"):
         call_command("pilot_readiness", site.slug, stdout=output)
 
     site.is_published = True
     site.save(update_fields=("is_published", "updated_at"))
+    EventOccurrence.objects.create(
+        site=site,
+        event=event,
+        starts_at=timezone.now() + timedelta(days=7),
+        ends_at=timezone.now() + timedelta(days=7, hours=2),
+        timezone=site.timezone,
+    )
     output = io.StringIO()
     call_command("pilot_readiness", site.slug, stdout=output)
     assert json.loads(output.getvalue())["ok"] is True

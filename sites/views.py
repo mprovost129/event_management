@@ -24,6 +24,7 @@ from .permissions import (
     subscriber_admin_required,
     subscriber_recovery_required,
 )
+from .readiness import pilot_readiness
 from .reporting import event_comparison, occurrence_comparison, site_summary
 from .services import create_subscriber_site, site_setup_progress, user_site_roles
 
@@ -127,9 +128,7 @@ def reports(request, site_id):
         ]
     elif view_filter == "completed":
         occurrences = [
-            row
-            for row in occurrences
-            if row["is_complete"] and not row["is_canceled"]
+            row for row in occurrences if row["is_complete"] and not row["is_canceled"]
         ]
     return render(
         request,
@@ -141,6 +140,89 @@ def reports(request, site_id):
             "events": event_comparison(site, occurrence_rows=all_occurrences),
             "view_filter": view_filter,
         },
+    )
+
+
+@subscriber_recovery_required
+def launch_center(request, site_id):
+    site = request.authorized_site
+    readiness = pilot_readiness(site)
+    occurrence = readiness["occurrence"]
+    dashboard_url = reverse("sites:dashboard", kwargs={"site_id": site.id})
+    action_urls = {
+        "subscriber_admin": dashboard_url,
+        "site_published": reverse("content:presentation", kwargs={"site_id": site.id}),
+        "active_access": f"{dashboard_url}#subscription",
+        "contacts_entered": reverse("contacts:create", kwargs={"site_id": site.id}),
+        "upcoming_event": reverse("events:create", kwargs={"site_id": site.id}),
+        "commerce_ready": reverse("payments:manage", kwargs={"site_id": site.id}),
+        "billing_selected": f"{dashboard_url}#subscription",
+        "backup_manager": f"{dashboard_url}#managers",
+        "data_exported": reverse("sites:export_data", kwargs={"site_id": site.id}),
+    }
+    if occurrence:
+        action_urls.update(
+            {
+                "invitation_path": reverse(
+                    "events:invite",
+                    kwargs={"site_id": site.id, "occurrence_id": occurrence.id},
+                ),
+                "venue_complete": reverse(
+                    "events:occurrence_edit",
+                    kwargs={"site_id": site.id, "occurrence_id": occurrence.id},
+                ),
+                "response_recorded": reverse(
+                    "attendance:roster",
+                    kwargs={"site_id": site.id, "occurrence_id": occurrence.id},
+                ),
+                "delivery_tested": reverse(
+                    "events:invite",
+                    kwargs={"site_id": site.id, "occurrence_id": occurrence.id},
+                ),
+            }
+        )
+    else:
+        event_url = reverse("events:create", kwargs={"site_id": site.id})
+        action_urls.update(
+            {
+                "invitation_path": event_url,
+                "venue_complete": event_url,
+                "response_recorded": event_url,
+                "delivery_tested": event_url,
+            }
+        )
+    action_labels = {
+        "subscriber_admin": "Review access",
+        "site_published": "Website settings",
+        "active_access": "Review billing",
+        "contacts_entered": "Add a contact",
+        "upcoming_event": "Create an event",
+        "commerce_ready": "Open payments",
+        "invitation_path": "Open invitations",
+        "billing_selected": "Choose billing",
+        "venue_complete": "Edit occurrence",
+        "response_recorded": "Open roster",
+        "delivery_tested": "Send a test invitation",
+        "backup_manager": "Manage team",
+        "data_exported": "Download export",
+    }
+    for check in readiness["required"] + readiness["recommended"]:
+        check["action_url"] = action_urls[check["key"]]
+        check["action_label"] = action_labels[check["key"]]
+        if check["key"] == "commerce_ready" and occurrence is None:
+            check["status_label"] = "After event"
+        elif (
+            check["key"] == "commerce_ready"
+            and check["complete"]
+            and not readiness["ticketed"]
+        ):
+            check["status_label"] = "Not needed"
+        else:
+            check["status_label"] = "Complete" if check["complete"] else "To do"
+    return render(
+        request,
+        "sites/launch_center.html",
+        {"site": site, "readiness": readiness},
     )
 
 
