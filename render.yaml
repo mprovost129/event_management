@@ -4,11 +4,10 @@ services:
   - type: web
     name: gather-hqs-web
     runtime: docker
-    plan: starter
+    plan: free
     region: ohio
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health/live/
-    preDeployCommand: python manage.py migrate --noinput
     autoDeployTrigger: checksPass
     maxShutdownDelaySeconds: 30
     domains:
@@ -66,6 +65,7 @@ services:
     region: ohio
     dockerfilePath: ./Dockerfile
     dockerCommand: celery -A config worker --loglevel=INFO --concurrency=2
+    preDeployCommand: python manage.py migrate --noinput
     autoDeployTrigger: checksPass
     maxShutdownDelaySeconds: 120
     envVars:
@@ -213,21 +213,19 @@ services:
 
   - type: keyvalue
     name: gather-hqs-key-value
-    plan: starter
+    plan: free
     region: ohio
     ipAllowList: []
     maxmemoryPolicy: noeviction
-    persistenceMode: journal-snapshot
+    persistenceMode: off
 
 databases:
   - name: gather-hqs-db
-    plan: basic-256mb
+    plan: free
     region: ohio
     postgresMajorVersion: "16"
     databaseName: gather_hqs
     user: gather_hqs
-    diskSizeGB: 5
-    storageAutoscalingEnabled: false
     ipAllowList: []
 
 envVarGroups:

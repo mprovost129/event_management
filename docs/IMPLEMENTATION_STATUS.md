@@ -272,7 +272,7 @@ Completed:
 - Pinned dependency audit in CI and weekly dependency monitoring for Python, Actions, and Docker
 - Configurable read-only launch-scale probe with 100 concurrent users, p95 and error-rate gates
 - Operations, provider recovery, backup/restore, pilot-event, load, accessibility, security, and launch runbooks
-- Render production Blueprint with paid persistent PostgreSQL and Key Value, separate web/worker/scheduler processes, pre-deploy migrations, health gating, wildcard domains, and cross-service secret wiring
+- Cost-staged Render Blueprint with free prelaunch web/PostgreSQL/Key Value, paid worker/scheduler processes, pre-pilot persistence and availability upgrade gates, pre-deploy migrations, health gating, wildcard domains, and cross-service secret wiring
 - Render-compatible `DATABASE_URL` parsing and dynamic web-process port binding
 
 Automated verification includes cross-tenant denial, suspended-site recovery boundaries, stale/recovered worker readiness, alert escalation, restore confirmation/integrity, pilot data requirements, security headers, and the primary operator journey.

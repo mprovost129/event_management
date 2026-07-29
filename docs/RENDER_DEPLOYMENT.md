@@ -1,22 +1,40 @@
 # Render Deployment
 
-The repository includes a production Blueprint at `render.yaml`. It defines the
-smallest practical persistent deployment for the Gather HQs MVP:
+The repository includes a cost-staged Blueprint at `render.yaml`. It uses free
+resources for prelaunch traffic and data while retaining the paid background
+processes required for the complete Gather HQs feature set:
 
 | Resource | Purpose | Blueprint plan |
 | --- | --- | --- |
-| `gather-hqs-web` | Django and Gunicorn | Starter web service |
+| `gather-hqs-web` | Django and Gunicorn | Free web service during prelaunch |
 | `gather-hqs-worker` | Celery delivery and scheduled work | Starter background worker |
 | `gather-hqs-scheduler` | Celery beat schedule | Starter background worker |
-| `gather-hqs-key-value` | Redis-compatible cache and durable Celery broker | Starter Key Value |
-| `gather-hqs-db` | Tenant and operational data | Basic 256 MB PostgreSQL |
+| `gather-hqs-key-value` | Redis-compatible cache and Celery broker | Free Key Value during prelaunch |
+| `gather-hqs-db` | Tenant and operational data | Free PostgreSQL during prelaunch |
 
-These are paid resources. Committing or pushing `render.yaml` does not create
-them, but applying the Blueprint in Render does. Review Render's current price
-estimate before selecting **Deploy Blueprint**. Free services are intentionally
-not used for production payment, invitation, or scheduled-email workloads: free
-web services can sleep and free data services do not provide the durability and
-retention this application needs.
+Only the worker and scheduler are paid in the initial configuration because
+Render does not offer free background workers or cron jobs. They preserve
+queued delivery, reminders, campaign scheduling, inventory release,
+reconciliation, and review requests. Committing or pushing `render.yaml` does
+not create resources; applying the Blueprint does. Review Render's current
+price estimate before selecting **Deploy Blueprint**.
+
+This is a prelaunch configuration, not the final subscriber configuration:
+
+- The free web service sleeps after 15 minutes without inbound traffic and can
+  take about a minute to wake. Upgrade it to Starter before promoting the site
+  publicly or inviting the pilot group.
+- The free PostgreSQL database is limited to 1 GB, has no managed backups, and
+  expires after 30 days. Upgrade it before storing any real subscriber data and
+  no later than day 25 of the free database's life.
+- Free Key Value has no disk persistence and loses its contents on restarts and
+  when upgraded. Gather HQs keeps outbound-message and campaign state in
+  PostgreSQL and periodically recovers pending work, but the broker must still
+  be upgraded before real invitations, scheduled campaigns, or paid events.
+
+This staging uses the free tiers as long as they do not affect a real user's
+data or experience. The first public promotion, pilot invitation, or real
+subscriber signup is the upgrade trigger—not the first successful payment.
 
 ## Before applying the Blueprint
 
@@ -67,10 +85,29 @@ values that should not be promoted. If a new `sync: false` variable is added
 after the Blueprint already exists, add it to the service manually; Render only
 prompts for these values during initial Blueprint creation.
 
-The web service runs migrations as a pre-deploy command. Its container startup
+The paid worker runs migrations as its pre-deploy command because Render does
+not provide pre-deploy commands on free web services. The web container startup
 collects static files and starts Gunicorn on Render's assigned `PORT`. The
 Blueprint waits for repository checks before automatic deploys and uses
 `/health/live/` as Render's deploy health check.
+
+## Upgrade before the pilot
+
+Before inviting any real user:
+
+1. Export and verify the database, then change `gather-hqs-db` from `free` to
+   `basic-256mb`, add a 5 GB disk, and enable the reviewed backup policy.
+2. Change `gather-hqs-key-value` from `free` to `starter` and set persistence to
+   `journal-snapshot`. The upgrade clears the free instance, so perform it
+   before live work is queued. Restart the worker and scheduler afterward.
+3. Change `gather-hqs-web` from `free` to `starter` so customer-facing pages no
+   longer sleep after inactivity.
+4. Sync the Blueprint, confirm the new monthly estimate, and run every
+   first-deploy verification below again.
+
+Keep the worker and scheduler on Starter throughout. Combining them with the
+web process or using artificial traffic to prevent free-service sleep would
+make scheduled work less reliable and is not part of the supported plan.
 
 ## Domain and DNS
 
@@ -99,7 +136,9 @@ and `CSRF_TRUSTED_ORIGINS` too.
 
 ## First-deploy verification
 
-Use a Render Shell on the web service after all services report deployed:
+Use a Render Shell on the paid worker after all services report deployed. Free
+web services do not include shell access, and the worker uses the same release,
+database, application settings, and provider configuration:
 
 ```text
 python manage.py check --deploy --settings=config.Settings.prod

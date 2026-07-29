@@ -9,7 +9,7 @@
 - [ ] The pilot subscriber's in-product Pilot Launch Center shows every required item complete.
 - [ ] Platform and Connect webhook secrets are distinct and current.
 - [ ] Resend email delivery uses a verified sender domain, production API key, and distinct webhook signing secret; SMS remains disabled if no vendor is selected.
-- [ ] The Render Blueprint is synced from the release commit; web, worker, scheduler, PostgreSQL, and persistent Key Value resources are healthy and use the reviewed paid plans.
+- [ ] The Render Blueprint is synced from the release commit; web, worker, scheduler, PostgreSQL, and Key Value are healthy, and no public pilot or real subscriber data remains on free instances.
 
 ## External evidence required
 

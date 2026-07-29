@@ -46,7 +46,7 @@ Phase 7 launch hardening is complete in provider-ready application code:
 - Audited subscriber-admin JSON exports and read-only, expiring platform support access
 - Reasoned suspension plus two-admin, delayed, cancelable site-retention deletion workflows
 - Native Resend email delivery with signed delivery webhooks and suppression handling
-- Render production Blueprint for Django, Celery worker/beat, PostgreSQL, and persistent Key Value
+- Cost-staged Render Blueprint for Django, Celery worker/beat, PostgreSQL, and Key Value, with explicit pre-pilot upgrade gates
 
 Resend is the selected production email provider. Sender-domain, webhook, and end-to-end delivery evidence remain launch tasks. SMS is disabled by default and fails closed until a provider adapter and allowance are configured.
 
