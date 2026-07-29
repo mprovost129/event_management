@@ -98,6 +98,30 @@ def test_paid_invoice_recovers_site_from_grace():
 
 
 @pytest.mark.django_db
+def test_paused_subscription_suspends_site_access():
+    _, site, subscription = create_subscription_fixture()
+    subscription.stripe_subscription_id = "sub_123"
+    subscription.status = PlatformSubscription.Status.ACTIVE
+    subscription.save()
+    site.status = Site.Status.ACTIVE
+    site.save()
+
+    process_stripe_event(
+        {
+            "id": "evt_subscription_paused",
+            "type": "customer.subscription.paused",
+            "data": {"object": {"id": "sub_123"}},
+        }
+    )
+
+    subscription.refresh_from_db()
+    site.refresh_from_db()
+    assert subscription.status == PlatformSubscription.Status.SUSPENDED
+    assert site.status == Site.Status.SUSPENDED
+    assert subscription.suspended_at is not None
+
+
+@pytest.mark.django_db
 def test_failed_webhook_is_retained_for_operations():
     event = {
         "id": "evt_unknown_subscription",

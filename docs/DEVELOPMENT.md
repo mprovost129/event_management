@@ -71,6 +71,14 @@ python manage.py sync_subscription_access
 
 Stripe webhooks remain authoritative for paid activation, payment failure, recovery, and cancellation. Browser checkout redirects never change subscription access directly.
 
+Validate the configured Stripe account, prices, and both sandbox webhook endpoints with read-only API calls:
+
+```text
+python manage.py validate_stripe_sandbox --json
+```
+
+The command refuses non-test keys unless `--allow-live` is supplied explicitly. On a managed workstation whose HTTPS inspection root exists only in the operating-system certificate store, install development requirements and add `--use-system-trust`; certificate verification remains enabled.
+
 Test settings deliberately blank all Stripe secrets even when a developer `.env` contains sandbox credentials. Tests that exercise the gateway supply mocked keys explicitly, preventing accidental provider calls.
 
 ## Phase 2 flows

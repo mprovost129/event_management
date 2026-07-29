@@ -21,12 +21,12 @@ PLATFORM_CONTROL_HOSTS = env_list(
 PLATFORM_DEFAULT_CURRENCY = env("PLATFORM_DEFAULT_CURRENCY", "usd").lower()
 STRIPE_STANDARD_MONTHLY_PRICE_ID = env(
     "STRIPE_STANDARD_MONTHLY_PRICE_ID",
-    "price_1TyG1yGdCc3z25dtW56Lrqc6",
+    "price_1TyGKX2dujKmWAFggUOrejZz",
     allow_blank=True,
 )
 STRIPE_STANDARD_YEARLY_PRICE_ID = env(
     "STRIPE_STANDARD_YEARLY_PRICE_ID",
-    "price_1TyG1yGdCc3z25dtmrbLaJgM",
+    "price_1TyGKX2dujKmWAFgx9MQuP3R",
     allow_blank=True,
 )
 STRIPE_STANDARD_MONTHLY_LOOKUP_KEY = env(

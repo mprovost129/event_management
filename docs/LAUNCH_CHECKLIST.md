@@ -11,6 +11,8 @@
 
 ## External evidence required
 
+- [x] Read-only Stripe sandbox account, price, and endpoint validation completed; see `STRIPE_SANDBOX_VALIDATION.md`.
+- [ ] Add `account.application.deauthorized` to the connected-account Stripe destination and rerun the validator successfully.
 - [ ] Real Stripe sandbox subscription, Connect onboarding, paid ticket purchase/refund, and membership renewal complete with verified webhooks.
 - [ ] Production email delivery, unsubscribe, bounce, and callback behavior are verified; SMS is either fully verified or not offered.
 - [ ] The 100-concurrent-user production-like load drill passes and evidence is saved.

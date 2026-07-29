@@ -207,6 +207,13 @@ def _apply_stripe_event(event_type, stripe_object):
             now=now,
             audit_action="subscription.canceled",
         )
+    elif event_type == "customer.subscription.paused":
+        _set_status(
+            subscription,
+            PlatformSubscription.Status.SUSPENDED,
+            now=now,
+            audit_action="subscription.paused",
+        )
     elif event_type in {
         "customer.subscription.created",
         "customer.subscription.updated",

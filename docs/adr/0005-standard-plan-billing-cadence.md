@@ -13,8 +13,8 @@ Offer one Standard feature tier with two USD billing cadences after the fourteen
 
 | Cadence | Amount | Stripe price ID | Lookup key |
 | --- | ---: | --- | --- |
-| Monthly | $20.00 | `price_1TyG1yGdCc3z25dtW56Lrqc6` | `standard_monthly` |
-| Yearly | $220.00 | `price_1TyG1yGdCc3z25dtmrbLaJgM` | `standard_yearly` |
+| Monthly | $20.00 | `price_1TyGKX2dujKmWAFggUOrejZz` | `standard_monthly` |
+| Yearly | $220.00 | `price_1TyGKX2dujKmWAFgx9MQuP3R` | `standard_yearly` |
 
 Yearly billing saves $20 compared with twelve monthly payments. Both cadences grant the same features and create subscriptions on the platform Stripe account. The price identifiers, lookup keys, and display amounts remain environment-overridable so automated tests and isolated environments do not depend on production Stripe objects.
 
