@@ -1,7 +1,9 @@
+import base64
 import hashlib
 import hmac
 import json
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from django.core import mail
@@ -30,6 +32,7 @@ from communications.models import (
     SmsAllowance,
     SmsUsageEvent,
 )
+from communications.providers import provider_for
 from communications.services import deliver_message, queued_message_ids
 from contacts.models import (
     ConsentStatus,
@@ -367,6 +370,108 @@ def test_callback_endpoint_verifies_signature():
 
 
 @pytest.mark.django_db
+@override_settings(
+    EMAIL_DELIVERY_BACKEND="resend",
+    RESEND_API_KEY="re_test_key",
+    DEFAULT_FROM_EMAIL="Gather HQs <events@gatherhqs.com>",
+)
+@patch("communications.providers.resend.Emails.send")
+def test_resend_provider_returns_provider_id_and_preserves_unsubscribe_headers(send):
+    _, site = campaign_fixture()
+    contact = contact_for(site, email_consent=True)
+    message = OutboundMessage.objects.create(
+        site=site,
+        contact=contact,
+        kind=OutboundMessage.Kind.CAMPAIGN,
+        channel=OutboundMessage.Channel.EMAIL,
+        recipient_email=contact.email,
+        subject="Friday dance",
+        body="Join us this Friday.",
+        is_marketing=True,
+        unsubscribe_url="https://boot-scooters.gatherhqs.com/unsubscribe/example/",
+    )
+    send.return_value = {"id": "email_resend_123"}
+
+    result = provider_for("email").send(message)
+
+    assert result.provider == "resend"
+    assert result.message_id == "email_resend_123"
+    params, options = send.call_args.args
+    assert params["from"] == "Gather HQs <events@gatherhqs.com>"
+    assert params["to"] == [contact.email]
+    assert params["headers"]["List-Unsubscribe"] == (
+        "<https://boot-scooters.gatherhqs.com/unsubscribe/example/>"
+    )
+    assert params["headers"]["X-Gather-HQs-Message-ID"] == str(message.id)
+    assert options == {"idempotency_key": f"gather-hqs-message-{message.id}"}
+
+
+@pytest.mark.django_db
+def test_resend_callback_verifies_svix_signature_and_suppresses_complaints(
+    client,
+    settings,
+):
+    _, site = campaign_fixture()
+    contact = contact_for(site, email_consent=True)
+    message = OutboundMessage.objects.create(
+        site=site,
+        contact=contact,
+        kind=OutboundMessage.Kind.INVITATION,
+        channel=OutboundMessage.Channel.EMAIL,
+        recipient_email=contact.email,
+        subject="Friday dance",
+        body="You are invited.",
+        status=OutboundMessage.Status.SENT,
+        provider="resend",
+        provider_message_id="email_resend_123",
+    )
+    secret_bytes = b"gather-hqs-resend-test-secret"
+    settings.RESEND_WEBHOOK_SECRET = "whsec_" + base64.b64encode(secret_bytes).decode()
+    url = reverse("communications:provider_callback", kwargs={"provider": "resend"})
+
+    def signed_post(event_type, webhook_id):
+        payload = json.dumps(
+            {
+                "type": event_type,
+                "created_at": timezone.now().isoformat(),
+                "data": {"email_id": message.provider_message_id},
+            },
+            separators=(",", ":"),
+        ).encode()
+        timestamp = str(int(timezone.now().timestamp()))
+        signed = f"{webhook_id}.{timestamp}.{payload.decode()}".encode()
+        signature = base64.b64encode(
+            hmac.new(secret_bytes, signed, hashlib.sha256).digest()
+        ).decode()
+        return client.post(
+            url,
+            data=payload,
+            content_type="application/json",
+            headers={
+                "Svix-Id": webhook_id,
+                "Svix-Timestamp": timestamp,
+                "Svix-Signature": f"v1,{signature}",
+            },
+        )
+
+    assert signed_post("email.delivered", "resend-event-delivered").status_code == 200
+    message.refresh_from_db()
+    assert message.status == OutboundMessage.Status.DELIVERED
+    assert message.delivered_at is not None
+
+    assert signed_post("email.complained", "resend-event-complained").status_code == 200
+    message.refresh_from_db()
+    contact.refresh_from_db()
+    assert message.status == OutboundMessage.Status.BOUNCED
+    assert contact.email_consent_status == ConsentStatus.SUPPRESSED
+    assert ProviderCallbackEvent.objects.filter(provider="resend").count() == 2
+
+    assert (
+        client.post(url, data=b"{}", content_type="application/json").status_code == 400
+    )
+
+
+@pytest.mark.django_db
 def test_callback_processing_failure_is_durable_and_retryable():
     owner, site = campaign_fixture()
     contact_for(site, email_consent=True)
@@ -512,7 +617,7 @@ def test_campaign_composer_renders_guided_audience_controls():
     content = response.content.decode()
 
     assert response.status_code == 200
-    assert 'data-campaign-editor' in content
+    assert "data-campaign-editor" in content
     assert 'data-audience-section="tag"' in content
     assert "Save and review audience" in content
     assert "You will review the exact eligible audience" in content

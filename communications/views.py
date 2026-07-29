@@ -26,6 +26,7 @@ from .campaigns import (
 )
 from .forms import CampaignForm, CampaignLaunchForm, CampaignTestForm
 from .models import Campaign
+from .resend_webhooks import process_resend_webhook
 
 
 @site_staff_required
@@ -233,6 +234,19 @@ def unsubscribe_view(request, token):
 @csrf_exempt
 @require_POST
 def provider_callback(request, provider):
+    if provider == "resend":
+        if not settings.RESEND_WEBHOOK_SECRET:
+            return HttpResponse("Resend callbacks are not configured.", status=503)
+        try:
+            process_resend_webhook(
+                body=request.body,
+                webhook_id=request.headers.get("Svix-Id", ""),
+                timestamp=request.headers.get("Svix-Timestamp", ""),
+                signature=request.headers.get("Svix-Signature", ""),
+            )
+        except (KeyError, TypeError, UnicodeDecodeError, ValueError):
+            return HttpResponseBadRequest("Invalid Resend callback.")
+        return HttpResponse(status=200)
     if not settings.COMMUNICATIONS_WEBHOOK_SECRET:
         return HttpResponse("Communication callbacks are not configured.", status=503)
     signature = request.headers.get("X-Communications-Signature", "")

@@ -183,7 +183,7 @@ Completed next milestone: Phase 5 - newsletters, SMS, campaign delivery, and pro
 
 ## Phase 5 - Newsletters, SMS, and delivery analytics
 
-Status: Complete in provider-ready application code. Production email and SMS vendors remain deployment decisions; SMS stays disabled until one is selected.
+Status: Complete with a native Resend production email path. Live sender-domain verification and evidence remain deployment tasks; SMS stays disabled until a provider is selected.
 
 Completed:
 
@@ -194,8 +194,11 @@ Completed:
 - Unique hashed unsubscribe capabilities that withdraw consent and suppress queued marketing immediately
 - Background campaign expansion, bounded outbox delivery, stale-job recovery, exponential retries, and safe message-body redaction
 - Django email delivery adapter with one-click unsubscribe headers and a fail-closed SMS provider boundary
+- Native Resend Email API adapter with provider IDs, idempotent sends, operational tags, and one-click unsubscribe headers
 - SMS segment estimates, explicit usage confirmation, monthly/purchased allowances, transactional reservations, hard limits, and append-only usage records
 - Signed vendor-neutral callback ingestion with durable idempotency and out-of-order-safe sent, delivered, bounce, failure, open, click, and unsubscribe processing
+- Raw-body Resend/Svix webhook verification with complaint and provider-suppression handling
+- Read-only eight-check Resend sandbox journey gate for transactional delivery, marketing delivery, callbacks, suppression, and unsubscribe evidence
 - Subscriber campaign reports plus platform-admin visibility into campaigns, recipient failures, SMS allowances and history, callbacks, and unsubscribe capabilities
 
 Verified locally:
@@ -207,10 +210,10 @@ Verified locally:
 
 Production activation still requires:
 
-- A production Django email backend and verified sender/domain configuration
+- A verified Resend sender domain plus production API and webhook secrets
 - A selected production SMS provider adapter and customer-facing segment allowance/credit policy
-- Vendor-specific callback signature verification or a trusted translation into the normalized callback contract
-- Email and SMS sandbox deliverability tests with real provider callbacks
+- Email sandbox deliverability tests with real Resend callbacks
+- SMS sandbox deliverability tests after a provider is selected
 
 Completed next milestone: Phase 6 - reviews, reporting completion, and platform operations.
 
@@ -272,6 +275,6 @@ Completed:
 
 Automated verification includes cross-tenant denial, suspended-site recovery boundaries, stale/recovered worker readiness, alert escalation, restore confirmation/integrity, pilot data requirements, security headers, and the primary operator journey.
 
-Verified locally: 141 tests pass, the PostgreSQL-only simultaneous-capacity assertion remains selected for CI, Ruff lint passes, migration drift is clean, and Django system checks report no issues. The strict production deployment check passes with zero warnings when all required production values are supplied.
+Verified locally: 146 tests pass, the PostgreSQL-only simultaneous-capacity assertion remains selected for CI, Ruff lint passes, migration drift is clean, and Django system checks report no issues. The strict production deployment check passes with zero warnings when all required production values are supplied.
 
 Launch remains blocked until every external-evidence item in `LAUNCH_CHECKLIST.md` is signed off, especially real provider sandbox flows, the production-like 100-user drill, manual accessibility review, legal approval, and an isolated backup restore.

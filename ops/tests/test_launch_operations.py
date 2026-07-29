@@ -9,7 +9,13 @@ from django.core.management.base import CommandError
 from django.test import override_settings
 from django.utils import timezone
 
-from contacts.models import Member, MembershipPlan, MemberSubscription
+from communications.callbacks import process_provider_callback
+from communications.models import (
+    OutboundMessage,
+    ProviderCallbackEvent,
+    UnsubscribeCapability,
+)
+from contacts.models import Contact, Member, MembershipPlan, MemberSubscription
 from events.models import EventOccurrence
 from ops.management.commands.validate_stripe_sandbox import (
     CONNECT_EVENTS,
@@ -62,6 +68,74 @@ def test_pilot_readiness_requires_operable_site_contact_and_published_event():
     output = io.StringIO()
     call_command("pilot_readiness", site.slug, stdout=output)
     assert json.loads(output.getvalue())["ok"] is True
+
+
+@pytest.mark.django_db
+@override_settings(
+    EMAIL_DELIVERY_BACKEND="resend",
+    RESEND_API_KEY="re_sandbox",
+    RESEND_WEBHOOK_SECRET="whsec_sandbox",
+)
+def test_email_sandbox_journey_requires_complete_provider_backed_evidence():
+    _, site, _ = operations_fixture()
+    contact = Contact.objects.for_site(site).get()
+    output = io.StringIO()
+    with pytest.raises(CommandError, match="evidence is incomplete"):
+        call_command("email_sandbox_journey", site.slug, json=True, stdout=output)
+    assert json.loads(output.getvalue())["ok"] is False
+
+    common = {
+        "site": site,
+        "contact": contact,
+        "channel": OutboundMessage.Channel.EMAIL,
+        "recipient_email": contact.email,
+        "subject": "Pilot email",
+        "body": "Provider evidence",
+        "status": OutboundMessage.Status.DELIVERED,
+        "provider": "resend",
+    }
+    transactional = OutboundMessage.objects.create(
+        **common,
+        kind=OutboundMessage.Kind.INVITATION,
+        provider_message_id="email_transactional",
+    )
+    OutboundMessage.objects.create(
+        **common,
+        kind=OutboundMessage.Kind.CAMPAIGN,
+        is_marketing=True,
+        provider_message_id="email_marketing",
+    )
+    suppression = OutboundMessage.objects.create(
+        **common,
+        kind=OutboundMessage.Kind.INVITATION,
+        provider_message_id="email_suppression",
+    )
+    process_provider_callback(
+        provider="resend",
+        provider_event_id="evt_email_delivered",
+        provider_message_id=transactional.provider_message_id,
+        event_type="delivered",
+    )
+    process_provider_callback(
+        provider="resend",
+        provider_event_id="evt_email_bounced",
+        provider_message_id=suppression.provider_message_id,
+        event_type="bounced",
+    )
+    UnsubscribeCapability.objects.create(
+        site=site,
+        contact=contact,
+        channel=OutboundMessage.Channel.EMAIL,
+        token_hash="e" * 64,
+        used_at=timezone.now(),
+    )
+
+    output = io.StringIO()
+    call_command("email_sandbox_journey", site.slug, json=True, stdout=output)
+    payload = json.loads(output.getvalue())
+    assert payload["ok"] is True
+    assert payload["completed"] == payload["total"] == 8
+    assert ProviderCallbackEvent.objects.filter(provider="resend").count() == 2
 
 
 @pytest.mark.django_db

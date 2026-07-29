@@ -238,6 +238,8 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "", allow_blank=True)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "webmaster@localhost")
 SUPPORT_EMAIL = env("SUPPORT_EMAIL", "", allow_blank=True)
 EMAIL_DELIVERY_BACKEND = env("EMAIL_DELIVERY_BACKEND", "django").lower()
+RESEND_API_KEY = env("RESEND_API_KEY", "", allow_blank=True)
+RESEND_WEBHOOK_SECRET = env("RESEND_WEBHOOK_SECRET", "", allow_blank=True)
 SMS_DELIVERY_BACKEND = env("SMS_DELIVERY_BACKEND", "disabled").lower()
 COMMUNICATIONS_WEBHOOK_SECRET = env(
     "COMMUNICATIONS_WEBHOOK_SECRET", "", allow_blank=True

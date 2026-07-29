@@ -29,6 +29,7 @@ Stripe and communications use durable inbox/outbox records; provider redirects a
 
 1. Check platform ops and `alert_summary` to identify the affected provider and time window.
 2. Confirm the provider's status independently.
+   For email, compare the Gather HQs outbox provider ID with the Resend email and webhook records; never replay an accepted send manually.
 3. Keep queued records intact. Do not manually mark payments paid or messages delivered.
 4. After recovery, run the appropriate bounded command:
 

@@ -8,14 +8,14 @@
 - [ ] Primary onboarding-to-review journey passes on the release commit.
 - [ ] The pilot subscriber's in-product Pilot Launch Center shows every required item complete.
 - [ ] Platform and Connect webhook secrets are distinct and current.
-- [ ] Production email/SMS backends are not console adapters; SMS remains disabled if no vendor is selected.
+- [ ] Resend email delivery uses a verified sender domain, production API key, and distinct webhook signing secret; SMS remains disabled if no vendor is selected.
 
 ## External evidence required
 
 - [x] Read-only Stripe sandbox account, price, and endpoint validation completed; see `STRIPE_SANDBOX_VALIDATION.md`.
 - [x] Documented unavailable Connect deauthorization selector event and implemented scheduled permanent-access-failure reconciliation fallback.
 - [ ] Real Stripe sandbox subscription, Connect onboarding, paid ticket purchase/refund, and membership renewal complete; `stripe_sandbox_journey SITE_SLUG --json` passes and Stripe Dashboard evidence is retained.
-- [ ] Production email delivery, unsubscribe, bounce, and callback behavior are verified; SMS is either fully verified or not offered.
+- [ ] Production email delivery, unsubscribe, bounce, and callback behavior are verified; `email_sandbox_journey SITE_SLUG --json` passes. SMS is either fully verified or not offered.
 - [ ] The 100-concurrent-user production-like load drill passes and evidence is saved.
 - [ ] Keyboard-only, screen-reader, zoom, contrast, and small-phone checks are signed off using `ACCESSIBILITY_REVIEW.md`.
 - [ ] A backup restores into isolation and `post_restore_verify` plus representative UI checks pass.

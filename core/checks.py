@@ -71,6 +71,13 @@ def product_configuration_check(app_configs, **kwargs):
                 id="platform.E022",
             )
         )
+    if settings.EMAIL_DELIVERY_BACKEND not in {"django", "resend"}:
+        issues.append(
+            Error(
+                "EMAIL_DELIVERY_BACKEND must be either 'django' or 'resend'.",
+                id="platform.E025",
+            )
+        )
     if settings.PLATFORM_DOMAIN not in settings.PLATFORM_CONTROL_HOSTS:
         issues.append(
             Error(
@@ -178,14 +185,32 @@ def deployment_product_check(app_configs, **kwargs):
                 id="platform.E013",
             )
         )
-    if settings.EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend":
+    if (
+        settings.EMAIL_DELIVERY_BACKEND == "django"
+        and settings.EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend"
+    ):
         issues.append(
             Error(
                 "The console email backend cannot be used in production.",
                 id="platform.E014",
             )
         )
-    if not settings.COMMUNICATIONS_WEBHOOK_SECRET:
+    if settings.EMAIL_DELIVERY_BACKEND == "resend":
+        if not settings.RESEND_API_KEY:
+            issues.append(
+                Error(
+                    "RESEND_API_KEY is required when Resend email delivery is enabled.",
+                    id="platform.E026",
+                )
+            )
+        if not settings.RESEND_WEBHOOK_SECRET:
+            issues.append(
+                Error(
+                    "RESEND_WEBHOOK_SECRET is required to verify Resend delivery events.",
+                    id="platform.E027",
+                )
+            )
+    elif not settings.COMMUNICATIONS_WEBHOOK_SECRET:
         issues.append(
             Warning(
                 "Configure COMMUNICATIONS_WEBHOOK_SECRET to receive delivery analytics callbacks.",

@@ -210,11 +210,22 @@ python manage.py dispatch_campaigns --limit 25
 python manage.py deliver_outbound_messages --limit 100
 ```
 
-Email delivery uses Django's configured `EMAIL_BACKEND` through the internal `django` delivery adapter. Configure a production email backend rather than the console backend before launch.
+Local email delivery uses Django's configured `EMAIL_BACKEND` through the internal `django` adapter. The recommended production path is Resend:
+
+```text
+EMAIL_DELIVERY_BACKEND=resend
+RESEND_API_KEY=re_...
+RESEND_WEBHOOK_SECRET=whsec_...
+DEFAULT_FROM_EMAIL=Gather HQs <events@gatherhqs.com>
+```
+
+Verify the sending domain in Resend, then add `https://gatherhqs.com/communications/callbacks/resend/` as a webhook for `email.sent`, `email.delivered`, `email.bounced`, `email.complained`, `email.failed`, `email.opened`, `email.clicked`, and `email.suppressed`. The endpoint verifies the raw body with the Resend/Svix signing headers. API sends return a provider message ID, preserve one-click unsubscribe headers, and use the local message UUID as an idempotency key.
+
+After completing the real transactional, marketing, unsubscribe, and suppression paths for the pilot site, run `python manage.py email_sandbox_journey SITE_SLUG --json`. See `EMAIL_SANDBOX_JOURNEY.md` for the required evidence.
 
 SMS fails closed by default. A deployment must provide a production SMS adapter, set `SMS_DELIVERY_BACKEND`, and assign a nonzero `SMS_MONTHLY_SEGMENT_LIMIT` or purchased segment credit before SMS campaigns can launch. Every SMS launch and test send requires explicit usage confirmation; segments are reserved before audience expansion and moved to immutable accepted/released usage records.
 
-Provider callbacks are accepted at `/communications/callbacks/{provider}/`. The current vendor-neutral adapter expects a JSON body containing `event_id`, `message_id`, `event_type`, and optional `occurred_at`, with a lowercase hexadecimal HMAC-SHA256 signature in `X-Communications-Signature` using `COMMUNICATIONS_WEBHOOK_SECRET`. Supported normalized event types are `sent`, `delivered`, `bounced`, `failed`, `opened`, `clicked`, and `unsubscribed`. A selected production vendor should translate its signed payload into this contract or add a vendor-specific verified adapter.
+Provider callbacks are accepted at `/communications/callbacks/{provider}/`. Resend has a native signed adapter. The vendor-neutral fallback expects a JSON body containing `event_id`, `message_id`, `event_type`, and optional `occurred_at`, with a lowercase hexadecimal HMAC-SHA256 signature in `X-Communications-Signature` using `COMMUNICATIONS_WEBHOOK_SECRET`. Supported normalized states include sent, delivered, bounced, complained, suppressed, failed, opened, clicked, and unsubscribed.
 
 Marketing unsubscribe links are random capabilities stored only as SHA-256 hashes. Unsubscribing updates consent and suppresses already queued marketing immediately. Successful and terminal deliveries erase message bodies and raw unsubscribe URLs from the outbox.
 

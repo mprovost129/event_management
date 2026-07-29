@@ -2,6 +2,7 @@ import pytest
 from django.test import override_settings
 from django.urls import reverse
 
+from core.checks import deployment_product_check
 from ops.models import SystemHeartbeat
 from ops.tasks import record_background_heartbeat
 
@@ -100,3 +101,34 @@ def test_support_contact_is_published_in_policy_and_error_pages(client):
 
     assert b"mailto:support@gatherhqs.com" in privacy.content
     assert b"mailto:support@gatherhqs.com" in missing.content
+
+
+@override_settings(
+    DEBUG=False,
+    EMAIL_DELIVERY_BACKEND="resend",
+    EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend",
+    RESEND_API_KEY="",
+    RESEND_WEBHOOK_SECRET="",
+)
+def test_resend_deployment_requires_api_and_webhook_secrets():
+    issue_ids = {issue.id for issue in deployment_product_check(None)}
+
+    assert "platform.E026" in issue_ids
+    assert "platform.E027" in issue_ids
+    assert "platform.E014" not in issue_ids
+
+
+@override_settings(
+    DEBUG=False,
+    EMAIL_DELIVERY_BACKEND="resend",
+    EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend",
+    RESEND_API_KEY="re_configured",
+    RESEND_WEBHOOK_SECRET="whsec_configured",
+)
+def test_resend_deployment_accepts_complete_provider_configuration():
+    issue_ids = {issue.id for issue in deployment_product_check(None)}
+
+    assert "platform.E026" not in issue_ids
+    assert "platform.E027" not in issue_ids
+    assert "platform.E014" not in issue_ids
+    assert "platform.W003" not in issue_ids

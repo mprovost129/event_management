@@ -13,19 +13,23 @@ EVENT_STATUS = {
     "sent": OutboundMessage.Status.SENT,
     "delivered": OutboundMessage.Status.DELIVERED,
     "bounced": OutboundMessage.Status.BOUNCED,
+    "complained": OutboundMessage.Status.BOUNCED,
     "failed": OutboundMessage.Status.FAILED,
     "opened": OutboundMessage.Status.OPENED,
     "clicked": OutboundMessage.Status.CLICKED,
     "unsubscribed": OutboundMessage.Status.UNSUBSCRIBED,
+    "suppressed": OutboundMessage.Status.SUPPRESSED,
 }
 RECIPIENT_STATUS = {
     "sent": CampaignRecipient.Status.SENT,
     "delivered": CampaignRecipient.Status.DELIVERED,
     "bounced": CampaignRecipient.Status.BOUNCED,
+    "complained": CampaignRecipient.Status.BOUNCED,
     "failed": CampaignRecipient.Status.FAILED,
     "opened": CampaignRecipient.Status.OPENED,
     "clicked": CampaignRecipient.Status.CLICKED,
     "unsubscribed": CampaignRecipient.Status.UNSUBSCRIBED,
+    "suppressed": CampaignRecipient.Status.SUPPRESSED,
 }
 ENGAGEMENT_RANK = {
     OutboundMessage.Status.SENT: 1,
@@ -34,6 +38,7 @@ ENGAGEMENT_RANK = {
     OutboundMessage.Status.CLICKED: 4,
     OutboundMessage.Status.FAILED: 90,
     OutboundMessage.Status.BOUNCED: 100,
+    OutboundMessage.Status.SUPPRESSED: 105,
     OutboundMessage.Status.UNSUBSCRIBED: 110,
 }
 
@@ -122,11 +127,16 @@ def process_provider_callback(
                     recipient_updates.append(timestamp_field)
                 recipient.save(update_fields=recipient_updates)
 
-            if message.contact_id and event_type in ("bounced", "unsubscribed"):
+            if message.contact_id and event_type in (
+                "bounced",
+                "complained",
+                "suppressed",
+                "unsubscribed",
+            ):
                 status = (
-                    ConsentStatus.SUPPRESSED
-                    if event_type == "bounced"
-                    else ConsentStatus.WITHDRAWN
+                    ConsentStatus.WITHDRAWN
+                    if event_type == "unsubscribed"
+                    else ConsentStatus.SUPPRESSED
                 )
                 set_consent_status(
                     contact=message.contact,
