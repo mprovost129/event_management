@@ -6,13 +6,24 @@ import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import override_settings
+from django.utils import timezone
 
+from contacts.models import Member, MembershipPlan, MemberSubscription
 from ops.management.commands.validate_stripe_sandbox import (
     CONNECT_EVENTS,
     PLATFORM_EVENTS,
 )
 from ops.tests.test_platform_operations import operations_fixture
-from subscriptions.models import StripeWebhookEvent
+from payments.models import (
+    ConnectWebhookEvent,
+    MembershipPayment,
+    Order,
+    Refund,
+    Ticket,
+)
+from payments.services import reserve_ticket_order
+from payments.tests.test_commerce import commerce_fixture
+from subscriptions.models import PlatformSubscription, StripeWebhookEvent
 
 
 @pytest.mark.django_db
@@ -42,6 +53,128 @@ def test_pilot_readiness_requires_operable_site_contact_and_published_event():
     output = io.StringIO()
     call_command("pilot_readiness", site.slug, stdout=output)
     assert json.loads(output.getvalue())["ok"] is True
+
+
+@pytest.mark.django_db
+@override_settings(STRIPE_SECRET_KEY="sk_test_journey")
+def test_stripe_sandbox_journey_requires_complete_webhook_backed_evidence():
+    _, site, connected, _, ticket_type, registration = commerce_fixture()
+    output = io.StringIO()
+    with pytest.raises(CommandError, match="evidence is incomplete"):
+        call_command("stripe_sandbox_journey", site.slug, json=True, stdout=output)
+    assert json.loads(output.getvalue())["ok"] is False
+
+    platform = site.platform_subscription
+    platform.status = PlatformSubscription.Status.ACTIVE
+    platform.stripe_customer_id = "cus_platform"
+    platform.stripe_subscription_id = "sub_platform"
+    platform.stripe_price_id = "price_monthly"
+    platform.billing_interval = PlatformSubscription.BillingInterval.MONTHLY
+    platform.save()
+    StripeWebhookEvent.objects.create(
+        stripe_event_id="evt_platform_subscription",
+        event_type="customer.subscription.updated",
+        object_id="sub_platform",
+        status=StripeWebhookEvent.Status.PROCESSED,
+        processed_at=timezone.now(),
+    )
+    ConnectWebhookEvent.objects.create(
+        stripe_event_id="evt_account_ready",
+        connected_account_id=connected.stripe_account_id,
+        event_type="account.updated",
+        object_id=connected.stripe_account_id,
+        status=ConnectWebhookEvent.Status.PROCESSED,
+        processed_at=timezone.now(),
+    )
+
+    order, line = reserve_ticket_order(
+        registration=registration, ticket_type=ticket_type
+    )
+    order.status = Order.Status.REFUNDED
+    order.stripe_checkout_session_id = "cs_ticket"
+    order.stripe_payment_intent_id = "pi_ticket"
+    order.refunded_cents = order.total_cents
+    order.paid_at = timezone.now()
+    order.save()
+    Ticket.objects.create(
+        site=site,
+        order_line=line,
+        participant=registration.participants.get(is_primary=True),
+        display_code="GHQ-EVIDENCE-1",
+        status=Ticket.Status.REFUNDED,
+    )
+    Refund.objects.create(
+        site=site,
+        order=order,
+        amount_cents=order.total_cents,
+        status=Refund.Status.SUCCEEDED,
+        stripe_refund_id="re_ticket",
+        succeeded_at=timezone.now(),
+    )
+    for event_id, event_type, object_id in (
+        ("evt_ticket_paid", "checkout.session.completed", "cs_ticket"),
+        ("evt_ticket_refund", "refund.updated", "re_ticket"),
+    ):
+        ConnectWebhookEvent.objects.create(
+            stripe_event_id=event_id,
+            connected_account_id=connected.stripe_account_id,
+            event_type=event_type,
+            object_id=object_id,
+            status=ConnectWebhookEvent.Status.PROCESSED,
+            processed_at=timezone.now(),
+        )
+
+    member = Member.objects.create(site=site, contact=registration.contact)
+    plan = MembershipPlan.objects.create(
+        site=site,
+        name="Dance club",
+        amount_cents=2000,
+        currency="usd",
+        interval=MembershipPlan.Interval.MONTHLY,
+    )
+    membership = MemberSubscription.objects.create(
+        site=site,
+        member=member,
+        plan=plan,
+        status=MemberSubscription.Status.ACTIVE,
+        connected_account_id=connected.stripe_account_id,
+        stripe_customer_id="cus_member",
+        stripe_subscription_id="sub_member",
+    )
+    ConnectWebhookEvent.objects.create(
+        stripe_event_id="evt_member_subscription",
+        connected_account_id=connected.stripe_account_id,
+        event_type="customer.subscription.updated",
+        object_id="sub_member",
+        status=ConnectWebhookEvent.Status.PROCESSED,
+        processed_at=timezone.now(),
+    )
+    for sequence in (1, 2):
+        invoice_id = f"in_member_{sequence}"
+        MembershipPayment.objects.create(
+            site=site,
+            member_subscription=membership,
+            stripe_invoice_id=invoice_id,
+            amount_due_cents=2000,
+            amount_paid_cents=2000,
+            currency="usd",
+            status=MembershipPayment.Status.PAID,
+            paid_at=timezone.now(),
+        )
+        ConnectWebhookEvent.objects.create(
+            stripe_event_id=f"evt_{invoice_id}",
+            connected_account_id=connected.stripe_account_id,
+            event_type="invoice.paid",
+            object_id=invoice_id,
+            status=ConnectWebhookEvent.Status.PROCESSED,
+            processed_at=timezone.now(),
+        )
+
+    output = io.StringIO()
+    call_command("stripe_sandbox_journey", site.slug, json=True, stdout=output)
+    payload = json.loads(output.getvalue())
+    assert payload["ok"] is True
+    assert payload["completed"] == payload["total"] == 12
 
 
 @pytest.mark.django_db

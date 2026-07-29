@@ -261,12 +261,13 @@ Completed:
 - Safe branded production error pages with correlation IDs and security headers
 - Read-only Stripe environment validator for account mode, plan prices, lookup keys, billing intervals, and required platform/Connect webhook coverage
 - Six-hour connected-account reconciliation with three-strike permanent-access disconnect fallback when Stripe does not expose the deauthorization event selector
+- Read-only, site-scoped evidence gate for the complete Stripe sandbox subscription, Connect, ticket/refund, and membership-renewal journey
 - Pinned dependency audit in CI and weekly dependency monitoring for Python, Actions, and Docker
 - Configurable read-only launch-scale probe with 100 concurrent users, p95 and error-rate gates
 - Operations, provider recovery, backup/restore, pilot-event, load, accessibility, security, and launch runbooks
 
 Automated verification includes cross-tenant denial, suspended-site recovery boundaries, stale/recovered worker readiness, alert escalation, restore confirmation/integrity, pilot data requirements, security headers, and the primary operator journey.
 
-Verified locally: 105 tests pass, the PostgreSQL-only simultaneous-capacity assertion remains selected for CI, Ruff and formatting pass, migration drift is clean, and the strict production deployment check passes with zero warnings when all required production values are supplied.
+Verified locally: 109 tests pass, the PostgreSQL-only simultaneous-capacity assertion remains selected for CI, Ruff and formatting pass, migration drift is clean, and the strict production deployment check passes with zero warnings when all required production values are supplied.
 
 Launch remains blocked until every external-evidence item in `LAUNCH_CHECKLIST.md` is signed off, especially real provider sandbox flows, the production-like 100-user drill, manual accessibility review, legal approval, and an isolated backup restore.

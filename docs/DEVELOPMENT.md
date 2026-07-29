@@ -77,6 +77,14 @@ Validate the configured Stripe account, prices, and both sandbox webhook endpoin
 python manage.py validate_stripe_sandbox --json
 ```
 
+After completing the hosted payment and Connect flows for a pilot site, validate the resulting local evidence with:
+
+```text
+python manage.py stripe_sandbox_journey SITE_SLUG --json
+```
+
+See `STRIPE_SANDBOX_JOURNEY.md` for the required subscription, ticket/refund, and membership-renewal sequence.
+
 The command refuses non-test keys unless `--allow-live` is supplied explicitly. On a managed workstation whose HTTPS inspection root exists only in the operating-system certificate store, install development requirements and add `--use-system-trust`; certificate verification remains enabled.
 
 Test settings deliberately blank all Stripe secrets even when a developer `.env` contains sandbox credentials. Tests that exercise the gateway supply mocked keys explicitly, preventing accidental provider calls.

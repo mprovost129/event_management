@@ -177,9 +177,7 @@ class Command(BaseCommand):
                                 "Connect webhook omits account.application.deauthorized; "
                                 "scheduled account reconciliation remains the fallback"
                             )
-                        webhooks[-1]["recommended_missing_events"] = (
-                            recommended_missing
-                        )
+                        webhooks[-1]["recommended_missing_events"] = recommended_missing
         except stripe.StripeError as exc:
             raise CommandError(f"Stripe sandbox validation failed: {exc}") from exc
 

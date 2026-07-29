@@ -13,7 +13,7 @@
 
 - [x] Read-only Stripe sandbox account, price, and endpoint validation completed; see `STRIPE_SANDBOX_VALIDATION.md`.
 - [x] Documented unavailable Connect deauthorization selector event and implemented scheduled permanent-access-failure reconciliation fallback.
-- [ ] Real Stripe sandbox subscription, Connect onboarding, paid ticket purchase/refund, and membership renewal complete with verified webhooks.
+- [ ] Real Stripe sandbox subscription, Connect onboarding, paid ticket purchase/refund, and membership renewal complete; `stripe_sandbox_journey SITE_SLUG --json` passes and Stripe Dashboard evidence is retained.
 - [ ] Production email delivery, unsubscribe, bounce, and callback behavior are verified; SMS is either fully verified or not offered.
 - [ ] The 100-concurrent-user production-like load drill passes and evidence is saved.
 - [ ] Keyboard-only, screen-reader, zoom, contrast, and small-phone checks are signed off using `ACCESSIBILITY_REVIEW.md`.
