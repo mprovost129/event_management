@@ -15,7 +15,7 @@ from events.models import Event, Registration
 from events.registration import save_public_response
 from events.reporting import occurrence_metrics
 from events.services import create_event_series
-from payments.gateway import create_ticket_checkout_session
+from payments.gateway import create_refund, create_ticket_checkout_session
 from payments.models import (
     ConnectedAccount,
     ConnectWebhookEvent,
@@ -30,6 +30,7 @@ from payments.models import (
 from payments.services import (
     apply_refund_object,
     attach_member_checkout,
+    commerce_summary,
     mark_order_paid,
     prepare_refund,
     process_connect_event,
@@ -123,7 +124,7 @@ def test_paid_rsvp_waits_for_payment_before_capacity_or_check_in():
 @pytest.mark.django_db
 @override_settings(STRIPE_SECRET_KEY="sk_test_example")
 @patch("payments.gateway.stripe.checkout.Session.create")
-def test_direct_ticket_checkout_has_connected_context_and_no_platform_fee(mock_create):
+def test_direct_ticket_checkout_collects_snapshotted_platform_fee(mock_create):
     _, _, _, _, ticket_type, registration = commerce_fixture()
     order, line = reserve_ticket_order(
         registration=registration, ticket_type=ticket_type
@@ -143,7 +144,32 @@ def test_direct_ticket_checkout_has_connected_context_and_no_platform_fee(mock_c
     assert params["metadata"]["order_id"] == str(order.id)
     assert "application_fee_amount" not in params
     assert "payment_intent_data" in params
-    assert "application_fee_amount" not in params["payment_intent_data"]
+    assert order.application_fee_bps == 300
+    assert order.application_fee_cents == 90
+    assert params["payment_intent_data"]["application_fee_amount"] == 90
+
+
+@pytest.mark.django_db
+@override_settings(STRIPE_SECRET_KEY="sk_test_example", TICKET_APPLICATION_FEE_BPS=0)
+@patch("payments.gateway.stripe.checkout.Session.create")
+def test_ticket_platform_fee_can_be_disabled_without_changing_checkout(mock_create):
+    _, _, _, _, ticket_type, registration = commerce_fixture()
+    order, line = reserve_ticket_order(
+        registration=registration, ticket_type=ticket_type
+    )
+    mock_create.return_value = SimpleNamespace(id="cs_123", url="https://stripe.test")
+
+    create_ticket_checkout_session(
+        order=order,
+        line=line,
+        success_url="https://example.test/success",
+        cancel_url="https://example.test/cancel",
+    )
+
+    assert order.application_fee_cents == 0
+    assert "application_fee_amount" not in mock_create.call_args.kwargs[
+        "payment_intent_data"
+    ]
 
 
 @pytest.mark.django_db
@@ -256,6 +282,7 @@ def test_full_refund_is_idempotent_and_preserves_financial_history():
     assert refund.status == Refund.Status.SUCCEEDED
     assert order.status == Order.Status.REFUNDED
     assert order.refunded_cents == order.total_cents
+    assert order.application_fee_refunded_cents == order.application_fee_cents
     assert registration.payment_status == Registration.PaymentStatus.REFUNDED
     assert not Ticket.objects.filter(
         order_line__order=order, status=Ticket.Status.VALID
@@ -567,8 +594,12 @@ def test_charge_webhook_records_provider_fee_details_when_available():
                     "payment_intent": "pi_fee",
                     "balance_transaction": {
                         "id": "txn_fee",
-                        "fee": 117,
-                        "net": 2883,
+                        "fee": 207,
+                        "net": 2793,
+                        "fee_details": [
+                            {"type": "stripe_fee", "amount": 117},
+                            {"type": "application_fee", "amount": 90},
+                        ],
                     },
                 }
             },
@@ -578,7 +609,48 @@ def test_charge_webhook_records_provider_fee_details_when_available():
     order.refresh_from_db()
     assert order.stripe_charge_id == "ch_fee"
     assert order.stripe_fee_cents == 117
-    assert order.stripe_net_cents == 2883
+    assert order.stripe_net_cents == 2793
+
+
+@pytest.mark.django_db
+@override_settings(STRIPE_SECRET_KEY="sk_test_example")
+@patch("payments.gateway.stripe.Refund.create")
+def test_ticket_refund_returns_platform_fee_proportionally(mock_create):
+    owner, site, _, _, ticket_type, registration = commerce_fixture()
+    order, _ = reserve_ticket_order(registration=registration, ticket_type=ticket_type)
+    mark_order_paid(
+        order.id,
+        stripe_object={"object": "payment_intent", "id": "pi_paid"},
+    )
+    order.refresh_from_db()
+    refund = prepare_refund(
+        order=order,
+        amount_cents=order.total_cents // 2,
+        reason="Partial refund",
+        actor=owner,
+    )
+    mock_create.return_value = {
+        "id": "re_partial",
+        "status": "pending",
+        "metadata": {"refund_id": str(refund.id)},
+    }
+
+    create_refund(refund=refund)
+    params = mock_create.call_args.kwargs
+    assert params["refund_application_fee"] is True
+    assert params["stripe_account"] == "acct_site"
+
+    apply_refund_object(
+        {
+            "id": "re_partial",
+            "status": "succeeded",
+            "metadata": {"refund_id": str(refund.id)},
+        }
+    )
+    order.refresh_from_db()
+    assert order.application_fee_cents == 90
+    assert order.application_fee_refunded_cents == 45
+    assert commerce_summary(site)["platform_fee_net_cents"] == 45
 
 
 @pytest.mark.django_db

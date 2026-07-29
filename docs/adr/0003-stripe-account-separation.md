@@ -1,6 +1,6 @@
 # ADR 0003: Separate platform billing from subscriber commerce
 
-Status: Accepted  
+Status: Superseded by ADR 0008
 Date: July 28, 2026
 
 ## Context
@@ -25,7 +25,7 @@ All provider identifiers are stored with their Stripe account context. Webhooks 
 - Platform subscription revenue is cleanly separated from subscriber event/member revenue.
 - Direct-charge objects must be queried and reconciled in the connected-account context.
 - Connected-account readiness, disconnection, refunds, disputes, and webhook routing require operational tooling.
-- A future platform transaction fee requires a new business decision and ADR rather than silently adding an application fee.
+- A future platform transaction fee requires a new business decision and ADR rather than silently adding an application fee. That decision is recorded in ADR 0008.
 
 ## References
 

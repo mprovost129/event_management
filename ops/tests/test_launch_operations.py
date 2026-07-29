@@ -94,6 +94,7 @@ def test_stripe_sandbox_journey_requires_complete_webhook_backed_evidence():
     order.stripe_checkout_session_id = "cs_ticket"
     order.stripe_payment_intent_id = "pi_ticket"
     order.refunded_cents = order.total_cents
+    order.application_fee_refunded_cents = order.application_fee_cents
     order.paid_at = timezone.now()
     order.save()
     Ticket.objects.create(
@@ -174,7 +175,7 @@ def test_stripe_sandbox_journey_requires_complete_webhook_backed_evidence():
     call_command("stripe_sandbox_journey", site.slug, json=True, stdout=output)
     payload = json.loads(output.getvalue())
     assert payload["ok"] is True
-    assert payload["completed"] == payload["total"] == 12
+    assert payload["completed"] == payload["total"] == 14
 
 
 @pytest.mark.django_db

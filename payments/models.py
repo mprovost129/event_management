@@ -131,6 +131,9 @@ class Order(SiteOwnedModel):
     subtotal_cents = models.PositiveIntegerField()
     total_cents = models.PositiveIntegerField()
     refunded_cents = models.PositiveIntegerField(default=0)
+    application_fee_bps = models.PositiveSmallIntegerField(default=0)
+    application_fee_cents = models.PositiveIntegerField(default=0)
+    application_fee_refunded_cents = models.PositiveIntegerField(default=0)
     status = models.CharField(
         max_length=30, choices=Status.choices, default=Status.PENDING, db_index=True
     )
@@ -145,6 +148,22 @@ class Order(SiteOwnedModel):
 
     class Meta:
         ordering = ("-created_at",)
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(application_fee_bps__lte=9999),
+                name="payments_order_application_fee_bps_valid",
+            ),
+            models.CheckConstraint(
+                condition=Q(application_fee_cents__lte=F("total_cents")),
+                name="payments_order_application_fee_not_over_total",
+            ),
+            models.CheckConstraint(
+                condition=Q(
+                    application_fee_refunded_cents__lte=F("application_fee_cents")
+                ),
+                name="payments_order_fee_refund_not_over_fee",
+            ),
+        ]
 
     def clean(self):
         super().clean()
@@ -159,6 +178,12 @@ class Order(SiteOwnedModel):
             raise ValidationError("Order currency must match the site currency.")
         if self.refunded_cents > self.total_cents:
             raise ValidationError("Refunded amount cannot exceed the order total.")
+        if self.application_fee_cents > self.total_cents:
+            raise ValidationError("Application fee cannot exceed the order total.")
+        if self.application_fee_refunded_cents > self.application_fee_cents:
+            raise ValidationError(
+                "Refunded application fee cannot exceed the collected fee."
+            )
 
     def __str__(self):
         return f"Order {str(self.id)[:8]} - {self.get_status_display()}"

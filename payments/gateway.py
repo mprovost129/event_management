@@ -52,6 +52,9 @@ def create_ticket_checkout_session(*, order, line, success_url, cancel_url):
         "order_id": str(order.id),
         "site_id": str(order.site_id),
     }
+    payment_intent_data = {"metadata": metadata}
+    if order.application_fee_cents:
+        payment_intent_data["application_fee_amount"] = order.application_fee_cents
     return stripe.checkout.Session.create(
         mode="payment",
         customer_email=order.purchaser.email,
@@ -70,7 +73,7 @@ def create_ticket_checkout_session(*, order, line, success_url, cancel_url):
         expires_at=int(order.checkout_expires_at.timestamp()),
         client_reference_id=str(order.id),
         metadata=metadata,
-        payment_intent_data={"metadata": metadata},
+        payment_intent_data=payment_intent_data,
         stripe_account=order.connected_account_id,
         idempotency_key=f"gather-hqs-ticket-checkout-{order.id}",
     )
@@ -136,12 +139,17 @@ def create_refund(*, refund):
         "order_id": str(refund.order_id),
         "site_id": str(refund.site_id),
     }
+    refund_values = {
+        "payment_intent": refund.order.stripe_payment_intent_id,
+        "amount": refund.amount_cents,
+        "metadata": metadata,
+        "stripe_account": refund.order.connected_account_id,
+        "idempotency_key": f"gather-hqs-refund-{refund.id}",
+    }
+    if refund.order.application_fee_cents:
+        refund_values["refund_application_fee"] = True
     return stripe.Refund.create(
-        payment_intent=refund.order.stripe_payment_intent_id,
-        amount=refund.amount_cents,
-        metadata=metadata,
-        stripe_account=refund.order.connected_account_id,
-        idempotency_key=f"gather-hqs-refund-{refund.id}",
+        **refund_values,
     )
 
 

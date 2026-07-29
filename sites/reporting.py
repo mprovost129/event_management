@@ -105,6 +105,7 @@ def site_summary(site, *, now=None):
         "ticket_net_display": Decimal(finance["ticket_net_cents"]) / 100,
         "refunds_display": Decimal(finance["refunds_cents"]) / 100,
         "member_dues_display": Decimal(finance["member_dues_cents"]) / 100,
+        "platform_fee_net_display": Decimal(finance["platform_fee_net_cents"]) / 100,
         **finance,
     }
 
@@ -190,6 +191,8 @@ def occurrence_comparison(site, *, now=None):
             gross=Sum("total_cents"),
             refunds=Sum("refunded_cents"),
             fees=Sum("stripe_fee_cents"),
+            application_fees=Sum("application_fee_cents"),
+            application_fee_refunds=Sum("application_fee_refunded_cents"),
         )
     }
     review_stats = {
@@ -214,6 +217,8 @@ def occurrence_comparison(site, *, now=None):
         gross = finance.get("gross") or 0
         refunds = finance.get("refunds") or 0
         fees = finance.get("fees") or 0
+        application_fees = finance.get("application_fees") or 0
+        application_fee_refunds = finance.get("application_fee_refunds") or 0
         results.append(
             {
                 "occurrence": occurrence,
@@ -240,7 +245,14 @@ def occurrence_comparison(site, *, now=None):
                 "refunds_cents": refunds,
                 "gross_display": Decimal(gross) / 100,
                 "refunds_display": Decimal(refunds) / 100,
-                "net_display": Decimal(gross - refunds - fees) / 100,
+                "net_display": Decimal(
+                    gross
+                    - refunds
+                    - fees
+                    - application_fees
+                    + application_fee_refunds
+                )
+                / 100,
                 "review_count": reviews.get("review_count", 0),
                 "rating_average": reviews.get("rating_average"),
                 "is_complete": occurrence.ends_at <= now,

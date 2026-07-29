@@ -66,6 +66,10 @@ def _money(cents):
     return Decimal(cents) / 100
 
 
+def _ticket_application_fee_percent():
+    return Decimal(settings.TICKET_APPLICATION_FEE_BPS) / 100
+
+
 @site_staff_required
 def manage(request, site_id):
     site = request.authorized_site
@@ -84,6 +88,7 @@ def manage(request, site_id):
     for order in orders:
         order.total_display = _money(order.total_cents)
         order.refunded_display = _money(order.refunded_cents)
+        order.application_fee_display = _money(order.application_fee_cents)
     plans = MembershipPlan.objects.for_site(site)
     for plan in plans:
         plan.price_display = _money(plan.amount_cents)
@@ -120,6 +125,7 @@ def manage(request, site_id):
             "disputes": disputes,
             "failed_webhooks": failed_webhooks,
             "summary": summary,
+            "ticket_application_fee_percent": _ticket_application_fee_percent(),
         },
     )
 
@@ -216,6 +222,7 @@ def ticket_type_create(request, site_id, occurrence_id):
             "occurrence": occurrence,
             "form": form,
             "connected": connected,
+            "ticket_application_fee_percent": _ticket_application_fee_percent(),
         },
     )
 
@@ -257,6 +264,7 @@ def ticket_type_edit(request, site_id, ticket_type_id):
             "form": form,
             "connected": connected,
             "inventory": ticket_inventory(ticket_type),
+            "ticket_application_fee_percent": _ticket_application_fee_percent(),
         },
     )
 

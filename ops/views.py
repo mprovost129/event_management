@@ -1,14 +1,15 @@
 from datetime import timedelta
+from decimal import Decimal
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from communications.models import OutboundMessage, ProviderCallbackEvent
-from payments.models import ConnectedAccount, ConnectWebhookEvent
+from payments.models import ConnectedAccount, ConnectWebhookEvent, Order
 from reviews.forms import ReviewModerationForm
 from reviews.models import Review, ReviewModeration
 from reviews.services import moderate_review
@@ -43,6 +44,20 @@ def dashboard(request):
         )
         users = users.filter(email__icontains=query)
     stale_before = timezone.now() - timedelta(minutes=15)
+    settled_orders = Order.objects.filter(
+        status__in=(
+            Order.Status.PAID,
+            Order.Status.PARTIALLY_REFUNDED,
+            Order.Status.REFUNDED,
+            Order.Status.DISPUTED,
+        )
+    )
+    fee_totals = settled_orders.aggregate(
+        collected=Sum("application_fee_cents"),
+        returned=Sum("application_fee_refunded_cents"),
+    )
+    collected_fee_cents = fee_totals["collected"] or 0
+    returned_fee_cents = fee_totals["returned"] or 0
     context = {
         "query": query,
         "sites": sites[:50],
@@ -73,6 +88,13 @@ def dashboard(request):
         )[:20],
         "audit_events": AuditEvent.objects.select_related("actor")[:30],
         "operational_alerts": operational_alerts(),
+        "platform_fees": {
+            "collected": Decimal(collected_fee_cents) / 100,
+            "returned": Decimal(returned_fee_cents) / 100,
+            "net": Decimal(collected_fee_cents - returned_fee_cents) / 100,
+            "orders": settled_orders.count(),
+            "sites": settled_orders.values("site_id").distinct().count(),
+        },
     }
     return render(request, "ops/dashboard.html", context)
 

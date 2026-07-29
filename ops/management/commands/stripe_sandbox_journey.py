@@ -78,6 +78,8 @@ class Command(BaseCommand):
         payment_webhook = False
         issued_ticket = False
         refund_webhook = False
+        ticket_application_fee_recorded = False
+        ticket_application_fee_returned = False
         if refunded_order:
             payment_object_ids = {
                 value
@@ -110,6 +112,14 @@ class Command(BaseCommand):
                 object_id__in=refund_ids,
                 event_type__in=("refund.created", "refund.updated"),
             ).exists()
+            ticket_application_fee_recorded = bool(
+                refunded_order.application_fee_bps
+                == settings.TICKET_APPLICATION_FEE_BPS
+                and refunded_order.application_fee_cents > 0
+            )
+            ticket_application_fee_returned = bool(
+                refunded_order.application_fee_refunded_cents > 0
+            )
 
         membership = (
             MemberSubscription.objects.for_site(site)
@@ -172,6 +182,8 @@ class Command(BaseCommand):
             "ticket_payment_webhook_processed": payment_webhook,
             "ticket_issued": issued_ticket,
             "ticket_refund_webhook_processed": refund_webhook,
+            "ticket_application_fee_recorded": ticket_application_fee_recorded,
+            "ticket_application_fee_returned": ticket_application_fee_returned,
             "membership_has_two_paid_invoices": membership is not None,
             "membership_subscription_webhook_processed": (
                 membership_subscription_webhook

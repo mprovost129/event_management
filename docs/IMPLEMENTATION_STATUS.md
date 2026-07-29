@@ -154,21 +154,21 @@ Completed:
 - Paid RSVP state that does not consume confirmed capacity or permit check-in before payment
 - Thirty-minute transactional inventory holds with scheduled expiration and recovery command
 - Immutable order and line-item snapshots in connected-account context
-- Direct Stripe Checkout sessions with no platform application fee
+- Direct Stripe Checkout sessions with a configurable 3% paid-ticket application fee, immutable per-order fee snapshots, and no attendee surcharge
 - One individually identifiable ticket per named primary attendee or guest after verified payment
-- Full and partial subscriber-admin refunds with append-only financial transitions
+- Full and partial subscriber-admin refunds with proportional application-fee return and append-only financial transitions
 - Refund, payment failure, late/duplicate event, dispute, and disconnected-account handling
 - Monthly and yearly site membership plans, distinct member identities, connected-account recurring Checkout, and provider-maintained membership status
 - Ticket and membership receipt messages through the durable outbox
 - Dedicated signed Connect webhook endpoint with connected-account context validation, durable idempotent inbox, retry support, and out-of-order-safe state transitions
 - Reconciliation tooling for account readiness, pending Checkout Sessions, recurring subscriptions, failed webhook events, and Stripe-reported charge fees
-- Ticket gross, recorded Stripe fees, refunds, estimated ticket net, member-dues revenue, and membership-state reporting
+- Ticket gross, recorded Stripe fees, Gather HQs fees, refunds, estimated subscriber ticket net, member-dues revenue, and membership-state reporting
 
 Verified locally:
 
 - 63 automated tests pass
 - One simultaneous-capacity test is selected automatically in authoritative PostgreSQL CI and skipped by the local SQLite feedback loop
-- Direct ticket and membership Checkout tests assert connected-account context and absence of application-fee parameters
+- Direct ticket Checkout tests assert the 3% connected-account application fee; membership Checkout tests assert that dues remain fee-free
 - Signature verification, account-context mismatch, duplicate/out-of-order events, failures, refunds, disputes, and disconnects are covered
 - Ruff, Django system checks, migration drift, and production deployment checks pass
 

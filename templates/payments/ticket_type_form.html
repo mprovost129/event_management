@@ -22,7 +22,7 @@
         <aside class="gh-editor-sidebar">
             {% if ticket_type %}<section class="gh-ticket-inventory-card"><p class="gh-step-label">Inventory now</p><h2>{{ inventory.remaining }} remaining</h2><dl><div><dt>Sold</dt><dd>{{ inventory.sold }}</dd></div><div><dt>Held</dt><dd>{{ inventory.held }}</dd></div><div><dt>Total</dt><dd>{{ ticket_type.quantity }}</dd></div></dl><p>Tickets currently held are released automatically if checkout expires.</p></section>{% endif %}
             <section class="gh-editor-card"><p class="gh-step-label">Availability</p><h2>Show at checkout</h2><label class="gh-active-toggle">{{ form.is_active }}<span><strong>Ticket option is active</strong><small>{{ form.is_active.help_text }}</small></span></label>{% for error in form.is_active.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}<button class="btn btn-primary w-100 mt-3" type="submit"{% if not ticket_type and not connected.commerce_ready %} disabled{% endif %}>{% if ticket_type %}Save ticket option{% else %}Create ticket option{% endif %}</button><a class="btn btn-link w-100" href="{% url 'events:manage' site.id %}">Cancel</a></section>
-            <div class="gh-editor-tip"><strong>One ticket per person</strong>When someone RSVPs with guests, checkout charges for the attendee and every named guest together.</div>
+            <div class="gh-editor-tip"><strong>{{ ticket_application_fee_percent|floatformat:2 }}% Gather HQs fee</strong>The fee is deducted from the ticket payout and is not added to the attendee's checkout total. Stripe processing fees also apply. Member dues remain fee-free.</div>
         </aside>
     </form>
 </div>

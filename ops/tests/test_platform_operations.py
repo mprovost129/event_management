@@ -229,3 +229,37 @@ def test_platform_operations_reject_non_admin_and_suspend_with_reason():
     assert AuditEvent.objects.filter(
         action="platform.site_suspended", site_id=site.id
     ).exists()
+
+
+@pytest.mark.django_db
+def test_platform_operations_reports_collected_and_returned_ticket_fees():
+    _, site, _ = operations_fixture()
+    registration = Registration.objects.get(site=site)
+    Order.objects.create(
+        site=site,
+        occurrence=registration.occurrence,
+        registration=registration,
+        purchaser=registration.contact,
+        connected_account_id="acct_test",
+        currency=site.currency,
+        subtotal_cents=2000,
+        total_cents=2000,
+        refunded_cents=500,
+        application_fee_bps=300,
+        application_fee_cents=60,
+        application_fee_refunded_cents=15,
+        status=Order.Status.PARTIALLY_REFUNDED,
+    )
+    admin = User.objects.create_superuser(
+        email="admin@example.com", password="Strong-Test-Pass-2026!"
+    )
+    client = Client()
+    client.force_login(admin)
+
+    response = client.get(reverse("ops:dashboard"))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Net Gather HQs fees" in content
+    assert "$0.45" in content
+    assert "Across 1 paid order" in content

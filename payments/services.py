@@ -2,6 +2,7 @@ import secrets
 from datetime import datetime, timedelta
 
 import stripe
+from django.conf import settings
 from django.core import signing
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -13,6 +14,7 @@ from events.models import Participant, Registration
 from ops.services import record_audit_event
 
 from . import gateway
+from .fees import proportional_fee_refund, ticket_application_fee
 from .models import (
     ConnectedAccount,
     ConnectWebhookEvent,
@@ -297,6 +299,7 @@ def reserve_ticket_order(*, registration, ticket_type):
 
     expires_at = timezone.now() + timedelta(minutes=CHECKOUT_HOLD_MINUTES)
     total = ticket_type.amount_cents * quantity
+    application_fee_cents = ticket_application_fee(total)
     order = Order.objects.create(
         site=registration.site,
         occurrence=registration.occurrence,
@@ -306,6 +309,8 @@ def reserve_ticket_order(*, registration, ticket_type):
         currency=registration.site.currency,
         subtotal_cents=total,
         total_cents=total,
+        application_fee_bps=settings.TICKET_APPLICATION_FEE_BPS,
+        application_fee_cents=application_fee_cents,
         checkout_expires_at=expires_at,
     )
     line = OrderLine.objects.create(
@@ -328,7 +333,12 @@ def reserve_ticket_order(*, registration, ticket_type):
         order=order,
         event_type="order.created",
         new_status=Order.Status.PENDING,
-        details={"quantity": quantity, "total_cents": total},
+        details={
+            "quantity": quantity,
+            "total_cents": total,
+            "application_fee_bps": order.application_fee_bps,
+            "application_fee_cents": order.application_fee_cents,
+        },
     )
     return order, line
 
@@ -551,6 +561,11 @@ def apply_refund_object(
     ):
         refund.succeeded_at = timezone.now()
         order.refunded_cents += refund.amount_cents
+        order.application_fee_refunded_cents = proportional_fee_refund(
+            fee_cents=order.application_fee_cents,
+            refunded_cents=order.refunded_cents,
+            total_cents=order.total_cents,
+        )
         previous_order = order.status
         if order.refunded_cents >= order.total_cents:
             order.status = Order.Status.REFUNDED
@@ -561,7 +576,14 @@ def apply_refund_object(
             order.registration.save(update_fields=("payment_status", "updated_at"))
         else:
             order.status = Order.Status.PARTIALLY_REFUNDED
-        order.save(update_fields=("refunded_cents", "status", "updated_at"))
+        order.save(
+            update_fields=(
+                "refunded_cents",
+                "application_fee_refunded_cents",
+                "status",
+                "updated_at",
+            )
+        )
     else:
         previous_order = order.status
     refund.save()
@@ -774,7 +796,14 @@ def apply_charge(stripe_object, *, account_id=""):
         order.stripe_balance_transaction_id = balance_transaction
     elif balance_transaction:
         order.stripe_balance_transaction_id = _value(balance_transaction, "id", "")
-        order.stripe_fee_cents = _value(balance_transaction, "fee")
+        total_fee = _value(balance_transaction, "fee", 0) or 0
+        fee_details = _value(balance_transaction, "fee_details", []) or []
+        application_fee = sum(
+            _value(detail, "amount", 0) or 0
+            for detail in fee_details
+            if _value(detail, "type", "") == "application_fee"
+        )
+        order.stripe_fee_cents = max(0, total_fee - application_fee)
         order.stripe_net_cents = _value(balance_transaction, "net")
     order.save()
     return order
@@ -960,19 +989,28 @@ def _apply_connect_event(event_type, stripe_object, account_id, event_id):
 def commerce_summary(site):
     orders = Order.objects.for_site(site)
     subscriptions = MemberSubscription.objects.for_site(site)
+    settled_orders = orders.filter(
+        status__in=(
+            Order.Status.PAID,
+            Order.Status.PARTIALLY_REFUNDED,
+            Order.Status.REFUNDED,
+            Order.Status.DISPUTED,
+        )
+    )
     gross = (
-        orders.filter(
-            status__in=(
-                Order.Status.PAID,
-                Order.Status.PARTIALLY_REFUNDED,
-                Order.Status.REFUNDED,
-                Order.Status.DISPUTED,
-            )
-        ).aggregate(total=Sum("total_cents"))["total"]
+        settled_orders.aggregate(total=Sum("total_cents"))["total"]
         or 0
     )
-    refunds = orders.aggregate(total=Sum("refunded_cents"))["total"] or 0
-    fees = orders.aggregate(total=Sum("stripe_fee_cents"))["total"] or 0
+    refunds = settled_orders.aggregate(total=Sum("refunded_cents"))["total"] or 0
+    fees = settled_orders.aggregate(total=Sum("stripe_fee_cents"))["total"] or 0
+    application_fees = (
+        settled_orders.aggregate(total=Sum("application_fee_cents"))["total"] or 0
+    )
+    application_fee_refunds = (
+        settled_orders.aggregate(total=Sum("application_fee_refunded_cents"))["total"]
+        or 0
+    )
+    application_fee_net = application_fees - application_fee_refunds
     member_dues = (
         MembershipPayment.objects.for_site(site)
         .filter(status=MembershipPayment.Status.PAID)
@@ -982,8 +1020,11 @@ def commerce_summary(site):
     return {
         "ticket_gross_cents": gross,
         "stripe_fees_cents": fees,
+        "platform_fees_cents": application_fees,
+        "platform_fee_refunds_cents": application_fee_refunds,
+        "platform_fee_net_cents": application_fee_net,
         "refunds_cents": refunds,
-        "ticket_net_cents": gross - refunds - fees,
+        "ticket_net_cents": gross - refunds - fees - application_fee_net,
         "member_dues_cents": member_dues,
         "active_members": subscriptions.filter(
             status=MemberSubscription.Status.ACTIVE

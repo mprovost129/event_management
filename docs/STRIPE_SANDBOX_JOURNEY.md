@@ -18,6 +18,6 @@ python manage.py reconcile_commerce --site SITE_SLUG --retry-failed-events
 python manage.py stripe_sandbox_journey SITE_SLUG --json
 ```
 
-The evidence checker is read-only and must report all 12 checks as `true`. It requires a configured Stripe test key, correlated processed webhook records, a ready connected account, an issued and refunded ticket, and two distinct paid membership invoices observed through Connect webhooks.
+The evidence checker is read-only and must report all 14 checks as `true`. It requires a configured Stripe test key, correlated processed webhook records, a ready connected account, an issued and refunded ticket with its 3% application fee recorded and returned, and two distinct paid membership invoices observed through Connect webhooks.
 
 Passing this command proves that Gather HQs recorded the normal sandbox journey. Retain Stripe Dashboard request/event links and screenshots with the release evidence because local database evidence alone does not prove endpoint ownership or browser usability.

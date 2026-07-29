@@ -26,7 +26,7 @@ V1 will be a mobile-friendly web application built as a Django modular monolith 
 | Trial | Fourteen days, with no payment card required to start |
 | Product/domain | Gather HQs (Gather Headquarters) at `gatherhqs.com` |
 | Site address | `{site-slug}.gatherhqs.com`; custom domains are deferred |
-| Platform revenue | Subscription fee only; no event or member-payment platform fee |
+| Platform revenue | Standard subscription plus a 3% paid-ticket application fee; member dues remain platform-fee free |
 | Paid transactions | Stripe Connect; subscriber receives ticket and member-dues revenue |
 | Event types | Single and recurring scheduled events |
 | Event visibility | Public, unlisted, and invite-only |
@@ -66,7 +66,7 @@ The internal code may use `tenant` or `organization` where technically helpful, 
 2. Let managers publish single or recurring events to a public calendar.
 3. Let contacts respond from secure invitation links without first creating passwords.
 4. Let account holders register themselves and named guests for free or paid events.
-5. Route ticket and membership payments to the subscriber's connected Stripe account without a platform fee.
+5. Route ticket and membership payments to the subscriber's connected Stripe account, collecting a 3% platform application fee from paid ticket proceeds while leaving member dues fee-free.
 6. Give subscribers practical contact, RSVP, attendance, communication, revenue, membership, and review reporting.
 7. Keep operating and development costs proportional to early adoption.
 
@@ -161,7 +161,7 @@ All authorization is site-scoped. A role on one site grants no access to another
 3. A purchaser selects tickets and assigns a name to every attendee.
 4. Stripe-hosted checkout collects payment on the connected account.
 5. A verified webhook marks the order paid and creates confirmed tickets.
-6. The subscriber's connected account is responsible for Stripe processing fees, refunds, and chargebacks; the platform takes no application fee.
+6. The subscriber's connected account is responsible for Stripe processing fees, refunds, and chargebacks. Gather HQs deducts a 3% application fee from ticket proceeds without increasing the attendee's displayed ticket total.
 7. Refunds update the local order, ticket, registration, attendance, and reporting state through idempotent webhook processing.
 
 ### 6.5 Member dues
@@ -268,7 +268,7 @@ All authorization is site-scoped. A role on one site grants no access to another
 ### 7.8 Ticketing, orders, and refunds
 
 - **PAY-01:** Paid event and member-dues features remain disabled until Stripe reports the connected account ready for the required payment capability.
-- **PAY-02:** Direct charges are created in the subscriber's connected-account context with no application fee.
+- **PAY-02:** Direct ticket charges are created in the subscriber's connected-account context with a snapshotted 3% application fee; direct member-dues charges have no platform application fee.
 - **PAY-03:** Each order records site, occurrence, purchaser, currency, immutable line-item snapshots, totals, provider identifiers, and status.
 - **PAY-04:** Ticket inventory is reserved only for a short checkout window and confirmed only after payment success.
 - **PAY-05:** Every paid participant receives an individually identifiable ticket record.
@@ -354,7 +354,7 @@ draft -> trialing -> active -> grace -> suspended -> archived -> deletion eligib
 Two financial contexts must remain separate:
 
 1. **Platform subscription:** the platform charges the group leader $20 monthly or $220 yearly for the same Standard feature tier using the platform Stripe account.
-2. **Subscriber commerce:** ticket and membership payments are created for the subscriber's connected Stripe account with no application fee.
+2. **Subscriber commerce:** ticket and membership payments are created for the subscriber's connected Stripe account. Paid ticket orders deduct a 3% application fee from subscriber proceeds; member dues do not.
 
 No local model or report may combine these balances as if they shared a merchant account. Provider identifiers must always include the relevant connected-account context.
 
@@ -715,7 +715,7 @@ Deliverables:
 
 Exit gate:
 
-- Test-mode direct ticket charges and recurring member dues settle in the intended connected-account context with zero platform application fee
+- Test-mode direct ticket charges settle in the intended connected-account context with the 3% application fee, while recurring member dues settle with no platform application fee
 - Subscriber-paid platform billing remains isolated from site commerce
 - Payment success, failure, duplicate/out-of-order webhook, refund, dispute visibility, and disconnected-account cases are tested
 

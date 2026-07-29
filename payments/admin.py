@@ -57,6 +57,7 @@ class OrderAdmin(admin.ModelAdmin):
         "site",
         "purchaser",
         "total_cents",
+        "application_fee_cents",
         "currency",
         "status",
         "created_at",

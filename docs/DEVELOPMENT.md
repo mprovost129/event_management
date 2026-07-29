@@ -181,7 +181,7 @@ stripe listen --forward-connect-to localhost:8000/commerce/stripe/connect/
 
 Commerce management is at `/sites/{site-id}/commerce/`. Only subscriber admins can connect Stripe, create membership plans, or issue refunds; site managers can create ticket types and view commerce reporting. Public membership plans are at `/memberships/`. Paid RSVPs receive a short-lived checkout capability and reserve ticket inventory for 30 minutes only after Stripe Checkout begins.
 
-Ticket and dues Checkout Sessions, Products, Prices, Customers, Subscriptions, charges, and refunds are created with the connected account context. The application deliberately omits all application-fee parameters. No browser return marks an order paid; only a verified connected-account webhook or reconciliation does so.
+Ticket and dues Checkout Sessions, Products, Prices, Customers, Subscriptions, charges, and refunds are created with the connected account context. Ticket PaymentIntents include the order's snapshotted `TICKET_APPLICATION_FEE_BPS` fee (300 basis points by default); member-dues subscriptions deliberately omit application-fee parameters. Ticket refunds return the application fee proportionally. No browser return marks an order paid; only a verified connected-account webhook or reconciliation does so.
 
 Celery beat releases expired holds every minute. Operational fallbacks and reconciliation are:
 
