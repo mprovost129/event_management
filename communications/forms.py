@@ -26,8 +26,13 @@ class CampaignForm(forms.ModelForm):
             "scheduled_for",
         )
         widgets = {
-            "body": forms.Textarea(attrs={"rows": 12}),
-            "scheduled_for": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "channel": forms.RadioSelect,
+            "body": forms.Textarea(
+                attrs={"rows": 14, "placeholder": "Write your update here..."}
+            ),
+            "scheduled_for": forms.DateTimeInput(
+                format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}
+            ),
         }
 
     def __init__(self, *args, site, **kwargs):
@@ -41,6 +46,20 @@ class CampaignForm(forms.ModelForm):
             .order_by("-starts_at")
         )
         self.fields["audience_occurrence"].required = False
+        self.fields["name"].label = "Campaign name"
+        self.fields["name"].help_text = (
+            "An internal label to help your team find this campaign later."
+        )
+        self.fields["subject"].help_text = (
+            "Required for email newsletters and not used for SMS announcements."
+        )
+        self.fields["audience"].help_text = (
+            "Only contacts with consent for the selected channel can receive it."
+        )
+        self.fields["scheduled_for"].label = "Send later"
+        self.fields["scheduled_for"].help_text = (
+            f"Optional. Leave blank to send after review. Times use {site.timezone}."
+        )
 
     def clean(self):
         cleaned = super().clean()

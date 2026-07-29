@@ -37,7 +37,9 @@ class SitePageForm(PublishingFormMixin, forms.ModelForm):
                     "placeholder": "Tell visitors what they should know about your group.",
                 }
             ),
-            "publish_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "publish_at": forms.DateTimeInput(
+                format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}
+            ),
             "meta_description": forms.Textarea(attrs={"rows": 3}),
         }
 
@@ -57,15 +59,42 @@ class BlogPostForm(PublishingFormMixin, forms.ModelForm):
             "meta_description",
         )
         widgets = {
-            "excerpt": forms.Textarea(attrs={"rows": 3}),
-            "body": forms.Textarea(attrs={"rows": 16}),
-            "publish_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "title": forms.TextInput(
+                attrs={"placeholder": "Example: What to know before Friday's dance"}
+            ),
+            "slug": forms.TextInput(attrs={"placeholder": "friday-dance-details"}),
+            "excerpt": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": "A short summary for the blog list and homepage.",
+                }
+            ),
+            "body": forms.Textarea(
+                attrs={
+                    "rows": 16,
+                    "placeholder": "Write the full update here...",
+                }
+            ),
+            "featured_image": forms.ClearableFileInput(attrs={"accept": "image/*"}),
+            "publish_at": forms.DateTimeInput(
+                format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}
+            ),
             "meta_description": forms.Textarea(attrs={"rows": 3}),
         }
 
     def __init__(self, *args, site, **kwargs):
         self.site = site
         super().__init__(*args, **kwargs)
+        self.fields["slug"].help_text = (
+            "Used in the post's web address. Lowercase letters, numbers, and hyphens only."
+        )
+        self.fields["excerpt"].help_text = (
+            "Aim for one or two sentences that make people want to read more."
+        )
+        self.fields["author_display_name"].label = "Public author name"
+        self.fields["author_display_name"].help_text = (
+            "Optional. Use the group name if the post should not show a personal name."
+        )
 
     def clean_slug(self):
         slug = self.cleaned_data["slug"].lower()

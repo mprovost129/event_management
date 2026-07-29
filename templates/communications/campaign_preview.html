@@ -1,11 +1,54 @@
 {% extends 'base.html' %}
-{% block title %}{{ campaign.name }} &middot; {{ site.display_name }}{% endblock %}
+{% block title %}{{ campaign.name }} | {{ site.display_name }}{% endblock %}
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between gap-2 mb-4"><div><a href="{% url 'communications:campaign_list' site.id %}">&larr; Campaigns</a><h1>{{ campaign.name }}</h1><p class="text-secondary">{{ campaign.get_channel_display }} &middot; {{ campaign.get_audience_display }} &middot; {{ campaign.get_status_display }}</p></div><div>{% if campaign.status == 'draft' %}<a class="btn btn-outline-primary" href="{% url 'communications:campaign_edit' site.id campaign.id %}">Edit draft</a>{% endif %}<form method="post" action="{% url 'communications:campaign_duplicate' site.id campaign.id %}" class="d-inline">{% csrf_token %}<button class="btn btn-outline-secondary" type="submit">Duplicate</button></form></div></div>
-<div class="row g-3 mb-4"><div class="col-md"><div class="card"><div class="card-body"><small>Candidates</small><div class="h3">{{ preview.candidate_count }}</div></div></div></div><div class="col-md"><div class="card"><div class="card-body"><small>Eligible now</small><div class="h3">{{ preview.eligible_count }}</div></div></div></div><div class="col-md"><div class="card"><div class="card-body"><small>Excluded now</small><div class="h3">{{ preview.excluded_count }}</div></div></div></div>{% if campaign.channel == 'sms' %}<div class="col-md"><div class="card"><div class="card-body"><small>Estimated segments</small><div class="h3">{{ preview.estimated_segments }}</div><small>{{ preview.sms_remaining }} available</small></div></div></div>{% endif %}</div>
-{% if preview.excluded_reasons %}<details class="mb-4"><summary>Why contacts are excluded</summary><ul>{% for reason, count in preview.excluded_reasons.items %}<li>{{ reason }}: {{ count }}</li>{% endfor %}</ul></details>{% endif %}
-<section class="card mb-4"><div class="card-body"><h2 class="h5">{% if campaign.subject %}{{ campaign.subject }}{% else %}Message preview{% endif %}</h2><div class="border rounded p-3 bg-light" style="white-space: pre-wrap">{{ campaign.body }}</div><p class="small text-secondary mt-2 mb-0">A unique unsubscribe or stop-messages link is added to every marketing delivery.</p></div></section>
-{% if campaign.status == 'draft' %}<div class="row g-4"><div class="col-lg-6"><h2 class="h4">Send a test</h2><form method="post" class="card"><div class="card-body">{% csrf_token %}<input type="hidden" name="action" value="test">{{ test_form.as_p }}<button class="btn btn-outline-primary" type="submit">Queue test</button></div></form></div><div class="col-lg-6"><h2 class="h4">Launch</h2><form method="post" class="card"><div class="card-body">{% csrf_token %}<input type="hidden" name="action" value="launch">{% if campaign.scheduled_for %}<p>Scheduled for <strong>{{ campaign.scheduled_for }}</strong>.</p>{% else %}<p>This campaign will start as a background job now.</p>{% endif %}{% if campaign.channel == 'sms' %}{{ launch_form.as_p }}{% else %}{{ launch_form.non_field_errors }}{% endif %}<button class="btn btn-primary" type="submit">{% if campaign.scheduled_for %}Schedule campaign{% else %}Queue campaign{% endif %}</button></div></form></div></div>{% else %}
-<section><h2>Delivery report</h2><div class="row g-2"><div class="col"><strong>{{ metrics.sent }}</strong><br>Sent</div><div class="col"><strong>{{ metrics.delivered }}</strong><br>Delivered</div><div class="col"><strong>{{ metrics.opened }}</strong><br>Opened</div><div class="col"><strong>{{ metrics.clicked }}</strong><br>Clicked</div><div class="col"><strong>{{ metrics.bounced }}</strong><br>Bounced</div><div class="col"><strong>{{ metrics.failed }}</strong><br>Failed</div><div class="col"><strong>{{ metrics.unsubscribed }}</strong><br>Unsubscribed</div></div>{% if campaign.last_error %}<div class="alert alert-danger mt-3">{{ campaign.last_error }}</div>{% endif %}</section>
-{% endif %}
+<div class="gh-campaign-review">
+    <div class="gh-builder-head">
+        <div>
+            <a class="gh-back-link" href="{% url 'communications:campaign_list' site.id %}">&larr; Newsletters and SMS</a>
+            <p class="gh-step-label mt-3">{% if campaign.status == 'draft' %}Review before sending{% else %}Campaign report{% endif %}</p>
+            <h1>{{ campaign.name }}</h1>
+            <p>{{ campaign.get_channel_display }} &middot; {{ campaign.get_audience_display }}{% if campaign.scheduled_for %} &middot; planned for {{ campaign.scheduled_for }}{% endif %}</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2 align-items-center"><span class="gh-content-status gh-content-status-{{ campaign.status }}">{{ campaign.get_status_display }}</span>{% if campaign.status == 'draft' %}<a class="btn btn-outline-primary" href="{% url 'communications:campaign_edit' site.id campaign.id %}">Edit draft</a>{% endif %}<form method="post" action="{% url 'communications:campaign_duplicate' site.id campaign.id %}">{% csrf_token %}<button class="btn btn-outline-secondary" type="submit">Duplicate</button></form></div>
+    </div>
+
+    <section class="gh-audience-review" aria-labelledby="audience-review-title">
+        <div><p class="gh-step-label">Audience check</p><h2 id="audience-review-title">Who can receive this now</h2><p>Eligibility is calculated again at launch and immediately before each delivery.</p></div>
+        <dl>
+            <div><dt>Candidates</dt><dd>{{ preview.candidate_count }}</dd></div>
+            <div class="is-eligible"><dt>Eligible now</dt><dd>{{ preview.eligible_count }}</dd></div>
+            <div><dt>Excluded now</dt><dd>{{ preview.excluded_count }}</dd></div>
+            {% if campaign.channel == 'sms' %}<div><dt>SMS segments</dt><dd>{{ preview.estimated_segments }}</dd><small>{{ preview.sms_remaining }} available</small></div>{% endif %}
+        </dl>
+    </section>
+
+    {% if preview.excluded_reasons %}<details class="gh-exclusion-details"><summary>Why {{ preview.excluded_count }} contact{{ preview.excluded_count|pluralize }} are excluded</summary><ul>{% for reason, count in preview.excluded_reasons.items %}<li><span>{{ reason }}</span><strong>{{ count }}</strong></li>{% endfor %}</ul></details>{% endif %}
+
+    <div class="gh-review-layout">
+        <section class="gh-message-preview" aria-labelledby="message-preview-title">
+            <div class="gh-message-preview-top"><span>{% if campaign.channel == 'email' %}Email preview{% else %}SMS preview{% endif %}</span><small>Personal delivery links are added when sent</small></div>
+            <div class="gh-message-paper">
+                {% if campaign.subject %}<p>Subject</p><h2 id="message-preview-title">{{ campaign.subject }}</h2>{% else %}<h2 id="message-preview-title" class="visually-hidden">Message preview</h2>{% endif %}
+                <div>{{ campaign.body|linebreaks }}</div>
+                <footer>{% if campaign.channel == 'email' %}Unsubscribe link added automatically{% else %}Stop-messages instructions added automatically{% endif %}</footer>
+            </div>
+        </section>
+
+        <aside class="gh-review-actions">
+            {% if campaign.status == 'draft' %}
+            <section class="gh-editor-card">
+                <p class="gh-step-label">Step 1</p><h2>Send yourself a test</h2><p class="text-secondary">Check the message on a real device before sharing it with your group.</p>
+                <form method="post">{% csrf_token %}<input type="hidden" name="action" value="test">{% if test_form.non_field_errors %}<div class="alert alert-danger">{{ test_form.non_field_errors }}</div>{% endif %}{% for field in test_form %}{% if not field.is_hidden %}<div class="gh-form-field">{{ field.label_tag }}{{ field }}{% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>{% else %}{{ field }}{% endif %}{% endfor %}<button class="btn btn-outline-primary w-100" type="submit">Send test</button></form>
+            </section>
+            <section class="gh-launch-card">
+                <p class="gh-step-label">Step 2</p><h2>{% if campaign.scheduled_for %}Schedule this campaign{% else %}Send to your group{% endif %}</h2>
+                {% if campaign.scheduled_for %}<p>Delivery will begin after <strong>{{ campaign.scheduled_for }}</strong>.</p>{% else %}<p>Delivery will begin in the background after you confirm.</p>{% endif %}
+                <form method="post">{% csrf_token %}<input type="hidden" name="action" value="launch">{% if launch_form.non_field_errors %}<div class="alert alert-danger">{{ launch_form.non_field_errors }}</div>{% endif %}{% if campaign.channel == 'sms' %}{% for field in launch_form %}<div class="gh-publish-toggle">{{ field }}{{ field.label_tag }}{% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>{% endfor %}{% endif %}<button class="btn btn-light w-100 mt-3" type="submit">{% if campaign.scheduled_for %}Confirm schedule{% else %}Queue campaign{% endif %}</button></form>
+            </section>
+            {% else %}
+            <section class="gh-editor-card"><p class="gh-step-label">Delivery report</p><h2>Campaign results</h2><dl class="gh-delivery-results"><div><dt>Sent</dt><dd>{{ metrics.sent }}</dd></div><div><dt>Delivered</dt><dd>{{ metrics.delivered }}</dd></div><div><dt>Opened</dt><dd>{{ metrics.opened }}</dd></div><div><dt>Clicked</dt><dd>{{ metrics.clicked }}</dd></div><div><dt>Bounced</dt><dd>{{ metrics.bounced }}</dd></div><div><dt>Failed</dt><dd>{{ metrics.failed }}</dd></div><div><dt>Unsubscribed</dt><dd>{{ metrics.unsubscribed }}</dd></div></dl>{% if campaign.last_error %}<div class="alert alert-danger mt-3">{{ campaign.last_error }}</div>{% endif %}</section>
+            {% endif %}
+        </aside>
+    </div>
+</div>
 {% endblock %}

@@ -182,3 +182,18 @@ def test_design_builder_includes_live_preview_controls(client):
     assert 'data-site-builder-form' in content
     assert 'type="color"' in content
     assert "Your content moves with you if you switch later" in content
+
+
+@pytest.mark.django_db
+def test_blog_editor_explains_publish_then_newsletter_workflow(client):
+    owner, site = create_site()
+    client.force_login(owner)
+
+    response = client.get(reverse("content:blog_create", args=(site.id,)))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Share an update with your group" in content
+    assert 'data-blog-editor' in content
+    assert "Write once, share twice" in content
+    assert "/blog/" in content

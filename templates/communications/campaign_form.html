@@ -1,6 +1,59 @@
 {% extends 'base.html' %}
-{% block title %}{% if campaign %}Edit{% else %}New{% endif %} campaign &middot; {{ site.display_name }}{% endblock %}
+{% block title %}{% if campaign %}Edit{% else %}New{% endif %} campaign | {{ site.display_name }}{% endblock %}
 {% block content %}
-<a href="{% url 'communications:campaign_list' site.id %}">&larr; Campaigns</a><h1>{% if campaign %}Edit{% else %}New{% endif %} campaign</h1>{% if source_post %}<div class="alert alert-info">Started from the blog post <strong>{{ source_post.title }}</strong>. The campaign is an independent copy.</div>{% endif %}<p class="text-secondary">Audience eligibility is recalculated when the campaign is sent. Email and SMS consent are enforced separately.</p>
-<form method="post" class="card"><div class="card-body">{% csrf_token %}{% if source_post %}<input type="hidden" name="source_blog_post" value="{{ source_post.id }}">{% endif %}{{ form.as_p }}<p class="small text-secondary">Choose the event, response, or tag fields only when that audience type needs them.</p><button class="btn btn-primary" type="submit">Save and preview</button></div></form>
+<div class="gh-content-editor gh-campaign-editor">
+    <div class="gh-editor-head">
+        <div>
+            <a class="gh-back-link" href="{% url 'communications:campaign_list' site.id %}">&larr; Newsletters and SMS</a>
+            <p class="gh-step-label mt-3">Campaign composer</p>
+            <h1>{% if campaign %}Refine your message{% else %}What would you like to share?{% endif %}</h1>
+            <p>Create the message and choose who should receive it. You will review the exact eligible audience before anything sends.</p>
+        </div>
+        <span class="gh-content-status">Draft</span>
+    </div>
+
+    {% if source_post %}<div class="gh-source-banner"><span aria-hidden="true">POST</span><div><strong>Started from “{{ source_post.title }}”</strong><p>The newsletter is now an independent copy, so editing it will not change the blog post.</p></div><a href="{% url 'content:blog_edit' site.id source_post.id %}">View post</a></div>{% endif %}
+
+    <form method="post" class="gh-campaign-layout" data-campaign-editor>
+        {% csrf_token %}
+        {% if source_post %}<input type="hidden" name="source_blog_post" value="{{ source_post.id }}">{% endif %}
+        <div class="gh-editor-main">
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+            <section class="gh-editor-card" aria-labelledby="message-heading">
+                <p class="gh-step-label">Message</p>
+                <h2 id="message-heading">Write your update</h2>
+                <div class="gh-form-field">{{ form.name.label_tag }}{{ form.name }}<div class="gh-field-help">{{ form.name.help_text }}</div>{% for error in form.name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+
+                <fieldset class="gh-channel-fieldset">
+                    <legend>Channel</legend>
+                    <div class="gh-channel-options">
+                        {% for radio in form.channel %}
+                        <label>{{ radio.tag }}<span><strong>{{ radio.choice_label }}</strong><small>{% if radio.data.value == 'email' %}A longer update with a subject line.{% else %}A brief message sent to opted-in mobile numbers.{% endif %}</small></span></label>
+                        {% endfor %}
+                    </div>
+                    {% for error in form.channel.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </fieldset>
+
+                <div class="gh-form-field" data-campaign-section="email"{% if form.channel.value == 'sms' %} hidden{% endif %}>{{ form.subject.label_tag }}{{ form.subject }}<div class="gh-field-help">{{ form.subject.help_text }}</div>{% for error in form.subject.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.body.label_tag }}{{ form.body }}<div class="gh-field-row"><span class="gh-field-help" data-channel-help>{% if form.channel.value == 'sms' %}Keep SMS announcements concise. A stop-messages instruction is added automatically.{% else %}A unique unsubscribe link is added automatically.{% endif %}</span><output data-count-for="{{ form.body.id_for_label }}">0 characters</output></div>{% for error in form.body.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+            </section>
+        </div>
+
+        <aside class="gh-editor-sidebar">
+            <section class="gh-editor-card" aria-labelledby="audience-heading">
+                <p class="gh-step-label">Delivery plan</p>
+                <h2 id="audience-heading">Choose your audience</h2>
+                <div class="gh-form-field">{{ form.audience.label_tag }}{{ form.audience }}<div class="gh-field-help">{{ form.audience.help_text }}</div>{% for error in form.audience.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field" data-audience-section="tag"{% if form.audience.value != 'tag' %} hidden{% endif %}>{{ form.audience_tag.label_tag }}{{ form.audience_tag }}{% for error in form.audience_tag.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field" data-audience-section="event"{% if form.audience.value != 'event_invitees' and form.audience.value != 'response' %} hidden{% endif %}>{{ form.audience_occurrence.label_tag }}{{ form.audience_occurrence }}{% for error in form.audience_occurrence.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field" data-audience-section="response"{% if form.audience.value != 'response' %} hidden{% endif %}>{{ form.response_filter.label_tag }}{{ form.response_filter }}{% for error in form.response_filter.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <hr>
+                <div class="gh-form-field">{{ form.scheduled_for.label_tag }}{{ form.scheduled_for }}<div class="gh-field-help">{{ form.scheduled_for.help_text }}</div>{% for error in form.scheduled_for.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <button class="btn btn-primary w-100" type="submit">Save and review audience</button>
+                <a class="btn btn-link w-100" href="{% url 'communications:campaign_list' site.id %}">Cancel</a>
+            </section>
+            <div class="gh-editor-tip"><strong>Nothing sends from this screen</strong>Next, Gather HQs calculates who is currently eligible. You can send a test before launching.</div>
+        </aside>
+    </form>
+</div>
 {% endblock %}

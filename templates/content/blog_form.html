@@ -1,11 +1,55 @@
 {% extends 'base.html' %}
-{% block title %}{% if post %}Edit {{ post.title }}{% else %}New blog post{% endif %} · {{ site.display_name }}{% endblock %}
+{% block title %}{% if post %}Edit {{ post.title }}{% else %}New blog post{% endif %} | {{ site.display_name }}{% endblock %}
 {% block content %}
-<h1>{% if post %}Edit blog post{% else %}New blog post{% endif %}</h1>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn btn-primary" type="submit">Save post</button>
-    <a class="btn btn-link" href="{% url 'content:manage' site.id %}">Cancel</a>
-</form>
+<div class="gh-content-editor gh-post-editor">
+    <div class="gh-editor-head">
+        <div>
+            <a class="gh-back-link" href="{% url 'content:manage' site.id %}">&larr; Website</a>
+            <p class="gh-step-label mt-3">Blog and news</p>
+            <h1>{% if post %}Edit your post{% else %}Share an update with your group{% endif %}</h1>
+            <p>Publish it on your website first, then turn the same story into an email newsletter.</p>
+        </div>
+        {% if post %}<span class="gh-content-status gh-content-status-{{ post.status }}">{{ post.get_status_display }}</span>{% endif %}
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="gh-editor-layout" data-blog-editor>
+        {% csrf_token %}
+        <div class="gh-editor-main">
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+            <section class="gh-editor-card" aria-labelledby="story-heading">
+                <p class="gh-step-label">Your story</p>
+                <h2 id="story-heading">Write the post</h2>
+                <div class="gh-form-field">{{ form.title.label_tag }}{{ form.title }}{% for error in form.title.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.slug.label_tag }}<div class="gh-url-field"><span>/blog/</span>{{ form.slug }}</div><div class="gh-field-help">{{ form.slug.help_text }}</div>{% for error in form.slug.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.excerpt.label_tag }}{{ form.excerpt }}<div class="gh-field-row"><span class="gh-field-help">{{ form.excerpt.help_text }}</span><output data-count-for="{{ form.excerpt.id_for_label }}">0 / 400</output></div>{% for error in form.excerpt.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.body.label_tag }}{{ form.body }}<div class="gh-field-row"><span class="gh-field-help">Plain text keeps posts readable on every device and in newsletters.</span><output data-count-for="{{ form.body.id_for_label }}">0 characters</output></div>{% for error in form.body.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+            </section>
+
+            <details class="gh-editor-details">
+                <summary>Search and sharing details</summary>
+                <div class="gh-editor-details-body">
+                    <div class="gh-form-field">{{ form.meta_description.label_tag }}{{ form.meta_description }}<div class="gh-field-help">A short optional description for search results and shared links.</div>{% for error in form.meta_description.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                </div>
+            </details>
+        </div>
+
+        <aside class="gh-editor-sidebar">
+            <section class="gh-editor-card">
+                <p class="gh-step-label">Details</p>
+                <h2>Publish</h2>
+                <div class="gh-form-field">{{ form.status.label_tag }}{{ form.status }}{% for error in form.status.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.publish_at.label_tag }}{{ form.publish_at }}<div class="gh-field-help">Required for Scheduled posts. Times use {{ site.timezone }}.</div>{% for error in form.publish_at.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.author_display_name.label_tag }}{{ form.author_display_name }}<div class="gh-field-help">{{ form.author_display_name.help_text }}</div>{% for error in form.author_display_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.featured_image.label_tag }}{% if post.featured_image %}<div class="gh-current-image gh-current-hero"><img src="{{ post.featured_image.url }}" alt="Current featured image"><span>Current image</span></div>{% endif %}{{ form.featured_image }}{% for error in form.featured_image.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <button class="btn btn-primary w-100" type="submit">{% if post %}Save post{% else %}Create post{% endif %}</button>
+                <a class="btn btn-link w-100" href="{% url 'content:manage' site.id %}">Cancel</a>
+            </section>
+            {% if post %}
+            <div class="gh-editor-tip"><strong>Ready to email it?</strong>Save your changes, then use <em>Use in newsletter</em> from the website screen. The email becomes an independent draft.</div>
+            {% else %}
+            <div class="gh-editor-tip"><strong>Write once, share twice</strong>After this post is saved, you can copy its title and body into a newsletter draft.</div>
+            {% endif %}
+        </aside>
+    </form>
+</div>
 {% endblock %}

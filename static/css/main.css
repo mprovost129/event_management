@@ -2011,3 +2011,528 @@ textarea {
         flex-direction: column;
     }
 }
+
+/* =============================================================================
+   Blog and campaign publishing workflow
+   ============================================================================= */
+
+.gh-url-field {
+    display: flex;
+    align-items: stretch;
+}
+
+.gh-url-field > span {
+    display: flex;
+    align-items: center;
+    padding-inline: .8rem;
+    border: 1px solid #cfd3d9;
+    border-right: 0;
+    border-radius: .375rem 0 0 .375rem;
+    background: #f3f4f6;
+    color: #59616e;
+    font-size: .85rem;
+}
+
+.gh-url-field input {
+    min-width: 0;
+    border-radius: 0 .375rem .375rem 0;
+}
+
+.gh-field-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.gh-field-row output {
+    margin-top: .4rem;
+    color: #7a818c;
+    font-size: .75rem;
+    white-space: nowrap;
+}
+
+.gh-source-banner {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.15rem;
+    border: 1px solid #cddccb;
+    border-radius: .85rem;
+    background: #f1f7f0;
+    color: #17233c;
+}
+
+.gh-source-banner > span,
+.gh-campaign-mark {
+    display: grid;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: .7rem;
+    background: #e1eddf;
+    color: #426548;
+    font-size: .65rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    place-items: center;
+}
+
+.gh-source-banner p {
+    margin: .15rem 0 0;
+    color: #626a77;
+    font-size: .82rem;
+}
+
+.gh-source-banner > a {
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.gh-campaign-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(19rem, .55fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.gh-channel-fieldset {
+    margin: 0 0 1.25rem;
+    padding: 0;
+    border: 0;
+}
+
+.gh-channel-fieldset legend {
+    margin-bottom: .4rem;
+    color: #17233c;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.gh-channel-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+}
+
+.gh-channel-options label {
+    display: flex;
+    position: relative;
+    gap: .7rem;
+    min-height: 6rem;
+    padding: 1rem;
+    border: 2px solid #e0ddd9;
+    border-radius: .75rem;
+    cursor: pointer;
+}
+
+.gh-channel-options label:has(input:checked) {
+    border-color: #4f7655;
+    background: #f4f8f3;
+    box-shadow: 0 0 0 3px rgba(79, 118, 85, .1);
+}
+
+.gh-channel-options input {
+    flex: 0 0 auto;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-top: .15rem;
+}
+
+.gh-channel-options strong,
+.gh-channel-options small {
+    display: block;
+}
+
+.gh-channel-options small {
+    margin-top: .25rem;
+    color: #626a77;
+    font-size: .78rem;
+}
+
+[data-campaign-section][hidden],
+[data-audience-section][hidden] {
+    display: none;
+}
+
+.gh-campaign-editor hr {
+    margin: 1.35rem 0;
+    border-color: #e3ded8;
+    opacity: 1;
+}
+
+/* Campaign list */
+
+.gh-communications-hub,
+.gh-campaign-review {
+    --gh-builder-navy: #17233c;
+    --gh-builder-orange: #c95e32;
+    --gh-builder-sage: #4f7655;
+    color: var(--gh-builder-navy);
+}
+
+.gh-campaign-list {
+    border-top: 1px solid #e3ded8;
+}
+
+.gh-campaign-list article {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    gap: 1.15rem;
+    align-items: center;
+    padding: 1.35rem .25rem;
+    border-bottom: 1px solid #e3ded8;
+}
+
+.gh-campaign-list article:hover {
+    background: #fbfaf8;
+}
+
+.gh-campaign-summary > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem .8rem;
+    align-items: center;
+    color: #6b727d;
+    font-size: .75rem;
+}
+
+.gh-campaign-summary h2 {
+    margin: .4rem 0 .15rem;
+    font-size: 1.15rem;
+    font-weight: 750;
+}
+
+.gh-campaign-summary p {
+    overflow: hidden;
+    max-width: 45rem;
+    margin-bottom: 0;
+    color: #626a77;
+    font-size: .84rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gh-campaign-results {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 1rem;
+    margin: 0;
+    text-align: right;
+}
+
+.gh-campaign-results dt {
+    color: #777e89;
+    font-size: .65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.gh-campaign-results dd {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 750;
+}
+
+.gh-row-arrow {
+    color: #4f7655;
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.gh-campaign-empty {
+    max-width: 42rem;
+    margin: 3rem auto;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    text-align: center;
+}
+
+.gh-campaign-empty .gh-campaign-mark {
+    margin: 0 auto 1rem;
+}
+
+.gh-campaign-empty h2 {
+    font-size: 1.6rem;
+    font-weight: 750;
+}
+
+/* Campaign review */
+
+.gh-audience-review {
+    display: grid;
+    grid-template-columns: minmax(14rem, .75fr) minmax(0, 1.25fr);
+    gap: 2rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: clamp(1.4rem, 3vw, 2rem);
+    border-radius: 1rem;
+    background: #17233c;
+    color: #fff;
+}
+
+.gh-audience-review h2 {
+    font-size: 1.65rem;
+    font-weight: 750;
+    letter-spacing: -.025em;
+}
+
+.gh-audience-review > div > p:last-child {
+    margin-bottom: 0;
+    color: #c5ccd6;
+}
+
+.gh-audience-review dl {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .65rem;
+    margin: 0;
+}
+
+.gh-audience-review dl > div {
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, .13);
+    border-radius: .75rem;
+    background: rgba(255, 255, 255, .06);
+}
+
+.gh-audience-review dl > div.is-eligible {
+    border-color: #8ec397;
+    background: rgba(142, 195, 151, .13);
+}
+
+.gh-audience-review dt {
+    color: #c5ccd6;
+    font-size: .7rem;
+    text-transform: uppercase;
+}
+
+.gh-audience-review dd {
+    margin: .2rem 0 0;
+    font-size: 1.75rem;
+    font-weight: 750;
+}
+
+.gh-audience-review small {
+    color: #c5ccd6;
+}
+
+.gh-exclusion-details {
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.2rem;
+    border: 1px solid #eadcb9;
+    border-radius: .75rem;
+    background: #fff9e9;
+}
+
+.gh-exclusion-details summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.gh-exclusion-details ul {
+    margin: .8rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.gh-exclusion-details li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .35rem 0;
+    border-top: 1px solid #eee3c8;
+}
+
+.gh-review-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(19rem, .65fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.gh-message-preview {
+    overflow: hidden;
+    border: 1px solid #dcd7d1;
+    border-radius: 1rem;
+    background: #f3f1ed;
+}
+
+.gh-message-preview-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .75rem 1rem;
+    border-bottom: 1px solid #dcd7d1;
+    color: #5f6671;
+    font-size: .72rem;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.gh-message-preview-top small {
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.gh-message-paper {
+    max-width: 42rem;
+    min-height: 27rem;
+    margin: 1.4rem auto;
+    padding: clamp(1.4rem, 4vw, 2.4rem);
+    background: #fff;
+    box-shadow: 0 .75rem 2rem rgba(23, 35, 60, .08);
+}
+
+.gh-message-paper > p {
+    margin-bottom: .35rem;
+    color: #7a818c;
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.gh-message-paper h2 {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #ebe7e2;
+    font-size: 1.45rem;
+    font-weight: 750;
+}
+
+.gh-message-paper > div {
+    color: #333b48;
+    line-height: 1.65;
+}
+
+.gh-message-paper footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #ebe7e2;
+    color: #777e89;
+    font-size: .72rem;
+}
+
+.gh-review-actions {
+    display: grid;
+    gap: 1rem;
+}
+
+.gh-review-actions h2,
+.gh-launch-card h2 {
+    font-size: 1.35rem;
+    font-weight: 750;
+}
+
+.gh-launch-card {
+    padding: 1.5rem;
+    border-radius: 1rem;
+    background: #17233c;
+    color: #fff;
+}
+
+.gh-launch-card > p:not(.gh-step-label) {
+    color: #c5ccd6;
+}
+
+.gh-delivery-results {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .65rem;
+    margin: 0;
+}
+
+.gh-delivery-results > div {
+    padding: .75rem;
+    border-radius: .6rem;
+    background: #f5f3f0;
+}
+
+.gh-delivery-results dt {
+    color: #6c737e;
+    font-size: .68rem;
+    text-transform: uppercase;
+}
+
+.gh-delivery-results dd {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 750;
+}
+
+.gh-content-status-sent,
+.gh-content-status-sending,
+.gh-content-status-expanding {
+    background: #e5f2e7;
+    color: #35613b;
+}
+
+.gh-content-status-failed,
+.gh-content-status-canceled {
+    background: #f2e7e7;
+    color: #783838;
+}
+
+@media (max-width: 991.98px) {
+    .gh-campaign-layout,
+    .gh-review-layout,
+    .gh-audience-review {
+        grid-template-columns: 1fr;
+    }
+
+    .gh-campaign-list article {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .gh-campaign-results {
+        grid-column: 2;
+        justify-self: start;
+        text-align: left;
+    }
+
+    .gh-row-arrow {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .gh-channel-options,
+    .gh-audience-review dl {
+        grid-template-columns: 1fr;
+    }
+
+    .gh-source-banner {
+        grid-template-columns: auto 1fr;
+    }
+
+    .gh-source-banner > a {
+        grid-column: 2;
+    }
+
+    .gh-campaign-list article {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .gh-campaign-results {
+        gap: .65rem;
+    }
+
+    .gh-row-arrow {
+        display: none;
+    }
+
+    .gh-message-preview-top,
+    .gh-field-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .gh-message-paper {
+        min-height: 20rem;
+        margin: .6rem;
+    }
+}

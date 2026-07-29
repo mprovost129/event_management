@@ -47,9 +47,12 @@ def campaign_create(request, site_id):
     site = request.authorized_site
     initial = {}
     source_post = None
-    if request.GET.get("blog_post"):
+    source_post_id = request.GET.get("blog_post") or request.POST.get(
+        "source_blog_post"
+    )
+    if source_post_id:
         source_post = get_object_or_404(
-            BlogPost.objects.for_site(site), pk=request.GET["blog_post"]
+            BlogPost.objects.for_site(site), pk=source_post_id
         )
         initial = {
             "name": f"Newsletter: {source_post.title}"[:160],
@@ -108,7 +111,12 @@ def campaign_edit(request, site_id, campaign_id):
     return render(
         request,
         "communications/campaign_form.html",
-        {"site": site, "campaign": campaign, "form": form},
+        {
+            "site": site,
+            "campaign": campaign,
+            "form": form,
+            "source_post": campaign.source_blog_post,
+        },
     )
 
 

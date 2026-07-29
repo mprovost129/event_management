@@ -1,6 +1,38 @@
 {% extends 'base.html' %}
-{% block title %}Campaigns &middot; {{ site.display_name }}{% endblock %}
+{% block title %}Newsletters and SMS | {{ site.display_name }}{% endblock %}
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4"><div><h1>Newsletters &amp; SMS</h1><p class="text-secondary mb-0">{{ site.display_name }}</p></div><div><a class="btn btn-outline-primary" href="{% url 'sites:dashboard' site.id %}">Dashboard</a> <a class="btn btn-primary" href="{% url 'communications:campaign_create' site.id %}">New campaign</a></div></div>
-{% if campaigns %}<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Campaign</th><th>Channel</th><th>Status</th><th>Audience</th><th>Results</th></tr></thead><tbody>{% for campaign in campaigns %}<tr><td><a href="{% url 'communications:campaign_preview' site.id campaign.id %}">{{ campaign.name }}</a><br><small class="text-secondary">{{ campaign.created_at }}</small></td><td>{{ campaign.get_channel_display }}</td><td>{{ campaign.get_status_display }}</td><td>{{ campaign.get_audience_display }}</td><td>{{ campaign.metrics.sent }} sent &middot; {{ campaign.metrics.delivered }} delivered &middot; {{ campaign.metrics.failed }} failed</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-secondary">No campaigns yet.</p>{% endif %}
+<div class="gh-communications-hub">
+    <div class="gh-builder-head">
+        <div>
+            <a class="gh-back-link" href="{% url 'sites:dashboard' site.id %}">&larr; Dashboard</a>
+            <p class="gh-step-label mt-3">Newsletters and SMS</p>
+            <h1>Keep your group in the loop.</h1>
+            <p>Send a full newsletter or a short announcement to contacts who have chosen to hear from you.</p>
+        </div>
+        <a class="btn btn-primary" href="{% url 'communications:campaign_create' site.id %}">Create campaign</a>
+    </div>
+
+    {% if campaigns %}
+    <div class="gh-campaign-list">
+        {% for campaign in campaigns %}
+        <article>
+            <div class="gh-campaign-mark" aria-hidden="true">{% if campaign.channel == 'email' %}EM{% else %}SMS{% endif %}</div>
+            <div class="gh-campaign-summary">
+                <div><span class="gh-content-status gh-content-status-{{ campaign.status }}">{{ campaign.get_status_display }}</span><span>{{ campaign.get_channel_display }}</span><span>{{ campaign.get_audience_display }}</span></div>
+                <h2><a href="{% url 'communications:campaign_preview' site.id campaign.id %}">{{ campaign.name }}</a></h2>
+                <p>{% if campaign.subject %}{{ campaign.subject }}{% else %}{{ campaign.body|truncatechars:120 }}{% endif %}</p>
+            </div>
+            <dl class="gh-campaign-results">
+                <div><dt>Sent</dt><dd>{{ campaign.metrics.sent }}</dd></div>
+                <div><dt>Delivered</dt><dd>{{ campaign.metrics.delivered }}</dd></div>
+                <div><dt>Failed</dt><dd>{{ campaign.metrics.failed }}</dd></div>
+            </dl>
+            <a class="gh-row-arrow" href="{% url 'communications:campaign_preview' site.id campaign.id %}" aria-label="Open {{ campaign.name }}">&rarr;</a>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="gh-empty-note gh-campaign-empty"><span class="gh-campaign-mark" aria-hidden="true">EM</span><h2>Send your first group update</h2><p>Start from scratch here, or write a blog post and use it as the beginning of a newsletter.</p><div><a class="btn btn-primary" href="{% url 'communications:campaign_create' site.id %}">Create campaign</a> <a class="btn btn-link" href="{% url 'content:blog_create' site.id %}">Write a blog post</a></div></div>
+    {% endif %}
+</div>
 {% endblock %}

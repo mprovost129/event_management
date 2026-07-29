@@ -70,3 +70,73 @@
     updateTemplate();
     updateTypography();
 })();
+
+(() => {
+    document.querySelectorAll("[data-count-for]").forEach((output) => {
+        const input = document.getElementById(output.dataset.countFor);
+        if (!input) return;
+        const update = () => {
+            const maximum = input.maxLength > 0 ? ` / ${input.maxLength}` : " characters";
+            output.value = `${input.value.length}${maximum}`;
+        };
+        input.addEventListener("input", update);
+        update();
+    });
+
+    const editor = document.querySelector("[data-blog-editor]");
+    if (!editor) return;
+    const title = editor.elements.namedItem("title");
+    const slug = editor.elements.namedItem("slug");
+    let slugWasEdited = slug.value.trim() !== "";
+    slug.addEventListener("input", () => {
+        slugWasEdited = true;
+    });
+    title.addEventListener("input", () => {
+        if (slugWasEdited) return;
+        slug.value = title.value
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+            .slice(0, 180);
+    });
+})();
+
+(() => {
+    const editor = document.querySelector("[data-campaign-editor]");
+    if (!editor) return;
+
+    const updateChannel = () => {
+        const channel = editor.elements.namedItem("channel").value;
+        editor.querySelectorAll('[data-campaign-section="email"]').forEach((section) => {
+            section.hidden = channel !== "email";
+        });
+        const help = editor.querySelector("[data-channel-help]");
+        if (help) {
+            help.textContent =
+                channel === "sms"
+                    ? "Keep SMS announcements concise. A stop-messages instruction is added automatically."
+                    : "A unique unsubscribe link is added automatically.";
+        }
+    };
+
+    const updateAudience = () => {
+        const audience = editor.elements.namedItem("audience").value;
+        editor.querySelectorAll('[data-audience-section="tag"]').forEach((section) => {
+            section.hidden = audience !== "tag";
+        });
+        editor.querySelectorAll('[data-audience-section="event"]').forEach((section) => {
+            section.hidden = !["event_invitees", "response"].includes(audience);
+        });
+        editor.querySelectorAll('[data-audience-section="response"]').forEach((section) => {
+            section.hidden = audience !== "response";
+        });
+    };
+
+    editor.querySelectorAll('input[name="channel"]').forEach((input) => {
+        input.addEventListener("change", updateChannel);
+    });
+    editor.elements.namedItem("audience").addEventListener("change", updateAudience);
+    updateChannel();
+    updateAudience();
+})();

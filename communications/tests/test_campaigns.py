@@ -467,6 +467,58 @@ def test_blog_post_can_seed_campaign_and_campaign_can_be_duplicated():
 
 
 @pytest.mark.django_db
+def test_campaign_composer_keeps_source_post_after_validation_error():
+    owner, site = campaign_fixture()
+    post = BlogPost.objects.create(
+        site=site,
+        title="Festival recap",
+        slug="festival-recap",
+        body="We had a wonderful turnout.",
+        author=owner,
+    )
+    client = Client()
+    client.force_login(owner)
+    create_url = reverse("communications:campaign_create", kwargs={"site_id": site.id})
+
+    response = client.post(
+        create_url,
+        {
+            "name": "Festival newsletter",
+            "channel": Campaign.Channel.EMAIL,
+            "subject": "",
+            "body": post.body,
+            "audience": Campaign.Audience.ALL,
+            "source_blog_post": str(post.id),
+        },
+    )
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert response.context["source_post"] == post
+    assert f'value="{post.id}"' in content
+    assert "independent copy" in content
+    assert "Nothing sends from this screen" in content
+
+
+@pytest.mark.django_db
+def test_campaign_composer_renders_guided_audience_controls():
+    owner, site = campaign_fixture()
+    client = Client()
+    client.force_login(owner)
+
+    response = client.get(
+        reverse("communications:campaign_create", kwargs={"site_id": site.id})
+    )
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert 'data-campaign-editor' in content
+    assert 'data-audience-section="tag"' in content
+    assert "Save and review audience" in content
+    assert "You will review the exact eligible audience" in content
+
+
+@pytest.mark.django_db
 @override_settings(SMS_DELIVERY_BACKEND="disabled")
 def test_sms_fails_closed_when_no_provider_is_configured():
     owner, site = campaign_fixture()
