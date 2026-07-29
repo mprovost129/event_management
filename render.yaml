@@ -65,7 +65,6 @@ services:
     region: ohio
     dockerfilePath: ./Dockerfile
     dockerCommand: celery -A config worker --loglevel=INFO --concurrency=2
-    preDeployCommand: python manage.py migrate --noinput
     autoDeployTrigger: checksPass
     maxShutdownDelaySeconds: 120
     envVars:
