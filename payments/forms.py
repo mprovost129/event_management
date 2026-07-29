@@ -51,22 +51,22 @@ class TicketTypeForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if not self.instance._state.adding:
             self.fields["price"].initial = Decimal(self.instance.amount_cents) / 100
-        self.fields["name"].help_text = (
-            "Examples: General admission, Early bird, or Member ticket."
-        )
+        self.fields[
+            "name"
+        ].help_text = "Examples: General admission, Early bird, or Member ticket."
         self.fields["quantity"].label = "Tickets available"
-        self.fields["quantity"].help_text = (
-            "This inventory is tracked separately for this event date."
-        )
+        self.fields[
+            "quantity"
+        ].help_text = "This inventory is tracked separately for this event date."
         self.fields["max_per_order"].label = "Maximum tickets per RSVP"
-        self.fields["max_per_order"].help_text = (
-            "Must be large enough for the attendee plus their allowed guests."
-        )
+        self.fields[
+            "max_per_order"
+        ].help_text = "Must be large enough for the attendee plus their allowed guests."
         self.fields["sales_start_at"].label = "Sales open"
         self.fields["sales_end_at"].label = "Sales close"
-        self.fields["is_active"].help_text = (
-            "Inactive tickets are hidden from new checkout sessions."
-        )
+        self.fields[
+            "is_active"
+        ].help_text = "Inactive tickets are hidden from new checkout sessions."
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -185,10 +185,14 @@ class MembershipPlanForm(forms.ModelForm):
     def __init__(self, *args, site, **kwargs):
         self.site = site
         super().__init__(*args, **kwargs)
-        self.fields["name"].help_text = (
+        self.fields[
+            "name"
+        ].help_text = (
             "Examples: Supporting member, Annual club member, or Dance family."
         )
-        self.fields["is_active"].help_text = (
+        self.fields[
+            "is_active"
+        ].help_text = (
             "Inactive plans are hidden from new members but keep their history."
         )
         if not self.instance._state.adding:
@@ -196,10 +200,12 @@ class MembershipPlanForm(forms.ModelForm):
             if self.instance.stripe_price_id:
                 self.fields["price"].disabled = True
                 self.fields["interval"].disabled = True
-                self.fields["price"].help_text = (
-                    "Price is locked after Stripe creates the recurring plan."
-                )
-                self.fields["interval"].help_text = (
+                self.fields[
+                    "price"
+                ].help_text = "Price is locked after Stripe creates the recurring plan."
+                self.fields[
+                    "interval"
+                ].help_text = (
                     "Billing frequency is locked after Stripe creates the plan."
                 )
 

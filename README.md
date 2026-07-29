@@ -10,7 +10,7 @@ The first customer is a country line dancing group. The product is intentionally
 
 ## Current milestone
 
-Phase 6 is complete in provider-ready application code:
+Phase 7 launch hardening is complete in provider-ready application code:
 
 - Verified account signup
 - Subscriber-site onboarding
@@ -45,8 +45,10 @@ Phase 6 is complete in provider-ready application code:
 - Consolidated site metrics and event comparison across registrations, attendance, revenue, and ratings
 - Audited subscriber-admin JSON exports and read-only, expiring platform support access
 - Reasoned suspension plus two-admin, delayed, cancelable site-retention deletion workflows
+- Native Resend email delivery with signed delivery webhooks and suppression handling
+- Render production Blueprint for Django, Celery worker/beat, PostgreSQL, and persistent Key Value
 
-Live email and SMS delivery vendors remain deployment choices. SMS is disabled by default and fails closed until a provider adapter and allowance are configured.
+Resend is the selected production email provider. Sender-domain, webhook, and end-to-end delivery evidence remain launch tasks. SMS is disabled by default and fails closed until a provider adapter and allowance are configured.
 
 See [implementation status](docs/IMPLEMENTATION_STATUS.md) for verification results and the next phase.
 
@@ -54,6 +56,7 @@ See [implementation status](docs/IMPLEMENTATION_STATUS.md) for verification resu
 
 - [V1 product and technical specification](docs/Event_Management_Platform_V1_Specification.md)
 - [Development and environment guide](docs/DEVELOPMENT.md)
+- [Render deployment guide](docs/RENDER_DEPLOYMENT.md)
 - [Architecture decisions](docs/adr)
 
 ## Quick start

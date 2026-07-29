@@ -179,7 +179,7 @@ def test_design_builder_includes_live_preview_controls(client):
 
     assert response.status_code == 200
     assert "Homepage preview" in content
-    assert 'data-site-builder-form' in content
+    assert "data-site-builder-form" in content
     assert 'type="color"' in content
     assert "Your content moves with you if you switch later" in content
 
@@ -194,6 +194,6 @@ def test_blog_editor_explains_publish_then_newsletter_workflow(client):
 
     assert response.status_code == 200
     assert "Share an update with your group" in content
-    assert 'data-blog-editor' in content
+    assert "data-blog-editor" in content
     assert "Write once, share twice" in content
     assert "/blog/" in content

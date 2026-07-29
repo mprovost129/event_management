@@ -273,6 +273,12 @@ python manage.py check --deploy --settings=config.Settings.prod
 
 The production environment must provide a non-placeholder domain, allowed hosts, a durable media bucket, secure secrets, and both Standard-plan Stripe price IDs before paid-plan activation is enabled.
 
+Render deployments can use the platform-provided `DATABASE_URL`; local and
+manually provisioned environments can continue using the individual `DB_*`
+variables. The container binds Gunicorn and its health probe to the hosting
+platform's `PORT` when present. See `RENDER_DEPLOYMENT.md` for the complete
+Blueprint, secret, domain, and first-release procedure.
+
 ## Phase 7 launch operations
 
 Production exposes separate liveness and readiness probes:

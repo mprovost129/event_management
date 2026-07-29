@@ -85,14 +85,16 @@ class BlogPostForm(PublishingFormMixin, forms.ModelForm):
     def __init__(self, *args, site, **kwargs):
         self.site = site
         super().__init__(*args, **kwargs)
-        self.fields["slug"].help_text = (
-            "Used in the post's web address. Lowercase letters, numbers, and hyphens only."
-        )
-        self.fields["excerpt"].help_text = (
-            "Aim for one or two sentences that make people want to read more."
-        )
+        self.fields[
+            "slug"
+        ].help_text = "Used in the post's web address. Lowercase letters, numbers, and hyphens only."
+        self.fields[
+            "excerpt"
+        ].help_text = "Aim for one or two sentences that make people want to read more."
         self.fields["author_display_name"].label = "Public author name"
-        self.fields["author_display_name"].help_text = (
+        self.fields[
+            "author_display_name"
+        ].help_text = (
             "Optional. Use the group name if the post should not show a personal name."
         )
 

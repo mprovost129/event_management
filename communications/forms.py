@@ -47,17 +47,23 @@ class CampaignForm(forms.ModelForm):
         )
         self.fields["audience_occurrence"].required = False
         self.fields["name"].label = "Campaign name"
-        self.fields["name"].help_text = (
-            "An internal label to help your team find this campaign later."
-        )
-        self.fields["subject"].help_text = (
+        self.fields[
+            "name"
+        ].help_text = "An internal label to help your team find this campaign later."
+        self.fields[
+            "subject"
+        ].help_text = (
             "Required for email newsletters and not used for SMS announcements."
         )
-        self.fields["audience"].help_text = (
+        self.fields[
+            "audience"
+        ].help_text = (
             "Only contacts with consent for the selected channel can receive it."
         )
         self.fields["scheduled_for"].label = "Send later"
-        self.fields["scheduled_for"].help_text = (
+        self.fields[
+            "scheduled_for"
+        ].help_text = (
             f"Optional. Leave blank to send after review. Times use {site.timezone}."
         )
 

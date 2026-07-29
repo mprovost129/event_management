@@ -9,6 +9,7 @@
 - [ ] The pilot subscriber's in-product Pilot Launch Center shows every required item complete.
 - [ ] Platform and Connect webhook secrets are distinct and current.
 - [ ] Resend email delivery uses a verified sender domain, production API key, and distinct webhook signing secret; SMS remains disabled if no vendor is selected.
+- [ ] The Render Blueprint is synced from the release commit; web, worker, scheduler, PostgreSQL, and persistent Key Value resources are healthy and use the reviewed paid plans.
 
 ## External evidence required
 
@@ -22,6 +23,7 @@
 - [ ] Provider outage/recovery drill succeeds without manually changing payment or delivery state.
 - [ ] Privacy notice, terms, acceptable-use policy, review guidelines, retention policy, support contact, and subscriber refund responsibilities receive legal/business approval.
 - [ ] DNS, TLS, object-storage CORS/access, sender DNS, monitoring destinations, and alert recipients are verified.
+- [ ] Root, `www`, and wildcard subscriber DNS resolve to Render without disturbing Resend's sending-domain records.
 - [ ] `SUPPORT_EMAIL` points to a staffed, tested mailbox on the production domain.
 - [ ] Pilot group completes `PILOT_RUNBOOK.md` without database intervention.
 

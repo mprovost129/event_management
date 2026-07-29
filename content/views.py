@@ -44,9 +44,7 @@ def manage_content(request, site_id):
             "label": "Write your homepage",
             "description": "Introduce the group below the welcome banner.",
             "complete": bool(home_page.body.strip()),
-            "url": reverse(
-                "content:page_edit", args=(site.id, SitePage.PageType.HOME)
-            ),
+            "url": reverse("content:page_edit", args=(site.id, SitePage.PageType.HOME)),
         },
         {
             "label": "Publish your website",

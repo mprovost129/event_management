@@ -272,9 +272,11 @@ Completed:
 - Pinned dependency audit in CI and weekly dependency monitoring for Python, Actions, and Docker
 - Configurable read-only launch-scale probe with 100 concurrent users, p95 and error-rate gates
 - Operations, provider recovery, backup/restore, pilot-event, load, accessibility, security, and launch runbooks
+- Render production Blueprint with paid persistent PostgreSQL and Key Value, separate web/worker/scheduler processes, pre-deploy migrations, health gating, wildcard domains, and cross-service secret wiring
+- Render-compatible `DATABASE_URL` parsing and dynamic web-process port binding
 
 Automated verification includes cross-tenant denial, suspended-site recovery boundaries, stale/recovered worker readiness, alert escalation, restore confirmation/integrity, pilot data requirements, security headers, and the primary operator journey.
 
-Verified locally: 146 tests pass, the PostgreSQL-only simultaneous-capacity assertion remains selected for CI, Ruff lint passes, migration drift is clean, and Django system checks report no issues. The strict production deployment check passes with zero warnings when all required production values are supplied.
+Verified locally: 153 tests pass, the PostgreSQL-only simultaneous-capacity assertion remains selected for CI, Ruff lint passes, migration drift is clean, and Django system checks report no issues. The strict production deployment check passes with zero warnings when all required production values are supplied. The Render Blueprint and deployment guide are ready for account-side review and application.
 
 Launch remains blocked until every external-evidence item in `LAUNCH_CHECKLIST.md` is signed off, especially real provider sandbox flows, the production-like 100-user drill, manual accessibility review, legal approval, and an isolated backup restore.

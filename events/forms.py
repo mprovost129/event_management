@@ -51,19 +51,19 @@ class EventForm(forms.ModelForm):
     def __init__(self, *args, site, **kwargs):
         self.site = site
         super().__init__(*args, **kwargs)
-        self.fields["slug"].help_text = (
-            "Used in the event's web address. Lowercase letters, numbers, and hyphens only."
-        )
-        self.fields["host_name"].help_text = (
-            "Optional public name for the person or group hosting."
-        )
+        self.fields[
+            "slug"
+        ].help_text = "Used in the event's web address. Lowercase letters, numbers, and hyphens only."
+        self.fields[
+            "host_name"
+        ].help_text = "Optional public name for the person or group hosting."
         self.fields["max_guests"].label = "Guests per RSVP"
-        self.fields["max_guests"].help_text = (
-            "Set to 0 when each person must respond separately."
-        )
-        self.fields["capacity"].help_text = (
-            "Optional. Leave blank when there is no attendance limit."
-        )
+        self.fields[
+            "max_guests"
+        ].help_text = "Set to 0 when each person must respond separately."
+        self.fields[
+            "capacity"
+        ].help_text = "Optional. Leave blank when there is no attendance limit."
         self.fields["recurrence_interval"].label = "Repeat every"
         if not self.is_bound:
             if not self.initial.get("host_name"):
@@ -139,9 +139,9 @@ class EventDetailsForm(forms.ModelForm):
     def __init__(self, *args, site, **kwargs):
         self.site = site
         super().__init__(*args, **kwargs)
-        self.fields["slug"].help_text = (
-            "Changing this also changes the event's public web address."
-        )
+        self.fields[
+            "slug"
+        ].help_text = "Changing this also changes the event's public web address."
         self.fields["max_guests"].label = "Guests per RSVP"
 
     def clean_slug(self):

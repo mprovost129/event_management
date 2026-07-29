@@ -71,9 +71,9 @@ class ContactForm(forms.ModelForm):
             )
             self.member = Member.objects.filter(contact=self.instance).first()
             if self.member is not None:
-                self.fields["member_tracking"].initial = (
-                    self.member.administrative_status
-                )
+                self.fields[
+                    "member_tracking"
+                ].initial = self.member.administrative_status
                 self.fields["member_starts_on"].initial = self.member.starts_on
                 self.fields["member_ends_on"].initial = self.member.ends_on
                 self.fields["member_notes"].initial = self.member.notes
@@ -101,9 +101,7 @@ class ContactForm(forms.ModelForm):
         if member_tracking != self.MemberTracking.CONTACT_ONLY and not member_starts_on:
             self.add_error("member_starts_on", "Choose when this membership starts.")
         if member_starts_on and member_ends_on and member_ends_on < member_starts_on:
-            self.add_error(
-                "member_ends_on", "Membership cannot end before it starts."
-            )
+            self.add_error("member_ends_on", "Membership cannot end before it starts.")
         if (
             member_tracking == self.MemberTracking.CONTACT_ONLY
             and self.member is not None

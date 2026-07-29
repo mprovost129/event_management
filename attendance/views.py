@@ -132,9 +132,7 @@ def toggle_check_in(request, site_id, occurrence_id, participant_id):
         messages.success(
             request, "Check-in recorded." if checked_in else "Check-in was undone."
         )
-    roster_url = reverse(
-        "attendance:roster", args=(site.id, occurrence_id)
-    )
+    roster_url = reverse("attendance:roster", args=(site.id, occurrence_id))
     return_params = {}
     query = request.POST.get("q", "").strip()
     status = request.POST.get("status", "")

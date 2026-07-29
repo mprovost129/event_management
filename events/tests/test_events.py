@@ -149,7 +149,7 @@ def test_event_editor_guides_owner_through_access_and_recurrence(client):
     content = response.content.decode()
 
     assert response.status_code == 200
-    assert 'data-event-editor' in content
+    assert "data-event-editor" in content
     assert "Who can attend?" in content
     assert "Does it repeat?" in content
     assert "Create event and continue" in content
@@ -213,7 +213,7 @@ def test_invitation_picker_shows_contact_email_and_search_controls(client):
     content = response.content.decode()
 
     assert response.status_code == 200
-    assert 'data-invite-picker' in content
+    assert "data-invite-picker" in content
     assert "Pat Dancer - pat@example.com" in content
     assert "Search by name or email" in content
     assert "Personal invitation links" in content

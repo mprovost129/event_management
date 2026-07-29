@@ -1,0 +1,313 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+
+services:
+  - type: web
+    name: gather-hqs-web
+    runtime: docker
+    plan: starter
+    region: ohio
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health/live/
+    preDeployCommand: python manage.py migrate --noinput
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 30
+    domains:
+      - gatherhqs.com
+      - "*.gatherhqs.com"
+    envVars:
+      - fromGroup: gather-hqs-runtime
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gather-hqs-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: gather-hqs-key-value
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: keyvalue
+          name: gather-hqs-key-value
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: STRIPE_STANDARD_MONTHLY_PRICE_ID
+        sync: false
+      - key: STRIPE_STANDARD_YEARLY_PRICE_ID
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_CONNECT_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_BILLING_PORTAL_CONFIGURATION_ID
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_WEBHOOK_SECRET
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        sync: false
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+
+  - type: worker
+    name: gather-hqs-worker
+    runtime: docker
+    plan: starter
+    region: ohio
+    dockerfilePath: ./Dockerfile
+    dockerCommand: celery -A config worker --loglevel=INFO --concurrency=2
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 120
+    envVars:
+      - fromGroup: gather-hqs-runtime
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gather-hqs-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: gather-hqs-key-value
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: keyvalue
+          name: gather-hqs-key-value
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: SECRET_KEY
+      - key: STRIPE_STANDARD_MONTHLY_PRICE_ID
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: STRIPE_STANDARD_MONTHLY_PRICE_ID
+      - key: STRIPE_STANDARD_YEARLY_PRICE_ID
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: STRIPE_STANDARD_YEARLY_PRICE_ID
+      - key: STRIPE_SECRET_KEY
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: STRIPE_SECRET_KEY
+      - key: STRIPE_WEBHOOK_SECRET
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: STRIPE_WEBHOOK_SECRET
+      - key: STRIPE_CONNECT_WEBHOOK_SECRET
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: STRIPE_CONNECT_WEBHOOK_SECRET
+      - key: STRIPE_BILLING_PORTAL_CONFIGURATION_ID
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: STRIPE_BILLING_PORTAL_CONFIGURATION_ID
+      - key: RESEND_API_KEY
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: RESEND_API_KEY
+      - key: RESEND_WEBHOOK_SECRET
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: RESEND_WEBHOOK_SECRET
+      - key: AWS_STORAGE_BUCKET_NAME
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: AWS_STORAGE_BUCKET_NAME
+      - key: AWS_S3_REGION_NAME
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: AWS_S3_REGION_NAME
+      - key: AWS_S3_ENDPOINT_URL
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: AWS_S3_ENDPOINT_URL
+      - key: AWS_ACCESS_KEY_ID
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: AWS_SECRET_ACCESS_KEY
+
+  - type: worker
+    name: gather-hqs-scheduler
+    runtime: docker
+    plan: starter
+    region: ohio
+    dockerfilePath: ./Dockerfile
+    dockerCommand: celery -A config beat --loglevel=INFO --pidfile= --schedule=/tmp/celerybeat-schedule
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - fromGroup: gather-hqs-runtime
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gather-hqs-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: gather-hqs-key-value
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: keyvalue
+          name: gather-hqs-key-value
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: SECRET_KEY
+      - key: AWS_STORAGE_BUCKET_NAME
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: AWS_STORAGE_BUCKET_NAME
+      - key: AWS_S3_REGION_NAME
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: AWS_S3_REGION_NAME
+      - key: AWS_S3_ENDPOINT_URL
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: AWS_S3_ENDPOINT_URL
+      - key: AWS_ACCESS_KEY_ID
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromService:
+          type: web
+          name: gather-hqs-web
+          envVarKey: AWS_SECRET_ACCESS_KEY
+
+  - type: keyvalue
+    name: gather-hqs-key-value
+    plan: starter
+    region: ohio
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+    persistenceMode: journal-snapshot
+
+databases:
+  - name: gather-hqs-db
+    plan: basic-256mb
+    region: ohio
+    postgresMajorVersion: "16"
+    databaseName: gather_hqs
+    user: gather_hqs
+    diskSizeGB: 5
+    storageAutoscalingEnabled: false
+    ipAllowList: []
+
+envVarGroups:
+  - name: gather-hqs-runtime
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.Settings.prod
+      - key: PLATFORM_NAME
+        value: Gather HQs
+      - key: PLATFORM_LONG_NAME
+        value: Gather Headquarters
+      - key: PLATFORM_DOMAIN
+        value: gatherhqs.com
+      - key: PLATFORM_CONTROL_HOSTS
+        value: gatherhqs.com,www.gatherhqs.com
+      - key: PLATFORM_DEFAULT_CURRENCY
+        value: usd
+      - key: ALLOWED_HOSTS
+        value: gatherhqs.com,www.gatherhqs.com,.gatherhqs.com,gather-hqs-web.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://gatherhqs.com,https://www.gatherhqs.com,https://*.gatherhqs.com,https://gather-hqs-web.onrender.com
+      - key: SECURE_SSL_REDIRECT
+        value: "true"
+      - key: SECURE_HSTS_SECONDS
+        value: "31536000"
+      - key: TRUST_X_FORWARDED_PROTO
+        value: "true"
+      - key: LOG_FORMAT
+        value: json
+      - key: LOG_LEVEL
+        value: INFO
+      - key: DJANGO_LOG_LEVEL
+        value: INFO
+      - key: DB_CONN_MAX_AGE
+        value: "60"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: STRIPE_STANDARD_MONTHLY_LOOKUP_KEY
+        value: standard_monthly
+      - key: STRIPE_STANDARD_YEARLY_LOOKUP_KEY
+        value: standard_yearly
+      - key: STANDARD_MONTHLY_AMOUNT_CENTS
+        value: "2000"
+      - key: STANDARD_YEARLY_AMOUNT_CENTS
+        value: "22000"
+      - key: TICKET_APPLICATION_FEE_BPS
+        value: "300"
+      - key: SUBSCRIPTION_TRIAL_DAYS
+        value: "14"
+      - key: SUBSCRIPTION_GRACE_DAYS
+        value: "7"
+      - key: SUSPENDED_DATA_RETENTION_DAYS
+        value: "90"
+      - key: EMAIL_DELIVERY_BACKEND
+        value: resend
+      - key: DEFAULT_FROM_EMAIL
+        value: "Gather HQs <events@gatherhqs.com>"
+      - key: SUPPORT_EMAIL
+        value: support@gatherhqs.com
+      - key: SMS_DELIVERY_BACKEND
+        value: disabled
+      - key: SMS_MONTHLY_SEGMENT_LIMIT
+        value: "0"
+      - key: CAMPAIGN_EXPANSION_BATCH_SIZE
+        value: "500"
+      - key: CAMPAIGN_DELIVERY_BATCH_SIZE
+        value: "100"
+      - key: REVIEW_TOKEN_MAX_AGE_DAYS
+        value: "365"
+      - key: MEDIA_STORAGE_BACKEND
+        value: s3
+      - key: AWS_QUERYSTRING_AUTH
+        value: "true"
+      - key: HEALTHCHECK_REQUIRE_BACKGROUND_WORKERS
+        value: "true"
+      - key: BACKGROUND_HEARTBEAT_MAX_AGE_SECONDS
+        value: "180"
+      - key: PUBLIC_WRITE_RATE_LIMIT_MAX
+        value: "30"
+      - key: PUBLIC_WRITE_RATE_LIMIT_WINDOW_SECONDS
+        value: "900"
+      - key: RATE_LIMIT_TRUSTED_PROXY_COUNT
+        value: "1"

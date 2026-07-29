@@ -204,7 +204,10 @@ def test_manager_response_page_guides_guest_and_paid_event_entry(client):
     assert response.status_code == 200
     assert "data-manager-response" in content
     assert 'data-guest-group="1"' in content
-    assert "A Going response remains off the check-in roster until payment clears" in content
+    assert (
+        "A Going response remains off the check-in roster until payment clears"
+        in content
+    )
     assert "secure checkout link by email" in content
 
 
@@ -237,4 +240,6 @@ def test_paid_manager_response_requires_email_for_checkout_delivery(client):
 
     assert response.status_code == 200
     assert "An email address is required" in response.content.decode()
-    assert not Registration.objects.filter(occurrence=occurrence, contact=contact).exists()
+    assert not Registration.objects.filter(
+        occurrence=occurrence, contact=contact
+    ).exists()
