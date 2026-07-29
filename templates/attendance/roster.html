@@ -3,28 +3,77 @@
 {% block title %}Roster · {{ occurrence.event.title }}{% endblock %}
 {% block content %}
 {% timezone site.timezone %}
-<div class="d-flex flex-wrap justify-content-between gap-2 mb-4">
-    <div><h1>{{ occurrence.event.title }} roster</h1><p class="text-secondary">{{ occurrence.starts_at|date:"F j, Y · g:i A" }}</p></div>
-    <div><a class="btn btn-outline-primary" href="{% url 'events:manage' site.id %}">Events</a> <a class="btn btn-primary" href="{% url 'events:manager_response' site.id occurrence.id %}">Add response</a></div>
-</div>
-<div class="row g-2 mb-4">
-    <div class="col-6 col-md"><div class="card"><div class="card-body"><small>Going</small><div class="h4 mb-0">{{ metrics.going }}</div></div></div></div>
-    <div class="col-6 col-md"><div class="card"><div class="card-body"><small>Participants</small><div class="h4 mb-0">{{ metrics.participants }}</div></div></div></div>
-    <div class="col-6 col-md"><div class="card"><div class="card-body"><small>Guests</small><div class="h4 mb-0">{{ metrics.guests }}</div></div></div></div>
-    <div class="col-6 col-md"><div class="card"><div class="card-body"><small>Checked in</small><div class="h4 mb-0">{{ metrics.checked_in }}</div></div></div></div>
-</div>
-<form method="get" class="row g-2 mb-3">
-    <div class="col-md"><input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Search participant"></div>
-    <div class="col-md-auto"><select class="form-select" name="status"><option value="all"{% if check_in_filter == 'all' %} selected{% endif %}>All</option><option value="checked_in"{% if check_in_filter == 'checked_in' %} selected{% endif %}>Checked in</option><option value="not_checked_in"{% if check_in_filter == 'not_checked_in' %} selected{% endif %}>Not checked in</option></select></div>
-    <div class="col-auto"><button class="btn btn-outline-primary" type="submit">Filter</button></div>
-</form>
-<div class="vstack gap-2">
-{% for participant in participants %}
-<article class="card"><div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
-    <div><h2 class="h5 mb-1">{{ participant.display_name }}{% if not participant.is_primary %} <span class="badge text-bg-light">Guest</span>{% endif %}</h2><p class="text-secondary mb-0">{{ participant.email|default:participant.registration.contact.email }}</p></div>
-    <form method="post" action="{% url 'attendance:toggle' site.id occurrence.id participant.id %}">{% csrf_token %}{% if participant.attendance_status.checked_in_at %}<input type="hidden" name="action" value="undo"><button class="btn btn-outline-secondary btn-lg" type="submit">Undo check-in</button>{% else %}<input type="hidden" name="action" value="check_in"><button class="btn btn-success btn-lg" type="submit">Check in</button>{% endif %}</form>
-</div></article>
-{% empty %}<p class="text-secondary">No participants match this filter.</p>{% endfor %}
+<div class="gh-roster">
+    <header class="gh-roster-header">
+        <div>
+            <a class="gh-back-link" href="{% url 'events:manage' site.id %}">&larr; Events</a>
+            <p class="gh-step-label mt-3">Event-day roster</p>
+            <h1>{{ occurrence.event.title }}</h1>
+            <p>{{ occurrence.starts_at|date:"l, F j · g:i A" }}{% if occurrence.venue_name %} <span aria-hidden="true">·</span> {{ occurrence.venue_name }}{% endif %}</p>
+        </div>
+        <a class="btn btn-primary btn-lg" href="{% url 'events:manager_response' site.id occurrence.id %}">Add or update response</a>
+    </header>
+
+    <section class="gh-roster-metrics" aria-label="Attendance summary">
+        <div><span>Going responses</span><strong>{{ metrics.going }}</strong></div>
+        <div><span>Ready to attend</span><strong>{{ metrics.participants }}</strong></div>
+        <div><span>Guests</span><strong>{{ metrics.guests }}</strong></div>
+        <div class="gh-metric-checked"><span>Checked in</span><strong>{{ metrics.checked_in }}</strong></div>
+        <div{% if metrics.payment_pending %} class="gh-metric-warning"{% endif %}><span>Waiting for payment</span><strong>{{ metrics.payment_pending }}</strong></div>
+    </section>
+
+    {% if pending_registrations %}
+    <details class="gh-payment-waiting" open>
+        <summary><strong>{{ metrics.payment_pending }} response{{ metrics.payment_pending|pluralize }} waiting for payment</strong><span>These attendees are not yet on the check-in list.</span></summary>
+        <div>
+            <p>Payment confirmation has not arrived yet. They cannot be checked in until Stripe confirms their ticket purchase.</p>
+            <ul>
+                {% for registration in pending_registrations %}
+                <li><strong>{{ registration.contact.display_name }}</strong><span>{{ registration.contact.email }}{% if registration.party_size > 1 %} · Party of {{ registration.party_size }}{% endif %}</span></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </details>
+    {% endif %}
+
+    <form method="get" class="gh-roster-tools" aria-label="Filter roster">
+        <label class="gh-roster-search"><span class="visually-hidden">Search by participant name or email</span><input class="form-control form-control-lg" type="search" name="q" value="{{ query }}" placeholder="Search name or email"></label>
+        <label><span class="visually-hidden">Check-in status</span><select class="form-select form-select-lg" name="status"><option value="all"{% if check_in_filter == 'all' %} selected{% endif %}>Any check-in status</option><option value="checked_in"{% if check_in_filter == 'checked_in' %} selected{% endif %}>Checked in</option><option value="not_checked_in"{% if check_in_filter == 'not_checked_in' %} selected{% endif %}>Not checked in</option></select></label>
+        <label><span class="visually-hidden">Participant type</span><select class="form-select form-select-lg" name="party"><option value="all"{% if party_filter == 'all' %} selected{% endif %}>Attendees and guests</option><option value="attendees"{% if party_filter == 'attendees' %} selected{% endif %}>Primary attendees</option><option value="guests"{% if party_filter == 'guests' %} selected{% endif %}>Guests only</option></select></label>
+        <button class="btn btn-outline-primary btn-lg" type="submit">Apply</button>
+    </form>
+
+    <div class="gh-roster-list" aria-live="polite">
+        {% for participant in participants %}
+        <article class="gh-roster-person{% if participant.attendance_status.checked_in_at %} is-checked-in{% endif %}">
+            <div class="gh-person-initials" aria-hidden="true">{{ participant.first_name|first }}{{ participant.last_name|first }}</div>
+            <div class="gh-roster-person-details">
+                <div class="gh-roster-name-line"><h2>{{ participant.display_name }}</h2>{% if participant.is_primary %}<span class="gh-roster-badge">Attendee</span>{% else %}<span class="gh-roster-badge gh-roster-guest">Guest</span>{% endif %}</div>
+                {% if not participant.is_primary %}<p>Guest of {{ participant.registration.contact.display_name }}</p>{% elif participant.email or participant.registration.contact.email %}<p>{{ participant.email|default:participant.registration.contact.email }}</p>{% endif %}
+                <div class="gh-roster-tags">
+                    {% if participant.is_primary and participant.registration.contact.membership.administrative_status == 'active' %}<span>Active member</span>{% endif %}
+                    {% if participant.registration.payment_status == 'paid' %}<span>Paid ticket</span>{% else %}<span>Free RSVP</span>{% endif %}
+                    {% if participant.attendance_status.checked_in_at %}<span class="gh-checked-time">Checked in {{ participant.attendance_status.checked_in_at|date:"g:i A" }}</span>{% endif %}
+                </div>
+            </div>
+            <form method="post" action="{% url 'attendance:toggle' site.id occurrence.id participant.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="status" value="{{ check_in_filter }}">
+                <input type="hidden" name="party" value="{{ party_filter }}">
+                {% if participant.attendance_status.checked_in_at %}
+                <input type="hidden" name="action" value="undo">
+                <button class="btn btn-outline-secondary btn-lg" type="submit"><span aria-hidden="true">✓</span> Checked in <small>Undo</small></button>
+                {% else %}
+                <input type="hidden" name="action" value="check_in">
+                <button class="btn btn-success btn-lg" type="submit">Check in</button>
+                {% endif %}
+            </form>
+        </article>
+        {% empty %}
+        <div class="gh-roster-empty"><strong>No participants match these filters.</strong><span>Try clearing the search or choosing a different status.</span></div>
+        {% endfor %}
+    </div>
 </div>
 {% endtimezone %}
 {% endblock %}

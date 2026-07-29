@@ -279,7 +279,22 @@ def manager_response(request, site_id, occurrence_id):
     return render(
         request,
         "events/manager_response_form.html",
-        {"site": site, "occurrence": occurrence, "form": form},
+        {
+            "site": site,
+            "occurrence": occurrence,
+            "form": form,
+            "paid_event": form.paid_event,
+            "guest_groups": [
+                {
+                    "number": index,
+                    "first_name": form[f"guest_{index}_first_name"],
+                    "last_name": form[f"guest_{index}_last_name"],
+                    "email": form[f"guest_{index}_email"],
+                    "phone": form[f"guest_{index}_phone"],
+                }
+                for index in range(1, occurrence.event.max_guests + 1)
+            ],
+        },
     )
 
 

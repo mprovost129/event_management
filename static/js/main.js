@@ -233,3 +233,27 @@
     memberStatus.addEventListener("change", updateMemberFields);
     updateMemberFields();
 })();
+
+(() => {
+    const form = document.querySelector("[data-manager-response]");
+    if (!form) return;
+
+    const guestSection = form.querySelector("[data-guest-section]");
+    const guestCount = form.elements.namedItem("guest_count");
+    const responseInputs = [...form.querySelectorAll('input[name="response"]')];
+
+    const selectedResponse = () => responseInputs.find((input) => input.checked)?.value;
+    const updateGuests = () => {
+        if (!guestSection || !guestCount) return;
+        const isGoing = selectedResponse() === "going";
+        guestSection.hidden = !isGoing;
+        const count = isGoing ? Number.parseInt(guestCount.value || "0", 10) : 0;
+        form.querySelectorAll("[data-guest-group]").forEach((group) => {
+            group.hidden = Number.parseInt(group.dataset.guestGroup, 10) > count;
+        });
+    };
+
+    responseInputs.forEach((input) => input.addEventListener("change", updateGuests));
+    guestCount?.addEventListener("input", updateGuests);
+    updateGuests();
+})();

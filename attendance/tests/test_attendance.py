@@ -1,4 +1,5 @@
 from datetime import timedelta
+from urllib.parse import parse_qs, urlparse
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -12,6 +13,7 @@ from events.models import Event, Participant, Registration
 from events.registration import save_response
 from events.reporting import occurrence_metrics
 from events.services import create_event_series
+from payments.models import TicketType
 from sites.services import create_subscriber_site
 from users.models import User
 
@@ -103,3 +105,136 @@ def test_mobile_roster_shows_primary_and_guest_and_is_tenant_scoped(client):
     assert "Sam Guest" in content
     assert "Check in" in content
     assert registration.participants.count() == 2
+
+
+@pytest.mark.django_db
+def test_check_in_redirect_preserves_active_roster_filters(client):
+    owner, site, occurrence, registration = attendance_fixture()
+    participant = registration.participants.get(is_primary=True)
+    client.force_login(owner)
+
+    response = client.post(
+        reverse(
+            "attendance:toggle",
+            kwargs={
+                "site_id": site.id,
+                "occurrence_id": occurrence.id,
+                "participant_id": participant.id,
+            },
+        ),
+        {
+            "action": "check_in",
+            "q": "Alex",
+            "status": "not_checked_in",
+            "party": "attendees",
+        },
+    )
+
+    assert response.status_code == 302
+    assert parse_qs(urlparse(response.url).query) == {
+        "q": ["Alex"],
+        "status": ["not_checked_in"],
+        "party": ["attendees"],
+    }
+
+
+@pytest.mark.django_db
+def test_roster_separates_responses_waiting_for_ticket_payment(client):
+    owner, site, occurrence, _ = attendance_fixture()
+    TicketType.objects.create(
+        site=site,
+        occurrence=occurrence,
+        name="Dance admission",
+        amount_cents=1200,
+        currency=site.currency,
+        quantity=100,
+    )
+    contact = Contact.objects.create(
+        site=site,
+        first_name="Taylor",
+        last_name="Pending",
+        email="taylor@example.com",
+    )
+    registration, _ = save_response(
+        occurrence=occurrence,
+        contact=contact,
+        response=Registration.Response.GOING,
+        guests=[],
+        source=Registration.Source.MANAGER,
+    )
+    client.force_login(owner)
+
+    response = client.get(
+        reverse(
+            "attendance:roster",
+            kwargs={"site_id": site.id, "occurrence_id": occurrence.id},
+        )
+    )
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert registration.payment_status == Registration.PaymentStatus.PENDING
+    assert "1 response waiting for payment" in content
+    assert "Taylor Pending" in content
+    assert "cannot be checked in until Stripe confirms" in content
+    assert "Ready to attend</span><strong>2" in content
+
+
+@pytest.mark.django_db
+def test_manager_response_page_guides_guest_and_paid_event_entry(client):
+    owner, site, occurrence, _ = attendance_fixture()
+    TicketType.objects.create(
+        site=site,
+        occurrence=occurrence,
+        name="Dance admission",
+        amount_cents=1200,
+        currency=site.currency,
+        quantity=100,
+    )
+    client.force_login(owner)
+
+    response = client.get(
+        reverse(
+            "events:manager_response",
+            kwargs={"site_id": site.id, "occurrence_id": occurrence.id},
+        )
+    )
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "data-manager-response" in content
+    assert 'data-guest-group="1"' in content
+    assert "A Going response remains off the check-in roster until payment clears" in content
+    assert "secure checkout link by email" in content
+
+
+@pytest.mark.django_db
+def test_paid_manager_response_requires_email_for_checkout_delivery(client):
+    owner, site, occurrence, _ = attendance_fixture()
+    TicketType.objects.create(
+        site=site,
+        occurrence=occurrence,
+        name="Dance admission",
+        amount_cents=1200,
+        currency=site.currency,
+        quantity=100,
+    )
+    contact = Contact.objects.create(
+        site=site,
+        first_name="No",
+        last_name="Email",
+        phone="555-0100",
+    )
+    client.force_login(owner)
+
+    response = client.post(
+        reverse(
+            "events:manager_response",
+            kwargs={"site_id": site.id, "occurrence_id": occurrence.id},
+        ),
+        {"contact": contact.id, "response": "going", "guest_count": 0},
+    )
+
+    assert response.status_code == 200
+    assert "An email address is required" in response.content.decode()
+    assert not Registration.objects.filter(occurrence=occurrence, contact=contact).exists()

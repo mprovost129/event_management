@@ -1,7 +1,10 @@
+from urllib.parse import urlencode
+
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from events.models import EventOccurrence, Participant, Registration
@@ -29,10 +32,16 @@ def roster(request, site_id, occurrence_id):
             ),
             status=Participant.Status.ACTIVE,
         )
-        .select_related("registration__contact", "attendance_status")
+        .select_related(
+            "registration__contact",
+            "registration__contact__membership",
+            "attendance_status",
+            "ticket",
+        )
     )
     query = request.GET.get("q", "").strip()
     check_in_filter = request.GET.get("status", "all")
+    party_filter = request.GET.get("party", "all")
     if query:
         participants = participants.filter(
             Q(first_name__icontains=query)
@@ -48,6 +57,29 @@ def roster(request, site_id, occurrence_id):
             Q(attendance_status__isnull=True)
             | Q(attendance_status__checked_in_at__isnull=True)
         )
+    else:
+        check_in_filter = "all"
+    if party_filter == "attendees":
+        participants = participants.filter(is_primary=True)
+    elif party_filter == "guests":
+        participants = participants.filter(is_primary=False)
+    else:
+        party_filter = "all"
+    pending_registrations = (
+        Registration.objects.for_site(site)
+        .filter(
+            occurrence=occurrence,
+            response=Registration.Response.GOING,
+            payment_status=Registration.PaymentStatus.PENDING,
+        )
+        .select_related("contact")
+        .annotate(
+            party_size=Count(
+                "participants",
+                filter=Q(participants__status=Participant.Status.ACTIVE),
+            )
+        )
+    )
     return render(
         request,
         "attendance/roster.html",
@@ -58,6 +90,8 @@ def roster(request, site_id, occurrence_id):
             "metrics": occurrence_metrics(occurrence),
             "query": query,
             "check_in_filter": check_in_filter,
+            "party_filter": party_filter,
+            "pending_registrations": pending_registrations,
         },
     )
 
@@ -98,4 +132,19 @@ def toggle_check_in(request, site_id, occurrence_id, participant_id):
         messages.success(
             request, "Check-in recorded." if checked_in else "Check-in was undone."
         )
-    return redirect("attendance:roster", site_id=site.id, occurrence_id=occurrence_id)
+    roster_url = reverse(
+        "attendance:roster", args=(site.id, occurrence_id)
+    )
+    return_params = {}
+    query = request.POST.get("q", "").strip()
+    status = request.POST.get("status", "")
+    party = request.POST.get("party", "")
+    if query:
+        return_params["q"] = query
+    if status in {"checked_in", "not_checked_in"}:
+        return_params["status"] = status
+    if party in {"attendees", "guests"}:
+        return_params["party"] = party
+    if return_params:
+        roster_url = f"{roster_url}?{urlencode(return_params)}"
+    return redirect(roster_url)

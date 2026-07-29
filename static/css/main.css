@@ -4328,3 +4328,315 @@ textarea {
         flex-wrap: wrap;
     }
 }
+
+/* Event-day roster and at-the-door responses */
+
+.gh-roster,
+.gh-door-response {
+    --gh-roster-ink: #17233c;
+    color: var(--gh-roster-ink);
+}
+
+.gh-roster-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    align-items: flex-end;
+    margin-bottom: 1.5rem;
+}
+
+.gh-roster-header h1,
+.gh-door-response .gh-editor-header h1 {
+    margin: 0;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 750;
+    letter-spacing: -.045em;
+}
+
+.gh-roster-header p:last-child,
+.gh-door-response .gh-editor-header p:last-child {
+    margin: .35rem 0 0;
+    color: #626b78;
+}
+
+.gh-roster-metrics {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: .7rem;
+    margin-bottom: 1rem;
+}
+
+.gh-roster-metrics > div {
+    display: flex;
+    min-height: 6rem;
+    padding: 1rem;
+    border: 1px solid #dedbd6;
+    border-radius: .8rem;
+    background: #fff;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.gh-roster-metrics span {
+    color: #68717d;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.gh-roster-metrics strong {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.gh-roster-metrics .gh-metric-checked {
+    border-color: #a9c9ad;
+    background: #f1f8f2;
+}
+
+.gh-roster-metrics .gh-metric-warning {
+    border-color: #e8c67a;
+    background: #fff9eb;
+}
+
+.gh-payment-waiting {
+    margin-bottom: 1rem;
+    border: 1px solid #e5c273;
+    border-radius: .8rem;
+    background: #fff9eb;
+}
+
+.gh-payment-waiting summary {
+    display: flex;
+    gap: .35rem;
+    padding: 1rem 1.1rem;
+    cursor: pointer;
+    flex-direction: column;
+}
+
+.gh-payment-waiting summary span,
+.gh-payment-waiting p,
+.gh-payment-waiting li span {
+    color: #6c6046;
+    font-size: .86rem;
+}
+
+.gh-payment-waiting > div {
+    padding: 0 1.1rem 1rem;
+}
+
+.gh-payment-waiting ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .5rem;
+    margin: .75rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.gh-payment-waiting li {
+    display: flex;
+    padding: .7rem;
+    border-radius: .5rem;
+    background: rgba(255, 255, 255, .7);
+    flex-direction: column;
+}
+
+.gh-roster-tools {
+    display: grid;
+    grid-template-columns: minmax(14rem, 1fr) auto auto auto;
+    gap: .6rem;
+    margin: 1.25rem 0;
+}
+
+.gh-roster-list {
+    display: grid;
+    gap: .65rem;
+}
+
+.gh-roster-person {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 1rem;
+    min-height: 6rem;
+    padding: .9rem;
+    border: 1px solid #dedbd6;
+    border-radius: .8rem;
+    background: #fff;
+    align-items: center;
+}
+
+.gh-roster-person.is-checked-in {
+    border-color: #a9c9ad;
+    background: #f4f9f4;
+}
+
+.gh-roster-person .gh-person-initials {
+    display: grid;
+    width: 3.1rem;
+    height: 3.1rem;
+    border-radius: 50%;
+    background: #e9edf4;
+    color: #40516f;
+    font-weight: 800;
+    place-items: center;
+}
+
+.gh-roster-person.is-checked-in .gh-person-initials {
+    background: #dceedd;
+    color: #28572e;
+}
+
+.gh-roster-name-line,
+.gh-roster-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    align-items: center;
+}
+
+.gh-roster-name-line h2 {
+    margin: 0;
+    font-size: 1.08rem;
+    font-weight: 750;
+}
+
+.gh-roster-person-details > p {
+    margin: .18rem 0 .4rem;
+    color: #68717d;
+    font-size: .86rem;
+}
+
+.gh-roster-badge,
+.gh-roster-tags span {
+    padding: .2rem .45rem;
+    border-radius: 999px;
+    background: #edf0f5;
+    color: #566274;
+    font-size: .65rem;
+    font-weight: 750;
+}
+
+.gh-roster-badge.gh-roster-guest {
+    background: #f4ece5;
+    color: #875437;
+}
+
+.gh-roster-tags .gh-checked-time {
+    background: #dceedd;
+    color: #28572e;
+}
+
+.gh-roster-person form .btn {
+    min-width: 9.5rem;
+    min-height: 3.25rem;
+}
+
+.gh-roster-person form small {
+    display: block;
+    font-size: .62rem;
+}
+
+.gh-roster-empty {
+    display: flex;
+    min-height: 10rem;
+    border: 1px dashed #cfd3d9;
+    border-radius: .8rem;
+    color: #68717d;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+.gh-door-response-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gh-door-guests[hidden],
+.gh-door-guest[hidden] {
+    display: none;
+}
+
+.gh-guest-count {
+    max-width: 14rem;
+}
+
+.gh-door-guest-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.gh-door-guest {
+    padding: 1rem;
+    border: 1px solid #e2ded9;
+    border-radius: .7rem;
+}
+
+.gh-door-guest legend {
+    width: auto;
+    padding: 0 .3rem;
+    font-size: .85rem;
+    font-weight: 800;
+}
+
+.gh-door-payment-note {
+    display: flex;
+    gap: .3rem;
+    margin-bottom: 1rem;
+    padding: .85rem;
+    border-radius: .6rem;
+    background: #fff7e5;
+    flex-direction: column;
+}
+
+.gh-door-payment-note span {
+    color: #6c6046;
+    font-size: .82rem;
+}
+
+@media (max-width: 991.98px) {
+    .gh-roster-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .gh-roster-tools {
+        grid-template-columns: minmax(12rem, 1fr) 1fr 1fr;
+    }
+
+    .gh-roster-tools button {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .gh-roster-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .gh-roster-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .gh-roster-metrics > div:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .gh-payment-waiting ul,
+    .gh-roster-tools,
+    .gh-door-response-options {
+        grid-template-columns: 1fr;
+    }
+
+    .gh-roster-person {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .gh-roster-person form {
+        grid-column: 1 / -1;
+    }
+
+    .gh-roster-person form .btn {
+        width: 100%;
+    }
+}

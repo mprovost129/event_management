@@ -206,13 +206,19 @@ class OccurrenceEditForm(forms.ModelForm):
         return cleaned_data
 
 
-class ContactInvitationChoiceField(forms.ModelMultipleChoiceField):
+class ContactDisplayMultipleChoiceField(forms.ModelMultipleChoiceField):
     def label_from_instance(self, contact):
         return f"{contact.display_name} - {contact.email}"
 
 
+class ContactDisplayChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, contact):
+        detail = contact.email or contact.phone or "No contact details"
+        return f"{contact.display_name} - {detail}"
+
+
 class InvitationForm(forms.Form):
-    contacts = ContactInvitationChoiceField(
+    contacts = ContactDisplayMultipleChoiceField(
         queryset=Contact.objects.none(),
         widget=forms.CheckboxSelectMultiple,
         help_text="Only contacts with an email address can receive an invitation.",
@@ -320,15 +326,30 @@ class RSVPForm(GuestFieldsMixin, forms.Form):
 
 
 class ManagerResponseForm(GuestFieldsMixin, forms.Form):
-    contact = forms.ModelChoiceField(queryset=Contact.objects.none())
-    response = forms.ChoiceField(choices=Registration.Response.choices)
+    contact = ContactDisplayChoiceField(queryset=Contact.objects.none())
+    response = forms.ChoiceField(
+        choices=Registration.Response.choices, widget=forms.RadioSelect
+    )
 
     def __init__(self, *args, site, occurrence, **kwargs):
         super().__init__(*args, **kwargs)
+        self.paid_event = occurrence.ticket_types.filter(is_active=True).exists()
         self.fields["contact"].queryset = Contact.objects.for_site(site).filter(
             archived_at__isnull=True
         )
         self.add_guest_fields(occurrence.event.max_guests)
 
     def clean(self):
-        return self.clean_guest_fields(super().clean())
+        cleaned_data = self.clean_guest_fields(super().clean())
+        contact = cleaned_data.get("contact")
+        if (
+            self.paid_event
+            and cleaned_data.get("response") == Registration.Response.GOING
+            and contact is not None
+            and not contact.email
+        ):
+            self.add_error(
+                "contact",
+                "An email address is required so this attendee can receive their checkout link.",
+            )
+        return cleaned_data
