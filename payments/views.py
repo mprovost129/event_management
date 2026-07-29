@@ -184,6 +184,7 @@ def ticket_type_create(request, site_id, occurrence_id):
         EventOccurrence.objects.for_site(site).select_related("event"), pk=occurrence_id
     )
     form = TicketTypeForm(request.POST or None, site=site, occurrence=occurrence)
+    connected = ConnectedAccount.objects.filter(site=site).first()
     if request.method == "POST" and form.is_valid():
         try:
             require_commerce_ready(site)
@@ -210,7 +211,12 @@ def ticket_type_create(request, site_id, occurrence_id):
     return render(
         request,
         "payments/ticket_type_form.html",
-        {"site": site, "occurrence": occurrence, "form": form},
+        {
+            "site": site,
+            "occurrence": occurrence,
+            "form": form,
+            "connected": connected,
+        },
     )
 
 
@@ -228,6 +234,7 @@ def ticket_type_edit(request, site_id, ticket_type_id):
         site=site,
         occurrence=ticket_type.occurrence,
     )
+    connected = ConnectedAccount.objects.filter(site=site).first()
     if request.method == "POST" and form.is_valid():
         inventory = ticket_inventory(ticket_type)
         committed = inventory["sold"] + inventory["held"]
@@ -248,6 +255,8 @@ def ticket_type_edit(request, site_id, ticket_type_id):
             "occurrence": ticket_type.occurrence,
             "ticket_type": ticket_type,
             "form": form,
+            "connected": connected,
+            "inventory": ticket_inventory(ticket_type),
         },
     )
 
@@ -264,6 +273,21 @@ def ticket_checkout(request, token):
         request.POST or None,
         occurrence=registration.occurrence,
         participant_count=participant_count,
+    )
+    ticket_options = []
+    available_ids = []
+    for ticket_type in form.fields["ticket_type"].queryset:
+        inventory = ticket_inventory(ticket_type)
+        if inventory["remaining"] >= participant_count:
+            ticket_type.inventory = inventory
+            ticket_type.price_display = _money(ticket_type.amount_cents)
+            ticket_type.total_display = _money(
+                ticket_type.amount_cents * participant_count
+            )
+            available_ids.append(ticket_type.id)
+            ticket_options.append(ticket_type)
+    form.fields["ticket_type"].queryset = form.fields["ticket_type"].queryset.filter(
+        id__in=available_ids
     )
     if request.method == "POST" and form.is_valid():
         try:
@@ -307,6 +331,7 @@ def ticket_checkout(request, token):
             "registration": registration,
             "participant_count": participant_count,
             "form": form,
+            "ticket_options": ticket_options,
         },
     )
 

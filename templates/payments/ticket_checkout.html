@@ -1,5 +1,15 @@
 {% extends 'public/site_base.html' %}
-{% block title %}Choose tickets · {{ registration.occurrence.event.title }}{% endblock %}
+{% block title %}Choose tickets | {{ registration.occurrence.event.title }}{% endblock %}
 {% block content %}
-<section class="site-theme"><h1>Choose tickets</h1><p class="lead">{{ registration.occurrence.event.title }}</p><p>You need {{ participant_count }} ticket{{ participant_count|pluralize }}—one for each named participant.</p><ul>{% for participant in registration.participants.all %}{% if participant.status == 'active' %}<li>{{ participant.display_name }}</li>{% endif %}{% endfor %}</ul><form method="post" class="mt-4">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary btn-lg" type="submit">Continue to secure Stripe Checkout</button></form><p class="small text-secondary mt-3">Your tickets are held for 30 minutes after checkout starts. Gather HQs does not store card details.</p></section>
+<div class="site-theme gh-public-checkout">
+    <div class="gh-checkout-head"><p>Secure ticket checkout</p><h1>Choose tickets for your party</h1><span>{{ registration.occurrence.event.title }}</span></div>
+    <div class="gh-checkout-layout">
+        <section class="gh-checkout-party" aria-labelledby="party-heading"><h2 id="party-heading">Your RSVP</h2><p>You need <strong>{{ participant_count }} ticket{{ participant_count|pluralize }}</strong>, one for each named person.</p><ul>{% for participant in registration.participants.all %}{% if participant.status == 'active' %}<li><span aria-hidden="true">&#10003;</span>{{ participant.display_name }}</li>{% endif %}{% endfor %}</ul><p class="gh-checkout-email">Receipt and confirmation will be sent to <strong>{{ registration.contact.email }}</strong>.</p></section>
+        <section class="gh-checkout-options" aria-labelledby="ticket-options-heading"><h2 id="ticket-options-heading">Ticket option</h2>
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+            {% if ticket_options %}<form method="post">{% csrf_token %}<div class="gh-public-ticket-options">{% for ticket in ticket_options %}<label><input type="radio" name="ticket_type" value="{{ ticket.id }}" required{% if form.ticket_type.value|stringformat:"s" == ticket.id|stringformat:"s" %} checked{% endif %}><span><strong>{{ ticket.name }}</strong>{% if ticket.description %}<small>{{ ticket.description }}</small>{% endif %}<em>${{ ticket.price_display|floatformat:2 }} each</em><b>${{ ticket.total_display|floatformat:2 }} total</b><i>{{ ticket.inventory.remaining }} remaining</i></span></label>{% endfor %}</div>{% for error in form.ticket_type.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}<button class="btn btn-primary btn-lg w-100 mt-3" type="submit">Continue to secure Stripe Checkout</button></form>{% else %}<div class="gh-ticket-unavailable"><h3>No ticket option can cover this party right now.</h3><p>Sales may not be open yet, inventory may be low, or this ticket may have a smaller per-order limit. Please contact {{ site.display_name }}.</p><a href="{% url 'events:occurrence_detail' registration.occurrence.event.slug registration.occurrence.id %}">Return to event</a></div>{% endif %}
+            <div class="gh-stripe-note"><strong>Payment handled by Stripe</strong><span>Your tickets are held for 30 minutes after checkout starts. Gather HQs does not store card details.</span></div>
+        </section>
+    </div>
+</div>
 {% endblock %}

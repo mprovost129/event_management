@@ -3013,3 +3013,823 @@ textarea {
         flex-direction: column;
     }
 }
+
+/* =============================================================================
+   Ticketing and commerce workflow
+   ============================================================================= */
+
+.gh-commerce-hub,
+.gh-ticket-editor {
+    --gh-builder-navy: #17233c;
+    --gh-builder-orange: #c95e32;
+    --gh-builder-sage: #4f7655;
+    color: var(--gh-builder-navy);
+}
+
+.gh-commerce-blocker {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.25rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid #ead198;
+    border-radius: .85rem;
+    background: #fff8e7;
+}
+
+.gh-commerce-blocker p {
+    margin: .2rem 0 0;
+    color: #6b6250;
+    font-size: .84rem;
+}
+
+.gh-ticket-numbers {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.gh-money-field {
+    display: flex;
+    align-items: stretch;
+}
+
+.gh-money-field span {
+    display: flex;
+    align-items: center;
+    padding-inline: .7rem;
+    border: 1px solid #cfd3d9;
+    background: #f3f4f6;
+    color: #59616e;
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.gh-money-field span:first-child {
+    border-right: 0;
+    border-radius: .375rem 0 0 .375rem;
+}
+
+.gh-money-field span:last-child {
+    border-left: 0;
+    border-radius: 0 .375rem .375rem 0;
+}
+
+.gh-money-field input {
+    min-width: 0;
+    border-radius: 0;
+}
+
+.gh-ticket-window {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.gh-active-toggle {
+    display: flex;
+    gap: .75rem;
+    align-items: flex-start;
+    padding: 1rem;
+    border: 1px solid #dcd8d3;
+    border-radius: .75rem;
+    background: #f7f6f3;
+}
+
+.gh-active-toggle input {
+    flex: 0 0 auto;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: .15rem;
+}
+
+.gh-active-toggle strong,
+.gh-active-toggle small {
+    display: block;
+}
+
+.gh-active-toggle small {
+    margin-top: .2rem;
+    color: #646c78;
+    font-size: .76rem;
+}
+
+.gh-ticket-inventory-card {
+    padding: 1.4rem;
+    border-radius: 1rem;
+    background: #17233c;
+    color: #fff;
+}
+
+.gh-ticket-inventory-card h2 {
+    font-size: 1.6rem;
+    font-weight: 750;
+}
+
+.gh-ticket-inventory-card dl {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .5rem;
+    margin: 1rem 0;
+}
+
+.gh-ticket-inventory-card dl > div {
+    padding: .6rem;
+    border-radius: .5rem;
+    background: rgba(255, 255, 255, .08);
+    text-align: center;
+}
+
+.gh-ticket-inventory-card dt {
+    color: #c5ccd6;
+    font-size: .62rem;
+    text-transform: uppercase;
+}
+
+.gh-ticket-inventory-card dd {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 750;
+}
+
+.gh-ticket-inventory-card > p:last-child {
+    margin-bottom: 0;
+    color: #c5ccd6;
+    font-size: .76rem;
+}
+
+/* Commerce dashboard */
+
+.gh-stripe-readiness {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding: 1.35rem;
+    border: 1px solid #ead198;
+    border-radius: 1rem;
+    background: #fff8e7;
+}
+
+.gh-stripe-readiness.is-ready {
+    border-color: #bdd4bf;
+    background: #f0f7f0;
+}
+
+.gh-stripe-readiness-mark {
+    display: grid;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    background: #f2d99f;
+    color: #6e551b;
+    font-size: 1.1rem;
+    font-weight: 900;
+    place-items: center;
+}
+
+.is-ready .gh-stripe-readiness-mark {
+    background: #cfe5d2;
+    color: #35613b;
+}
+
+.gh-stripe-readiness h2 {
+    margin-bottom: .25rem;
+    font-size: 1.35rem;
+    font-weight: 750;
+}
+
+.gh-stripe-readiness p:not(.gh-step-label) {
+    margin-bottom: 0;
+    color: #656b74;
+    font-size: .84rem;
+}
+
+.gh-stripe-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: flex-end;
+}
+
+.gh-commerce-summary {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: .7rem;
+    margin-bottom: 3rem;
+}
+
+.gh-commerce-summary > div {
+    display: flex;
+    min-height: 7rem;
+    padding: 1rem;
+    border: 1px solid #e3ded8;
+    border-radius: .8rem;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.gh-commerce-summary span {
+    color: #68707c;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.gh-commerce-summary strong {
+    font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+    letter-spacing: -.035em;
+}
+
+.gh-commerce-section {
+    margin-bottom: 3rem;
+}
+
+.gh-ticket-type-list {
+    border-top: 1px solid #e3ded8;
+}
+
+.gh-ticket-type-list article {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    gap: 1.25rem;
+    align-items: center;
+    padding: 1.2rem .25rem;
+    border-bottom: 1px solid #e3ded8;
+}
+
+.gh-ticket-type-main h3 {
+    margin: .35rem 0 .12rem;
+    font-size: 1.05rem;
+    font-weight: 750;
+}
+
+.gh-ticket-type-main p {
+    margin-bottom: 0;
+    color: #68707c;
+    font-size: .8rem;
+}
+
+.gh-ticket-price {
+    display: flex;
+    min-width: 7rem;
+    flex-direction: column;
+    text-align: right;
+}
+
+.gh-ticket-price strong {
+    font-size: 1.2rem;
+}
+
+.gh-ticket-price span {
+    color: #747b86;
+    font-size: .64rem;
+}
+
+.gh-ticket-type-list dl {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(3.5rem, 1fr));
+    gap: .5rem;
+    margin: 0;
+}
+
+.gh-ticket-type-list dl > div {
+    padding: .5rem;
+    border-radius: .5rem;
+    background: #f6f4f1;
+    text-align: center;
+}
+
+.gh-ticket-type-list dt {
+    color: #747b86;
+    font-size: .58rem;
+    text-transform: uppercase;
+}
+
+.gh-ticket-type-list dd {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 750;
+}
+
+.gh-commerce-table th {
+    color: #6c737e;
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.gh-dispute-section {
+    padding: 1.25rem;
+    border: 1px solid #e4c6c6;
+    border-radius: 1rem;
+    background: #fff8f8;
+}
+
+.gh-membership-plan-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+}
+
+.gh-membership-plan-list > a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e3ded8;
+    border-radius: .75rem;
+    color: #17233c;
+    text-decoration: none;
+}
+
+.gh-membership-plan-list h3 {
+    margin: .35rem 0 0;
+    font-size: 1rem;
+}
+
+.gh-membership-plan-list strong {
+    font-size: 1.1rem;
+    text-align: right;
+}
+
+.gh-membership-plan-list small {
+    display: block;
+    color: #737a85;
+    font-size: .65rem;
+}
+
+/* Public event and checkout */
+
+.gh-public-event-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(17rem, .55fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: start;
+    padding: clamp(1.5rem, 5vw, 3.5rem) 0;
+}
+
+.gh-public-event-head h1 {
+    max-width: 48rem;
+    margin-bottom: 1rem;
+    font-size: clamp(2.3rem, 6vw, 4.5rem);
+    font-weight: 750;
+    letter-spacing: -.05em;
+}
+
+.gh-public-event-description {
+    max-width: 46rem;
+    margin-bottom: 1.5rem;
+    color: #4d5561;
+    font-size: 1.05rem;
+}
+
+.gh-public-event-head aside {
+    padding: 1.4rem;
+    border: 1px solid #e3ded8;
+    border-radius: 1rem;
+    background: #fbfaf8;
+}
+
+.gh-public-event-head dl,
+.gh-public-event-head dl > div {
+    margin: 0;
+}
+
+.gh-public-event-head dl > div {
+    padding: .65rem 0;
+    border-bottom: 1px solid #e7e2dd;
+}
+
+.gh-public-event-head dl > div:last-child {
+    border-bottom: 0;
+}
+
+.gh-public-event-head dt {
+    color: #707783;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.gh-public-event-head dd {
+    margin: .15rem 0 0;
+    font-weight: 650;
+}
+
+.gh-public-ticket-section {
+    display: grid;
+    grid-template-columns: minmax(12rem, .55fr) minmax(0, 1.45fr);
+    gap: 2rem;
+    margin: 1rem 0 2rem;
+    padding: clamp(1.4rem, 4vw, 2.2rem);
+    border-radius: 1rem;
+    background: #f3f6f2;
+}
+
+.gh-public-ticket-section h2 {
+    font-size: 1.6rem;
+    font-weight: 750;
+}
+
+.gh-public-ticket-section > div:first-child > p:last-child {
+    color: #5e6672;
+}
+
+.gh-public-ticket-list {
+    display: grid;
+    gap: .6rem;
+}
+
+.gh-public-ticket-list article {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 1rem;
+    align-items: center;
+    padding: .9rem 1rem;
+    border: 1px solid #d9e2d8;
+    border-radius: .7rem;
+    background: #fff;
+}
+
+.gh-public-ticket-list h3 {
+    margin-bottom: .15rem;
+    font-size: .95rem;
+}
+
+.gh-public-ticket-list p {
+    margin-bottom: 0;
+    color: #69717d;
+    font-size: .76rem;
+}
+
+.gh-public-ticket-list > article > strong {
+    font-size: 1.15rem;
+}
+
+.gh-rsvp-complete {
+    max-width: 54rem;
+    margin: 2rem auto;
+    padding: clamp(1.5rem, 5vw, 3rem);
+    text-align: center;
+}
+
+.gh-rsvp-complete-mark {
+    display: grid;
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    background: #e4f1e6;
+    color: #35613b;
+    font-size: 1.5rem;
+    font-weight: 900;
+    place-items: center;
+}
+
+.gh-rsvp-complete h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 750;
+    letter-spacing: -.04em;
+}
+
+.gh-rsvp-party {
+    max-width: 26rem;
+    margin: 1.5rem auto;
+    padding: 1rem;
+    border-radius: .75rem;
+    background: #f5f3f0;
+}
+
+.gh-rsvp-party h2 {
+    font-size: .78rem;
+    text-transform: uppercase;
+}
+
+.gh-rsvp-party ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.gh-payment-required {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+    padding: 1.4rem;
+    border: 1px solid #ead198;
+    border-radius: 1rem;
+    background: #fff8e7;
+    text-align: left;
+}
+
+.gh-payment-required h2 {
+    font-size: 1.35rem;
+    font-weight: 750;
+}
+
+.gh-payment-required p:last-child {
+    margin-bottom: 0;
+    color: #696252;
+    font-size: .84rem;
+}
+
+.gh-confirmation-note {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border-radius: .75rem;
+    background: #eef6ed;
+}
+
+.gh-public-checkout {
+    max-width: 68rem;
+    margin-inline: auto;
+}
+
+.gh-checkout-head {
+    padding: 2rem 0;
+    text-align: center;
+}
+
+.gh-checkout-head > p {
+    margin-bottom: .5rem;
+    color: #c95e32;
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+}
+
+.gh-checkout-head h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 750;
+    letter-spacing: -.04em;
+}
+
+.gh-checkout-head span {
+    color: #636b77;
+}
+
+.gh-checkout-layout {
+    display: grid;
+    grid-template-columns: minmax(15rem, .55fr) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.gh-checkout-party,
+.gh-checkout-options {
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid #e3ded8;
+    border-radius: 1rem;
+}
+
+.gh-checkout-party {
+    background: #fbfaf8;
+}
+
+.gh-checkout-party h2,
+.gh-checkout-options h2 {
+    font-size: 1.35rem;
+    font-weight: 750;
+}
+
+.gh-checkout-party ul {
+    display: grid;
+    gap: .4rem;
+    margin: 1rem 0;
+    padding: 0;
+    list-style: none;
+}
+
+.gh-checkout-party li {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+}
+
+.gh-checkout-party li span {
+    display: grid;
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 50%;
+    background: #e4f1e6;
+    color: #35613b;
+    font-size: .68rem;
+    place-items: center;
+}
+
+.gh-checkout-email {
+    margin: 1rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid #e3ded8;
+    color: #68707c;
+    font-size: .8rem;
+}
+
+.gh-public-ticket-options {
+    display: grid;
+    gap: .65rem;
+}
+
+.gh-public-ticket-options label {
+    display: block;
+    position: relative;
+    cursor: pointer;
+}
+
+.gh-public-ticket-options input {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.gh-public-ticket-options label > span {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .2rem 1rem;
+    padding: 1rem 1rem 1rem 3rem;
+    border: 2px solid #e0ddd9;
+    border-radius: .75rem;
+}
+
+.gh-public-ticket-options label:has(input:checked) > span {
+    border-color: var(--site-primary, #4f7655);
+    background: #f7faf6;
+    box-shadow: 0 0 0 3px rgba(79, 118, 85, .1);
+}
+
+.gh-public-ticket-options strong,
+.gh-public-ticket-options small,
+.gh-public-ticket-options em,
+.gh-public-ticket-options b,
+.gh-public-ticket-options i {
+    display: block;
+}
+
+.gh-public-ticket-options small {
+    color: #68707c;
+    font-size: .78rem;
+}
+
+.gh-public-ticket-options em {
+    grid-column: 1;
+    color: #68707c;
+    font-size: .75rem;
+    font-style: normal;
+}
+
+.gh-public-ticket-options b {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 1.1rem;
+}
+
+.gh-public-ticket-options i {
+    grid-column: 2;
+    color: #68707c;
+    font-size: .7rem;
+    font-style: normal;
+    text-align: right;
+}
+
+.gh-stripe-note {
+    display: grid;
+    gap: .15rem;
+    margin-top: 1rem;
+    padding: .85rem;
+    border-radius: .6rem;
+    background: #f2f4f7;
+    color: #626a77;
+    font-size: .76rem;
+}
+
+.gh-stripe-note strong {
+    color: #17233c;
+}
+
+.gh-ticket-unavailable {
+    padding: 1.2rem;
+    border-radius: .75rem;
+    background: #fff8e7;
+}
+
+.gh-ticket-unavailable h3 {
+    font-size: 1rem;
+}
+
+.gh-ticket-unavailable p {
+    color: #696252;
+    font-size: .84rem;
+}
+
+.gh-content-status-paid {
+    background: #e5f2e7;
+    color: #35613b;
+}
+
+.gh-content-status-pending,
+.gh-content-status-partially_refunded,
+.gh-content-status-disputed {
+    background: #fff3cd;
+    color: #725800;
+}
+
+.gh-content-status-refunded,
+.gh-content-status-expired {
+    background: #eef0f3;
+    color: #59616e;
+}
+
+@media (max-width: 991.98px) {
+    .gh-commerce-summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .gh-ticket-type-list article {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+
+    .gh-ticket-type-list dl {
+        grid-column: 1 / 3;
+        justify-self: start;
+    }
+
+    .gh-public-event-head,
+    .gh-public-ticket-section,
+    .gh-checkout-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .gh-stripe-readiness {
+        grid-template-columns: auto 1fr;
+    }
+
+    .gh-stripe-actions {
+        grid-column: 2;
+        justify-content: flex-start;
+    }
+
+    .gh-ticket-numbers,
+    .gh-ticket-window,
+    .gh-membership-plan-list {
+        grid-template-columns: 1fr;
+    }
+
+    .gh-payment-required {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .gh-commerce-blocker {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .gh-commerce-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .gh-ticket-type-list article {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .gh-ticket-type-list dl {
+        grid-column: 1 / 3;
+        width: 100%;
+    }
+
+    .gh-ticket-type-list .gh-row-arrow {
+        display: none;
+    }
+
+    .gh-public-ticket-list article {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .gh-public-ticket-list .gh-content-status {
+        grid-column: 1 / 3;
+        justify-self: start;
+    }
+
+    .gh-public-ticket-options label > span {
+        grid-template-columns: 1fr;
+    }
+
+    .gh-public-ticket-options b,
+    .gh-public-ticket-options i {
+        grid-column: 1;
+        grid-row: auto;
+        text-align: left;
+    }
+}

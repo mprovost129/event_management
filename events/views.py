@@ -10,7 +10,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 
 from core.rate_limits import public_write_rate_limit
 from ops.services import record_audit_event
-from payments.services import registration_checkout_token
+from payments.services import registration_checkout_token, ticket_inventory
 from sites.permissions import site_staff_required
 
 from .forms import (
@@ -366,6 +366,10 @@ def occurrence_detail(request, slug, occurrence_id):
     ticket_types = occurrence.ticket_types.filter(is_active=True)
     for ticket_type in ticket_types:
         ticket_type.price_display = Decimal(ticket_type.amount_cents) / 100
+        ticket_type.inventory = ticket_inventory(ticket_type)
+        ticket_type.available_now = (
+            ticket_type.sales_are_open() and ticket_type.inventory["remaining"] > 0
+        )
     public_reviews = occurrence.reviews.filter(deleted_at__isnull=True).exclude(
         moderation_status="hidden"
     )

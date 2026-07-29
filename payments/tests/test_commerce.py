@@ -34,6 +34,7 @@ from payments.services import (
     prepare_refund,
     process_connect_event,
     refresh_connected_account,
+    registration_checkout_token,
     reserve_ticket_order,
     start_member_subscription,
     synchronize_connected_account,
@@ -666,3 +667,51 @@ def test_commerce_dashboard_and_edit_surfaces_render_for_subscriber_admin(client
     assert "Payments &amp; memberships" in dashboard.content.decode()
     assert ticket_edit.status_code == 200
     assert plan_edit.status_code == 200
+
+
+@pytest.mark.django_db
+def test_ticket_setup_explains_when_stripe_is_not_ready(client):
+    owner, site, connected, occurrence, _, _ = commerce_fixture()
+    connected.delete()
+    client.force_login(owner)
+
+    response = client.get(
+        reverse(
+            "payments:ticket_type_create",
+            kwargs={"site_id": site.id, "occurrence_id": occurrence.id},
+        )
+    )
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Stripe setup needed" in content
+    assert "Connect Stripe before creating paid tickets" in content
+    assert "Open payment setup" in content
+
+
+@pytest.mark.django_db
+def test_ticket_checkout_only_shows_options_that_cover_the_whole_party(client):
+    _, site, _, occurrence, ticket_type, registration = commerce_fixture(guests=1)
+    TicketType.objects.create(
+        site=site,
+        occurrence=occurrence,
+        name="Single admission only",
+        amount_cents=1000,
+        currency="usd",
+        quantity=10,
+        max_per_order=1,
+    )
+    token = registration_checkout_token(registration)
+
+    response = client.get(
+        reverse("payments:ticket_checkout", kwargs={"token": token}),
+        headers={"host": "boot-scooters.localhost"},
+    )
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert ticket_type.name in content
+    assert "Single admission only" not in content
+    assert "$30.00 total" in content
+    assert "2 tickets" in content
+    assert "Payment handled by Stripe" in content

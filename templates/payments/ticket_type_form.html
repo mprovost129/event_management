@@ -1,6 +1,30 @@
 {% extends 'base.html' %}
-{% block title %}{% if ticket_type %}Edit{% else %}Add{% endif %} tickets &middot; {{ occurrence.event.title }}{% endblock %}
+{% load tz %}
+{% block title %}{% if ticket_type %}Edit{% else %}Add{% endif %} tickets | {{ occurrence.event.title }}{% endblock %}
 {% block content %}
-<div class="mb-4"><a href="{% url 'events:manage' site.id %}">&larr; Events</a><h1>{% if ticket_type %}Edit{% else %}Add{% endif %} paid tickets</h1><p>{{ occurrence.event.title }} &middot; {{ occurrence.starts_at }}</p><p class="text-secondary">Every going participant, including each named guest, needs one ticket. Stripe must be ready before this can be saved.</p></div>
-<form method="post" class="card"><div class="card-body">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">{% if ticket_type %}Save{% else %}Create{% endif %} ticket type</button></div></form>
+{% timezone site.timezone %}
+<div class="gh-content-editor gh-ticket-editor">
+    <div class="gh-editor-head">
+        <div><a class="gh-back-link" href="{% url 'events:manage' site.id %}">&larr; Events</a><p class="gh-step-label mt-3">{% if ticket_type %}Ticket settings{% else %}Paid event setup{% endif %}</p><h1>{% if ticket_type %}Edit {{ ticket_type.name }}{% else %}Add tickets to {{ occurrence.event.title }}{% endif %}</h1><p>{{ occurrence.starts_at|date:"l, F j, Y" }} at {{ occurrence.starts_at|date:"g:i A" }}{% if occurrence.venue_name %} &middot; {{ occurrence.venue_name }}{% endif %}</p></div>
+        {% if connected.commerce_ready %}<span class="gh-status-pill gh-status-ready">Stripe ready</span>{% else %}<span class="gh-status-pill gh-status-restricted">Stripe setup needed</span>{% endif %}
+    </div>
+
+    {% if not ticket_type and not connected.commerce_ready %}<div class="gh-commerce-blocker"><div><strong>Connect Stripe before creating paid tickets.</strong><p>The event is safe to keep planning. Finish payment setup, then return to this date.</p></div><a class="btn btn-primary" href="{% url 'payments:manage' site.id %}">Open payment setup</a></div>{% endif %}
+
+    <form method="post" class="gh-editor-layout">{% csrf_token %}
+        <div class="gh-editor-main">
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+            <section class="gh-editor-card" aria-labelledby="ticket-details-heading"><p class="gh-step-label">Ticket option</p><h2 id="ticket-details-heading">What will attendees buy?</h2><div class="gh-form-field">{{ form.name.label_tag }}{{ form.name }}<div class="gh-field-help">{{ form.name.help_text }}</div>{% for error in form.name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.description.label_tag }}{{ form.description }}{% for error in form.description.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-ticket-numbers"><div class="gh-form-field">{{ form.price.label_tag }}<div class="gh-money-field"><span>$</span>{{ form.price }}<span>{{ site.currency|upper }}</span></div><div class="gh-field-help">{{ form.price.help_text }}</div>{% for error in form.price.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.quantity.label_tag }}{{ form.quantity }}<div class="gh-field-help">{{ form.quantity.help_text }}</div>{% for error in form.quantity.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.max_per_order.label_tag }}{{ form.max_per_order }}<div class="gh-field-help">{{ form.max_per_order.help_text }}</div>{% for error in form.max_per_order.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div></section>
+
+            <section class="gh-editor-card" aria-labelledby="ticket-window-heading"><p class="gh-step-label">Optional</p><h2 id="ticket-window-heading">Set a sales window</h2><p class="text-secondary">Leave both fields blank to make tickets available as soon as this option is active.</p><div class="gh-ticket-window"><div class="gh-form-field">{{ form.sales_start_at.label_tag }}{{ form.sales_start_at }}<div class="gh-field-help">Times use {{ site.timezone }}.</div>{% for error in form.sales_start_at.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.sales_end_at.label_tag }}{{ form.sales_end_at }}<div class="gh-field-help">Times use {{ site.timezone }}.</div>{% for error in form.sales_end_at.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div></section>
+        </div>
+
+        <aside class="gh-editor-sidebar">
+            {% if ticket_type %}<section class="gh-ticket-inventory-card"><p class="gh-step-label">Inventory now</p><h2>{{ inventory.remaining }} remaining</h2><dl><div><dt>Sold</dt><dd>{{ inventory.sold }}</dd></div><div><dt>Held</dt><dd>{{ inventory.held }}</dd></div><div><dt>Total</dt><dd>{{ ticket_type.quantity }}</dd></div></dl><p>Tickets currently held are released automatically if checkout expires.</p></section>{% endif %}
+            <section class="gh-editor-card"><p class="gh-step-label">Availability</p><h2>Show at checkout</h2><label class="gh-active-toggle">{{ form.is_active }}<span><strong>Ticket option is active</strong><small>{{ form.is_active.help_text }}</small></span></label>{% for error in form.is_active.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}<button class="btn btn-primary w-100 mt-3" type="submit"{% if not ticket_type and not connected.commerce_ready %} disabled{% endif %}>{% if ticket_type %}Save ticket option{% else %}Create ticket option{% endif %}</button><a class="btn btn-link w-100" href="{% url 'events:manage' site.id %}">Cancel</a></section>
+            <div class="gh-editor-tip"><strong>One ticket per person</strong>When someone RSVPs with guests, checkout charges for the attendee and every named guest together.</div>
+        </aside>
+    </form>
+</div>
+{% endtimezone %}
 {% endblock %}
