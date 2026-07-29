@@ -56,6 +56,20 @@ def test_onboarding_creates_isolated_site_trial_and_owner_role(client, settings)
 
 
 @pytest.mark.django_db
+def test_onboarding_explains_site_address_and_subscription_boundary(client, settings):
+    owner = verified_user("owner@example.com")
+    client.force_login(owner)
+
+    response = client.get(reverse("sites:onboarding"))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert f".{settings.PLATFORM_DOMAIN}" in content
+    assert "One website is included with each subscription" in content
+    assert "Create my site and start trial" in content
+
+
+@pytest.mark.django_db
 def test_reserved_site_slug_is_rejected(client):
     owner = verified_user("owner@example.com")
     client.force_login(owner)

@@ -2,11 +2,13 @@
 
 {% block title %}Check your email | {{ platform_name }}{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-6">
+<div class="gh-auth-centered">
+    <div class="gh-auth-card text-center">
+        <span class="gh-confirmation-mark" aria-hidden="true">✓</span>
+        <p class="gh-step-label">One quick step</p>
         <h1>Check your email</h1>
-        <p>Use the verification link we sent before signing in and creating your site.</p>
-        <p><a href="{% url 'users:resend_verification' %}">Send another verification link</a></p>
+        <p class="text-secondary">Open the verification link we sent. After that, you'll choose your group name and Gather HQs address.</p>
+        <p class="gh-auth-footer mb-0">Didn't receive it? <a href="{% url 'users:resend_verification' %}">Send another verification link</a>.</p>
     </div>
 </div>
 {% endblock %}

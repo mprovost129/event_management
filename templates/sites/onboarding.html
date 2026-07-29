@@ -2,16 +2,40 @@
 
 {% block title %}Create your site | {{ platform_name }}{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-7">
-        <p class="text-uppercase text-primary small fw-semibold">Step 1 of 1</p>
-        <h1>Create your group website</h1>
-        <p class="text-secondary">You can change the name and design later. The site address should be short and memorable.</p>
+<div class="gh-auth-shell gh-onboarding-shell">
+    <section class="gh-auth-intro" aria-labelledby="onboarding-title">
+        <p class="gh-eyebrow">Welcome to Gather HQs</p>
+        <h1 id="onboarding-title">Create your group's headquarters.</h1>
+        <p>This starts your 14-day trial. You can begin with the basics and add events, contacts, tickets, and content when you're ready.</p>
+        <ol class="gh-onboarding-preview">
+            <li class="is-current"><span>1</span><div><strong>Name your site</strong><small>Choose your group name and web address.</small></div></li>
+            <li><span>2</span><div><strong>Make it yours</strong><small>Add your colors, story, and first event.</small></div></li>
+            <li><span>3</span><div><strong>Invite your people</strong><small>Share your page or send invitations.</small></div></li>
+        </ol>
+    </section>
+    <div class="gh-auth-card">
+        <p class="gh-step-label">Site setup · About 2 minutes</p>
+        <h2>Your starting details</h2>
+        <p class="text-secondary">Nothing here is permanent except the web address. You can update your name and design later.</p>
         <form method="post" novalidate>
             {% csrf_token %}
-            {{ form.as_p }}
-            <button class="btn btn-primary" type="submit">Create site and start trial</button>
+            {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+            {% for field in form %}
+            <div class="gh-form-field">
+                {{ field.label_tag }}
+                {% if field.name == 'slug' %}
+                <div class="gh-domain-input">{{ field }}<span>.{{ platform_domain }}</span></div>
+                {% else %}
+                {{ field }}
+                {% endif %}
+                {% if field.help_text %}<div class="gh-field-help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</div>{% endif %}
+                {% if field.name == 'template_key' %}<div class="gh-field-help">Classic is structured and traditional. Social is softer and more spacious.</div>{% endif %}
+                {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            {% endfor %}
+            <button class="btn btn-primary btn-lg w-100" type="submit">Create my site and start trial</button>
         </form>
+        <p class="gh-auth-footer">One website is included with each subscription.</p>
     </div>
 </div>
 {% endblock %}

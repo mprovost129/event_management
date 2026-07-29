@@ -2,14 +2,17 @@
 
 {% block title %}Resend verification | {{ platform_name }}{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-6">
-        <h1>Resend verification</h1>
+<div class="gh-auth-centered">
+    <div class="gh-auth-card">
+        <p class="gh-step-label">Account verification</p>
+        <h1>Send a new link</h1>
+        <p class="text-secondary">Enter the email address you used to create your account.</p>
         <form method="post" novalidate>
             {% csrf_token %}
-            {{ form.as_p }}
-            <button class="btn btn-primary" type="submit">Send verification email</button>
+            {% include 'includes/form_fields.html' %}
+            <button class="btn btn-primary btn-lg w-100" type="submit">Send verification email</button>
         </form>
+        <p class="gh-auth-footer"><a href="{% url 'users:login' %}">Return to sign in</a></p>
     </div>
 </div>
 {% endblock %}

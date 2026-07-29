@@ -26,7 +26,7 @@
                         <button class="btn btn-link" type="submit">Sign out</button>
                     </form>
                 {% else %}
-                    <a class="btn btn-link" href="{% url 'login' %}">Sign in</a>
+                    <a class="btn btn-link" href="{% url 'users:login' %}">Sign in</a>
                     <a class="btn btn-primary" href="{% url 'users:signup' %}">Start free trial</a>
                 {% endif %}
                 {% endblock %}

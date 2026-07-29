@@ -1,17 +1,33 @@
 {% extends 'base.html' %}
 
 {% block title %}Create account | {{ platform_name }}{% endblock %}
+{% block meta_description %}Start a 14-day Gather HQs trial and create a home for your group's events.{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-6">
-        <h1>Create your account</h1>
-        <p class="text-secondary">Start with 14 days free. No card required.</p>
+<div class="gh-auth-shell">
+    <section class="gh-auth-intro" aria-labelledby="signup-title">
+        <p class="gh-eyebrow">Your group. One home.</p>
+        <h1 id="signup-title">Start gathering with less juggling.</h1>
+        <p>Create your account now. Your 14-day trial begins when you create your group website after verifying your email.</p>
+        <ul class="gh-auth-benefits">
+            <li>A branded website and event calendar</li>
+            <li>Invitations, RSVPs, guests, and attendance</li>
+            <li>Tickets, memberships, newsletters, and reports</li>
+        </ul>
+        <div class="gh-auth-price-note">
+            <strong>14 days free</strong>
+            <span>No card required. Then ${{ billing_options.0.amount|floatformat:0 }}/month or ${{ billing_options.1.amount|floatformat:0 }}/year.</span>
+        </div>
+    </section>
+    <div class="gh-auth-card">
+        <p class="gh-step-label">Account details</p>
+        <h2>Create your account</h2>
+        <p class="text-secondary">Use the email address where you want to receive your verification link.</p>
         <form method="post" novalidate>
             {% csrf_token %}
-            {{ form.as_p }}
-            <button class="btn btn-primary" type="submit">Create account</button>
+            {% include 'includes/form_fields.html' %}
+            <button class="btn btn-primary btn-lg w-100" type="submit">Create my account</button>
         </form>
-        <p class="mt-3">Already registered? <a href="{% url 'login' %}">Sign in</a>.</p>
+        <p class="gh-auth-footer">Already registered? <a href="{% url 'users:login' %}">Sign in</a>.</p>
     </div>
 </div>
 {% endblock %}

@@ -8,6 +8,7 @@ from django.views.decorators.http import require_http_methods
 
 from core.rate_limits import public_write_rate_limit
 from ops.services import record_audit_event
+from subscriptions.gateway import billing_options
 
 from .forms import ResendVerificationForm, SignupForm
 from .models import User
@@ -29,7 +30,11 @@ def signup(request):
             "Check your email to verify your account before signing in.",
         )
         return redirect("users:verification_sent")
-    return render(request, "users/signup.html", {"form": form})
+    return render(
+        request,
+        "users/signup.html",
+        {"form": form, "billing_options": billing_options()},
+    )
 
 
 def verification_sent(request):
