@@ -1,10 +1,12 @@
 from django.http import JsonResponse
+from django.templatetags.static import static
 from django.utils import timezone
 from django.views.generic import TemplateView
 
 from content.models import SitePage
 from content.services import public_blog_posts, public_page
 from events.models import Event, EventOccurrence
+from subscriptions.gateway import billing_options
 
 from .health import readiness_status
 
@@ -39,6 +41,12 @@ class HomeView(TemplateView):
                 .select_related("event")[:3]
             )
             context["recent_posts"] = public_blog_posts(site)[:3]
+        elif site is None:
+            context["billing_options"] = billing_options()
+            context["canonical_url"] = self.request.build_absolute_uri("/")
+            context["social_image_url"] = self.request.build_absolute_uri(
+                static("img/gather-hqs-social.png")
+            )
         return context
 
 

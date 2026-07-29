@@ -1,8 +1,41 @@
 {% extends base_template %}
 {% load tz %}
 
-{% block title %}{% if site %}{{ site.display_name }}{% else %}{{ platform_name }}{% endif %}{% endblock %}
-{% block meta_description %}{% if site %}Events and updates from {{ site.display_name }}.{% else %}Create a home for your group's events.{% endif %}{% endblock %}
+{% block title %}{% if site %}{{ site.display_name }}{% else %}Gather HQs | A home for your group's events{% endif %}{% endblock %}
+{% block meta_description %}{% if site %}Events and updates from {{ site.display_name }}.{% else %}Create your group website, schedule events, collect RSVPs, sell tickets, and keep members connected with Gather HQs.{% endif %}{% endblock %}
+
+{% block social_meta %}
+{% if not site %}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Gather HQs">
+    <meta property="og:title" content="Gather HQs | Your group. One home.">
+    <meta property="og:description" content="Create a website, organize events, collect RSVPs, and keep your group connected.">
+    <meta property="og:url" content="{{ canonical_url }}">
+    <meta property="og:image" content="{{ social_image_url }}">
+    <meta property="og:image:width" content="1733">
+    <meta property="og:image:height" content="909">
+    <meta property="og:image:alt" content="Gather HQs — Your group. One home.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Gather HQs | Your group. One home.">
+    <meta name="twitter:description" content="Create a website, organize events, collect RSVPs, and keep your group connected.">
+    <meta name="twitter:image" content="{{ social_image_url }}">
+{% endif %}
+{% endblock %}
+
+{% block nav %}
+{% if not site %}
+<div class="ms-auto d-flex align-items-center gap-2 gap-lg-3">
+    <div class="d-none d-md-flex align-items-center gap-3" aria-label="Page sections">
+        <a class="gh-nav-link" href="#features">Features</a>
+        <a class="gh-nav-link" href="#pricing">Pricing</a>
+    </div>
+    <a class="btn btn-link px-2" href="{% url 'login' %}">Sign in</a>
+    <a class="btn btn-primary" href="{% url 'users:signup' %}">Start free</a>
+</div>
+{% else %}
+{{ block.super }}
+{% endif %}
+{% endblock %}
 
 {% block content %}
 {% if site %}
@@ -22,14 +55,105 @@
     </div>
     {% endif %}
 {% else %}
-    <section class="py-5 row align-items-center g-5">
-        <div class="col-lg-7">
-            <p class="text-uppercase text-primary small fw-semibold">Built for real-world groups</p>
-            <h1 class="display-4 fw-semibold">Give your events a home.</h1>
-            <p class="lead text-secondary">Create a branded group website, invite people, collect RSVPs, and keep every event organized.</p>
-            <a class="btn btn-primary btn-lg" href="{% url 'users:signup' %}">Start your 14-day free trial</a>
-            <p class="small text-secondary mt-2">No card required.</p>
+<div class="gh-landing">
+    <section class="gh-hero py-5 py-lg-6" aria-labelledby="gh-hero-title">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <p class="gh-eyebrow">Built for groups that bring people together</p>
+                <h1 class="gh-display" id="gh-hero-title">Your group has plans. Give them a headquarters.</h1>
+                <p class="gh-lead">Create a welcoming website, organize every event, collect RSVPs, and keep your community in the loop—without piecing together five different tools.</p>
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3 mt-4">
+                    <a class="btn btn-primary btn-lg px-4" href="{% url 'users:signup' %}">Start your 14-day free trial</a>
+                    <a class="gh-text-link" href="#how-it-works">See how it works <span aria-hidden="true">→</span></a>
+                </div>
+                <p class="gh-fine-print mt-3 mb-0">No card required · One group website included · Cancel anytime</p>
+            </div>
+            <div class="col-lg-6">
+                <div class="gh-event-preview" aria-label="Example Gather HQs event page">
+                    <div class="gh-preview-topline"><span>Boot Scooters</span><span class="gh-live-dot">Open for RSVPs</span></div>
+                    <div class="gh-preview-date"><span>FRI</span><strong>18</strong><span>SEP</span></div>
+                    <div class="gh-preview-content">
+                        <p class="gh-preview-kicker">UPCOMING EVENT</p>
+                        <h2>Friday Night Line Dance</h2>
+                        <p>Town Hall · 7:00 PM</p>
+                        <div class="gh-rsvp-row">
+                            <span><strong>42</strong> going</span>
+                            <span><strong>6</strong> maybe</span>
+                            <span><strong>18</strong> spots left</span>
+                        </div>
+                        <span class="btn btn-primary gh-preview-button" aria-hidden="true">Save my spot</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
+
+    <section class="gh-trust-strip" aria-label="What Gather HQs replaces">
+        <p class="mb-0">One simple home for your <strong>website</strong>, <strong>calendar</strong>, <strong>invitations</strong>, <strong>tickets</strong>, and <strong>updates</strong>.</p>
+    </section>
+
+    <section class="py-5 py-lg-6" id="features" aria-labelledby="features-title">
+        <div class="gh-section-heading">
+            <p class="gh-eyebrow">Everything stays together</p>
+            <h2 id="features-title">Spend less time coordinating. Make more room for the gathering.</h2>
+            <p>Gather HQs works for clubs, dance groups, organizers, and growing communities—not only established businesses.</p>
+        </div>
+        <div class="row g-4 mt-2">
+            <div class="col-md-6 col-xl-4"><article class="gh-feature-card"><span class="gh-feature-number">01</span><h3>Your own group website</h3><p>Publish your story, calendar, blog, and updates at a memorable Gather HQs address.</p></article></div>
+            <div class="col-md-6 col-xl-4"><article class="gh-feature-card"><span class="gh-feature-number">02</span><h3>Invitations and RSVPs</h3><p>Run open or invite-only events with Going, Maybe, Not going, and named guests.</p></article></div>
+            <div class="col-md-6 col-xl-4"><article class="gh-feature-card"><span class="gh-feature-number">03</span><h3>Tickets and member dues</h3><p>Use your connected Stripe account for paid events and monthly or yearly memberships.</p></article></div>
+            <div class="col-md-6 col-xl-4"><article class="gh-feature-card"><span class="gh-feature-number">04</span><h3>Attendance that travels</h3><p>Search the mobile-friendly roster and check in attendees and guests right at the door.</p></article></div>
+            <div class="col-md-6 col-xl-4"><article class="gh-feature-card"><span class="gh-feature-number">05</span><h3>Blog and newsletters</h3><p>Share news once, turn posts into campaigns, and honor each contact's communication choices.</p></article></div>
+            <div class="col-md-6 col-xl-4"><article class="gh-feature-card"><span class="gh-feature-number">06</span><h3>Reports and reviews</h3><p>See responses, attendance, revenue, memberships, and participant feedback in one place.</p></article></div>
+        </div>
+    </section>
+
+    <section class="gh-how py-5 py-lg-6" id="how-it-works" aria-labelledby="how-title">
+        <div class="gh-section-heading">
+            <p class="gh-eyebrow">From idea to full house</p>
+            <h2 id="how-title">Set up once. Keep gathering.</h2>
+        </div>
+        <ol class="gh-steps list-unstyled row g-4 mb-0">
+            <li class="col-md-4"><div><span>1</span><h3>Create your headquarters</h3><p>Choose your group name and address, then add your colors, story, and first event.</p></div></li>
+            <li class="col-md-4"><div><span>2</span><h3>Invite your people</h3><p>Send private invitations or share an open event page. Guests respond from any device.</p></div></li>
+            <li class="col-md-4"><div><span>3</span><h3>Welcome everyone</h3><p>Track payments and headcounts before the event, then check people in at the door.</p></div></li>
+        </ol>
+    </section>
+
+    <section class="py-5 py-lg-6" id="pricing" aria-labelledby="pricing-title">
+        <div class="gh-pricing-wrap">
+            <div class="gh-pricing-copy">
+                <p class="gh-eyebrow">Straightforward pricing</p>
+                <h2 id="pricing-title">One plan. Everything your group needs.</h2>
+                <p>Start free for 14 days without a card. Choose monthly flexibility or save with yearly billing when you subscribe.</p>
+                <ul class="gh-check-list">
+                    <li>One branded group website</li>
+                    <li>Unlimited event types and contacts</li>
+                    <li>Blog, newsletters, reports, and reviews</li>
+                    <li>No Gather HQs fee on tickets or member dues</li>
+                </ul>
+                <p class="gh-fine-print">Standard Stripe processing fees still apply to payments collected by your group.</p>
+            </div>
+            <div class="gh-price-options" aria-label="Standard plan billing options">
+                {% for option in billing_options %}
+                <article class="gh-price-card{% if option.interval == 'yearly' %} gh-price-card-featured{% endif %}">
+                    {% if option.interval == 'yearly' %}<span class="gh-save-badge">Save ${{ option.annual_savings|floatformat:0 }} a year</span>{% endif %}
+                    <p>{{ option.label }}</p>
+                    <p class="gh-price"><span>$</span>{{ option.amount|floatformat:0 }}</p>
+                    <p class="gh-price-period">per {% if option.interval == 'monthly' %}month{% else %}year{% endif %}</p>
+                </article>
+                {% endfor %}
+                <a class="btn btn-primary btn-lg w-100" href="{% url 'users:signup' %}">Start free for 14 days</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="gh-final-cta text-center" aria-labelledby="final-cta-title">
+        <p class="gh-eyebrow">Your people are ready</p>
+        <h2 id="final-cta-title">Give the next gathering a place to begin.</h2>
+        <p>Build your group website and publish your first event today.</p>
+        <a class="btn btn-light btn-lg px-4" href="{% url 'users:signup' %}">Start your free trial</a>
+    </section>
+</div>
 {% endif %}
 {% endblock %}

@@ -64,6 +64,20 @@ def test_global_security_headers_skip_link_and_legal_drafts_are_exposed(client):
         assert b"Pre-launch policy draft" in legal.content
 
 
+def test_platform_home_explains_trial_pricing_and_social_preview(client):
+    response = client.get(reverse("core:home"))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Your group has plans" in content
+    assert "Start your 14-day free trial" in content
+    assert ">20<" in content
+    assert ">220<" in content
+    assert "No Gather HQs fee on tickets or member dues" in content
+    assert 'property="og:image"' in content
+    assert "/static/img/gather-hqs-social.png" in content
+
+
 @pytest.mark.django_db
 def test_production_error_pages_are_safe_branded_and_traceable(client):
     missing = client.get(

@@ -160,6 +160,430 @@ nav {
 }
 
 /* =============================================================================
+   Gather HQs platform landing page
+   ============================================================================= */
+
+.gh-landing {
+    --gh-navy: #17233c;
+    --gh-cream: #fff7ec;
+    --gh-orange: #c95e32;
+    --gh-sage: #4f7655;
+    --gh-ink-muted: #5b6270;
+    color: var(--gh-navy);
+}
+
+.gh-nav-link {
+    color: #3d4658;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.gh-nav-link:hover {
+    color: #0a58ca;
+}
+
+.gh-hero {
+    position: relative;
+    isolation: isolate;
+}
+
+.gh-hero::before {
+    position: absolute;
+    top: 2rem;
+    bottom: -2rem;
+    left: 50%;
+    width: 100vw;
+    z-index: -1;
+    background:
+        radial-gradient(circle at 72% 25%, rgba(201, 94, 50, .13), transparent 28%),
+        linear-gradient(135deg, #fff 10%, var(--gh-cream) 100%);
+    content: "";
+    transform: translateX(-50%);
+}
+
+.gh-eyebrow {
+    margin-bottom: .8rem;
+    color: var(--gh-orange);
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.gh-display {
+    max-width: 12ch;
+    font-size: clamp(2.6rem, 6vw, 4.9rem);
+    font-weight: 750;
+    letter-spacing: -.055em;
+    line-height: .98;
+}
+
+.gh-lead {
+    max-width: 39rem;
+    margin-top: 1.5rem;
+    color: var(--gh-ink-muted);
+    font-size: clamp(1.1rem, 2vw, 1.3rem);
+    line-height: 1.65;
+}
+
+.gh-text-link {
+    color: var(--gh-navy);
+    font-weight: 700;
+    text-underline-offset: .25rem;
+}
+
+.gh-fine-print {
+    color: var(--gh-ink-muted);
+    font-size: .9rem;
+}
+
+.gh-event-preview {
+    position: relative;
+    max-width: 34rem;
+    min-height: 28rem;
+    margin-inline: auto;
+    overflow: hidden;
+    border: 1px solid rgba(23, 35, 60, .12);
+    border-radius: 1.5rem;
+    background: #fff;
+    box-shadow: 0 1.75rem 4rem rgba(23, 35, 60, .16);
+    transform: rotate(1.5deg);
+}
+
+.gh-event-preview::after {
+    position: absolute;
+    right: -4rem;
+    bottom: -5rem;
+    width: 15rem;
+    height: 15rem;
+    border-radius: 50%;
+    background: rgba(79, 118, 85, .12);
+    content: "";
+}
+
+.gh-preview-topline {
+    display: flex;
+    justify-content: space-between;
+    padding: 1.15rem 1.4rem;
+    background: var(--gh-navy);
+    color: #fff;
+    font-size: .86rem;
+    font-weight: 700;
+}
+
+.gh-live-dot::before {
+    display: inline-block;
+    width: .55rem;
+    height: .55rem;
+    margin-right: .4rem;
+    border-radius: 50%;
+    background: #92c89a;
+    content: "";
+}
+
+.gh-preview-date {
+    position: absolute;
+    top: 5.3rem;
+    left: 1.5rem;
+    display: grid;
+    width: 5.5rem;
+    padding: .75rem;
+    border: 1px solid #ead7c8;
+    border-radius: .9rem;
+    background: var(--gh-cream);
+    color: var(--gh-orange);
+    text-align: center;
+}
+
+.gh-preview-date strong {
+    color: var(--gh-navy);
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+.gh-preview-content {
+    padding: 4.5rem 2rem 2.5rem 8.25rem;
+}
+
+.gh-preview-kicker {
+    color: var(--gh-orange);
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+}
+
+.gh-preview-content h2 {
+    max-width: 10ch;
+    margin-bottom: 1rem;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 750;
+    letter-spacing: -.04em;
+    line-height: 1;
+}
+
+.gh-rsvp-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .5rem;
+    margin: 2rem 0;
+    padding: 1rem 0;
+    border-block: 1px solid #e5e0d9;
+    color: var(--gh-ink-muted);
+    font-size: .78rem;
+}
+
+.gh-rsvp-row strong {
+    display: block;
+    color: var(--gh-navy);
+    font-size: 1.2rem;
+}
+
+.gh-preview-button {
+    position: relative;
+    z-index: 1;
+}
+
+.gh-trust-strip {
+    margin-block: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-block: 1px solid #e8ded2;
+    color: var(--gh-ink-muted);
+    text-align: center;
+}
+
+.gh-trust-strip strong {
+    color: var(--gh-navy);
+}
+
+.gh-section-heading {
+    max-width: 48rem;
+}
+
+.gh-section-heading h2,
+.gh-pricing-copy h2,
+.gh-final-cta h2 {
+    font-size: clamp(2rem, 4vw, 3.3rem);
+    font-weight: 750;
+    letter-spacing: -.045em;
+    line-height: 1.08;
+}
+
+.gh-section-heading > p:last-child,
+.gh-pricing-copy > p {
+    color: var(--gh-ink-muted);
+    font-size: 1.1rem;
+}
+
+.gh-feature-card {
+    height: 100%;
+    padding: 1.6rem;
+    border: 1px solid #e7e0d9;
+    border-radius: 1rem;
+    background: #fff;
+}
+
+.gh-feature-card:hover {
+    border-color: rgba(201, 94, 50, .45);
+    box-shadow: 0 1rem 2rem rgba(23, 35, 60, .08);
+}
+
+.gh-feature-number {
+    display: inline-block;
+    margin-bottom: 2.5rem;
+    color: var(--gh-orange);
+    font-size: .78rem;
+    font-weight: 800;
+}
+
+.gh-feature-card h3,
+.gh-steps h3 {
+    font-size: 1.25rem;
+    font-weight: 750;
+}
+
+.gh-feature-card p,
+.gh-steps p {
+    margin-bottom: 0;
+    color: var(--gh-ink-muted);
+}
+
+.gh-how {
+    position: relative;
+}
+
+.gh-how::before {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 100vw;
+    z-index: -1;
+    background: #f4f7f3;
+    content: "";
+    transform: translateX(-50%);
+}
+
+.gh-steps {
+    margin-top: 2rem;
+}
+
+.gh-steps > li > div {
+    height: 100%;
+    padding: 1.5rem 0;
+    border-top: 2px solid var(--gh-sage);
+}
+
+.gh-steps span {
+    display: grid;
+    width: 2.4rem;
+    height: 2.4rem;
+    margin-bottom: 2rem;
+    border-radius: 50%;
+    background: var(--gh-sage);
+    color: #fff;
+    font-weight: 800;
+    place-items: center;
+}
+
+.gh-pricing-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(18rem, .75fr);
+    gap: clamp(2rem, 7vw, 6rem);
+    align-items: center;
+    padding: clamp(2rem, 5vw, 4rem);
+    border-radius: 1.5rem;
+    background: var(--gh-navy);
+    color: #fff;
+}
+
+.gh-pricing-copy > p,
+.gh-pricing-copy .gh-fine-print {
+    color: #c9cfda;
+}
+
+.gh-check-list {
+    display: grid;
+    gap: .75rem;
+    padding-left: 0;
+    list-style: none;
+}
+
+.gh-check-list li::before {
+    margin-right: .65rem;
+    color: #a8d2ae;
+    content: "✓";
+    font-weight: 800;
+}
+
+.gh-price-options {
+    display: grid;
+    gap: .85rem;
+}
+
+.gh-price-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 1.15rem 1.25rem;
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, .08);
+}
+
+.gh-price-card p {
+    margin: 0;
+}
+
+.gh-price-card-featured {
+    border-color: #f0b091;
+    background: #fff7ec;
+    color: var(--gh-navy);
+}
+
+.gh-price {
+    grid-row: span 2;
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -.05em;
+}
+
+.gh-price span {
+    font-size: 1.2rem;
+    vertical-align: super;
+}
+
+.gh-price-period {
+    color: #c9cfda;
+    font-size: .82rem;
+}
+
+.gh-price-card-featured .gh-price-period {
+    color: var(--gh-ink-muted);
+}
+
+.gh-save-badge {
+    position: absolute;
+    top: -.65rem;
+    right: .75rem;
+    padding: .18rem .55rem;
+    border-radius: 99rem;
+    background: var(--gh-orange);
+    color: #fff;
+    font-size: .7rem;
+    font-weight: 800;
+}
+
+.gh-final-cta {
+    margin-top: 3rem;
+    padding: clamp(3rem, 8vw, 6rem) 1.5rem;
+    border-radius: 1.5rem;
+    background: var(--gh-orange);
+    color: #fff;
+}
+
+.gh-final-cta .gh-eyebrow,
+.gh-final-cta p {
+    color: #fff7ec;
+}
+
+.gh-final-cta p {
+    font-size: 1.1rem;
+}
+
+.py-lg-6 {
+    padding-block: 5rem;
+}
+
+@media (max-width: 767.98px) {
+    .gh-event-preview {
+        min-height: 25rem;
+        transform: none;
+    }
+
+    .gh-preview-date {
+        position: static;
+        margin: 1.5rem 1.5rem 0;
+    }
+
+    .gh-preview-content {
+        padding: 1.5rem;
+    }
+
+    .gh-rsvp-row {
+        font-size: .72rem;
+    }
+
+    .gh-pricing-wrap {
+        grid-template-columns: 1fr;
+    }
+
+    .py-lg-6 {
+        padding-block: 3rem;
+    }
+}
+
+/* =============================================================================
    Messages — map Django message tags to Bootstrap alert colors
    ============================================================================= */
 
