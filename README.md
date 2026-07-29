@@ -61,7 +61,8 @@ See [implementation status](docs/IMPLEMENTATION_STATUS.md) for verification resu
 
 ## Quick start
 
-Copy `.env.example` to `.env`, replace its development secrets, then run:
+Copy only **Section 1 - Local development** from `.env.example` into `.env`,
+replace its development secrets, then run:
 
 ```text
 docker compose up --build

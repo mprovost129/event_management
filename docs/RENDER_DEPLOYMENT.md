@@ -80,6 +80,10 @@ worker where needed:
 | `AWS_ACCESS_KEY_ID` | Bucket-scoped credential |
 | `AWS_SECRET_ACCESS_KEY` | Bucket-scoped secret |
 
+The Blueprint also routes Django account verification and password-reset email
+through the Resend HTTPS API backend. No SMTP host, port, username, or password
+is required.
+
 Do not paste `.env` wholesale into Render. It can contain local or sandbox
 values that should not be promoted. If a new `sync: false` variable is added
 after the Blueprint already exists, add it to the service manually; Render only

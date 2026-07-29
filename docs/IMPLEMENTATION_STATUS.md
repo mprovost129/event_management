@@ -274,9 +274,10 @@ Completed:
 - Operations, provider recovery, backup/restore, pilot-event, load, accessibility, security, and launch runbooks
 - Cost-staged Render Blueprint with free prelaunch web/PostgreSQL/Key Value, paid worker/scheduler processes, pre-pilot persistence and availability upgrade gates, pre-deploy migrations, health gating, wildcard domains, and cross-service secret wiring
 - Render-compatible `DATABASE_URL` parsing and dynamic web-process port binding
+- Separate copy-ready development and Render production environment references, including Resend API delivery for Django account verification and password resets
 
 Automated verification includes cross-tenant denial, suspended-site recovery boundaries, stale/recovered worker readiness, alert escalation, restore confirmation/integrity, pilot data requirements, security headers, and the primary operator journey.
 
-Verified locally: 153 tests pass, the PostgreSQL-only simultaneous-capacity assertion remains selected for CI, Ruff lint passes, migration drift is clean, and Django system checks report no issues. The strict production deployment check passes with zero warnings when all required production values are supplied. The Render Blueprint and deployment guide are ready for account-side review and application.
+Verified locally: 156 tests pass, the PostgreSQL-only simultaneous-capacity assertion remains selected for CI, Ruff lint passes, migration drift is clean, and Django system checks report no issues. The strict production deployment check passes with zero warnings when all required production values are supplied. The Render Blueprint and deployment guide are ready for account-side review and application.
 
 Launch remains blocked until every external-evidence item in `LAUNCH_CHECKLIST.md` is signed off, especially real provider sandbox flows, the production-like 100-user drill, manual accessibility review, legal approval, and an isolated backup restore.

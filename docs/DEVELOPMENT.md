@@ -2,7 +2,9 @@
 
 ## Local setup
 
-1. Copy `.env.example` to `.env` and replace the development passwords and secret.
+1. Copy only **Section 1 - Local development** from `.env.example` into `.env`
+   and replace the development passwords and secret. Section 2 is the separate
+   Render production reference and must not be included in the local file.
 2. Start PostgreSQL, Redis, and the web application with `docker compose up --build`.
 3. Apply migrations with `docker compose exec web python manage.py migrate`.
 4. Create a platform administrator with `docker compose exec web python manage.py createsuperuser`.

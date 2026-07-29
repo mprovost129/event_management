@@ -196,6 +196,17 @@ def deployment_product_check(app_configs, **kwargs):
             )
         )
     if settings.EMAIL_DELIVERY_BACKEND == "resend":
+        if settings.EMAIL_BACKEND != "communications.email_backend.ResendEmailBackend":
+            issues.append(
+                Error(
+                    "Django account email must use the Resend API backend when Resend delivery is enabled.",
+                    hint=(
+                        "Set EMAIL_BACKEND="
+                        "communications.email_backend.ResendEmailBackend."
+                    ),
+                    id="platform.E028",
+                )
+            )
         if not settings.RESEND_API_KEY:
             issues.append(
                 Error(

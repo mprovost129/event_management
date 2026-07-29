@@ -84,7 +84,10 @@ jobs:
           STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
           STRIPE_CONNECT_WEBHOOK_SECRET: whsec_ci_connect_placeholder
           COMMUNICATIONS_WEBHOOK_SECRET: ci-communications-signing-secret
-          EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+          EMAIL_DELIVERY_BACKEND: resend
+          EMAIL_BACKEND: communications.email_backend.ResendEmailBackend
+          RESEND_API_KEY: re_ci_placeholder
+          RESEND_WEBHOOK_SECRET: whsec_ci_resend_placeholder
           SUPPORT_EMAIL: support@events.example.test
           LOG_FORMAT: json
         run: python manage.py check --deploy --fail-level WARNING

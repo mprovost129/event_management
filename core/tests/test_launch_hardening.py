@@ -113,6 +113,7 @@ def test_support_contact_is_published_in_policy_and_error_pages(client):
 def test_resend_deployment_requires_api_and_webhook_secrets():
     issue_ids = {issue.id for issue in deployment_product_check(None)}
 
+    assert "platform.E028" in issue_ids
     assert "platform.E026" in issue_ids
     assert "platform.E027" in issue_ids
     assert "platform.E014" not in issue_ids
@@ -121,13 +122,14 @@ def test_resend_deployment_requires_api_and_webhook_secrets():
 @override_settings(
     DEBUG=False,
     EMAIL_DELIVERY_BACKEND="resend",
-    EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend",
+    EMAIL_BACKEND="communications.email_backend.ResendEmailBackend",
     RESEND_API_KEY="re_configured",
     RESEND_WEBHOOK_SECRET="whsec_configured",
 )
 def test_resend_deployment_accepts_complete_provider_configuration():
     issue_ids = {issue.id for issue in deployment_product_check(None)}
 
+    assert "platform.E028" not in issue_ids
     assert "platform.E026" not in issue_ids
     assert "platform.E027" not in issue_ids
     assert "platform.E014" not in issue_ids

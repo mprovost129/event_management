@@ -281,6 +281,8 @@ envVarGroups:
         value: "90"
       - key: EMAIL_DELIVERY_BACKEND
         value: resend
+      - key: EMAIL_BACKEND
+        value: communications.email_backend.ResendEmailBackend
       - key: DEFAULT_FROM_EMAIL
         value: "Gather HQs <events@gatherhqs.com>"
       - key: SUPPORT_EMAIL
