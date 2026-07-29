@@ -33,13 +33,41 @@ class EventForm(forms.ModelForm):
             "max_guests",
         )
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 8}),
+            "title": forms.TextInput(
+                attrs={"placeholder": "Example: Friday Night Line Dance"}
+            ),
+            "slug": forms.TextInput(attrs={"placeholder": "friday-night-line-dance"}),
+            "description": forms.Textarea(
+                attrs={
+                    "rows": 8,
+                    "placeholder": "What should people know before they decide to attend?",
+                }
+            ),
+            "visibility": forms.RadioSelect,
+            "recurrence": forms.RadioSelect,
             "recurrence_until": forms.DateInput(attrs={"type": "date"}),
         }
 
     def __init__(self, *args, site, **kwargs):
         self.site = site
         super().__init__(*args, **kwargs)
+        self.fields["slug"].help_text = (
+            "Used in the event's web address. Lowercase letters, numbers, and hyphens only."
+        )
+        self.fields["host_name"].help_text = (
+            "Optional public name for the person or group hosting."
+        )
+        self.fields["max_guests"].label = "Guests per RSVP"
+        self.fields["max_guests"].help_text = (
+            "Set to 0 when each person must respond separately."
+        )
+        self.fields["capacity"].help_text = (
+            "Optional. Leave blank when there is no attendance limit."
+        )
+        self.fields["recurrence_interval"].label = "Repeat every"
+        if not self.is_bound:
+            if not self.initial.get("host_name"):
+                self.initial["host_name"] = site.display_name
 
     def clean_slug(self):
         slug = self.cleaned_data["slug"].lower()
@@ -103,11 +131,18 @@ class EventDetailsForm(forms.ModelForm):
             "status",
             "max_guests",
         )
-        widgets = {"description": forms.Textarea(attrs={"rows": 8})}
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 8}),
+            "visibility": forms.RadioSelect,
+        }
 
     def __init__(self, *args, site, **kwargs):
         self.site = site
         super().__init__(*args, **kwargs)
+        self.fields["slug"].help_text = (
+            "Changing this also changes the event's public web address."
+        )
+        self.fields["max_guests"].label = "Guests per RSVP"
 
     def clean_slug(self):
         slug = self.cleaned_data["slug"].lower()
@@ -125,7 +160,9 @@ class OccurrenceEditForm(forms.ModelForm):
         FUTURE = "future", "This and future occurrences"
         ALL = "all", "Every occurrence"
 
-    scope = forms.ChoiceField(choices=Scope.choices, initial=Scope.ONE)
+    scope = forms.ChoiceField(
+        choices=Scope.choices, initial=Scope.ONE, widget=forms.RadioSelect
+    )
     start_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
     start_time = forms.TimeField(widget=forms.TimeInput(attrs={"type": "time"}))
     end_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
@@ -169,8 +206,13 @@ class OccurrenceEditForm(forms.ModelForm):
         return cleaned_data
 
 
+class ContactInvitationChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, contact):
+        return f"{contact.display_name} - {contact.email}"
+
+
 class InvitationForm(forms.Form):
-    contacts = forms.ModelMultipleChoiceField(
+    contacts = ContactInvitationChoiceField(
         queryset=Contact.objects.none(),
         widget=forms.CheckboxSelectMultiple,
         help_text="Only contacts with an email address can receive an invitation.",

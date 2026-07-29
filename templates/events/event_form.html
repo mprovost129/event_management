@@ -1,7 +1,64 @@
 {% extends 'base.html' %}
-{% block title %}Create event · {{ site.display_name }}{% endblock %}
+{% block title %}Create event | {{ site.display_name }}{% endblock %}
 {% block content %}
-<h1>Create event</h1>
-<p class="text-secondary">Times are entered in {{ site.timezone }}. Recurring events materialize calendar occurrences immediately.</p>
-<form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">Create event</button> <a class="btn btn-link" href="{% url 'events:manage' site.id %}">Cancel</a></form>
+<div class="gh-content-editor gh-event-editor">
+    <div class="gh-editor-head">
+        <div>
+            <a class="gh-back-link" href="{% url 'events:manage' site.id %}">&larr; Events</a>
+            <p class="gh-step-label mt-3">New event</p>
+            <h1>Give people something to look forward to.</h1>
+            <p>Start with the first date. Gather HQs will create the rest automatically if the event repeats.</p>
+        </div>
+        <span class="gh-event-timezone">Times use <strong>{{ site.timezone }}</strong></span>
+    </div>
+
+    <form method="post" class="gh-event-editor-layout" data-event-editor>
+        {% csrf_token %}
+        <div class="gh-editor-main">
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+            <section class="gh-editor-card" aria-labelledby="event-details-heading">
+                <p class="gh-step-label">Step 1</p><h2 id="event-details-heading">Describe the event</h2>
+                <div class="gh-form-field">{{ form.title.label_tag }}{{ form.title }}{% for error in form.title.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.slug.label_tag }}<div class="gh-url-field"><span>/events/</span>{{ form.slug }}</div><div class="gh-field-help">{{ form.slug.help_text }}</div>{% for error in form.slug.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.description.label_tag }}{{ form.description }}{% for error in form.description.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.host_name.label_tag }}{{ form.host_name }}<div class="gh-field-help">{{ form.host_name.help_text }}</div>{% for error in form.host_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+            </section>
+
+            <section class="gh-editor-card" aria-labelledby="event-schedule-heading">
+                <p class="gh-step-label">Step 2</p><h2 id="event-schedule-heading">Set the first date</h2>
+                <div class="gh-date-time-grid">
+                    <fieldset><legend>Starts</legend><div class="gh-form-field">{{ form.start_date.label_tag }}{{ form.start_date }}{% for error in form.start_date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.start_time.label_tag }}{{ form.start_time }}{% for error in form.start_time.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></fieldset>
+                    <fieldset><legend>Ends</legend><div class="gh-form-field">{{ form.end_date.label_tag }}{{ form.end_date }}{% for error in form.end_date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.end_time.label_tag }}{{ form.end_time }}{% for error in form.end_time.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></fieldset>
+                </div>
+                <div class="gh-form-field">{{ form.venue_name.label_tag }}{{ form.venue_name }}{% for error in form.venue_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.venue_address.label_tag }}{{ form.venue_address }}{% for error in form.venue_address.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.capacity.label_tag }}{{ form.capacity }}<div class="gh-field-help">{{ form.capacity.help_text }}</div>{% for error in form.capacity.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+            </section>
+
+            <section class="gh-editor-card" aria-labelledby="event-repeat-heading">
+                <p class="gh-step-label">Step 3</p><h2 id="event-repeat-heading">Does it repeat?</h2>
+                <div class="gh-choice-cards gh-recurrence-options">{% for radio in form.recurrence %}<label>{{ radio.tag }}<span><strong>{{ radio.choice_label }}</strong><small>{% if radio.data.value == 'none' %}Create one calendar date.{% elif radio.data.value == 'weekly' %}Repeat on the same weekday.{% else %}Repeat on the same calendar day.{% endif %}</small></span></label>{% endfor %}</div>
+                {% for error in form.recurrence.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                <div class="gh-recurrence-details" data-recurrence-section{% if form.recurrence.value == 'none' or not form.recurrence.value %} hidden{% endif %}>
+                    <div class="gh-form-field">{{ form.recurrence_interval.label_tag }}{{ form.recurrence_interval }}<div class="gh-field-help">Use 1 for every week or month, 2 for every other week or month.</div>{% for error in form.recurrence_interval.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                    <div class="gh-form-field">{{ form.recurrence_until.label_tag }}{{ form.recurrence_until }}<div class="gh-field-help">The final date Gather HQs should create.</div>{% for error in form.recurrence_until.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                </div>
+            </section>
+        </div>
+
+        <aside class="gh-editor-sidebar">
+            <section class="gh-editor-card" aria-labelledby="event-access-heading">
+                <p class="gh-step-label">Access and RSVPs</p><h2 id="event-access-heading">Who can attend?</h2>
+                <div class="gh-choice-cards gh-choice-cards-stacked">{% for radio in form.visibility %}<label>{{ radio.tag }}<span><strong>{{ radio.choice_label }}</strong><small>{% if radio.data.value == 'public' %}Listed on your calendar and open to everyone.{% elif radio.data.value == 'unlisted' %}Anyone with the direct link can respond.{% else %}Only invited contacts can open the response link.{% endif %}</small></span></label>{% endfor %}</div>
+                {% for error in form.visibility.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                <div class="gh-form-field mt-3">{{ form.max_guests.label_tag }}{{ form.max_guests }}<div class="gh-field-help">{{ form.max_guests.help_text }}</div>{% for error in form.max_guests.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <hr>
+                <div class="gh-form-field">{{ form.status.label_tag }}{{ form.status }}<div class="gh-field-help">Choose Draft while planning. Published events can appear publicly when your website is live.</div>{% for error in form.status.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <button class="btn btn-primary w-100" type="submit">Create event and continue</button>
+                <a class="btn btn-link w-100" href="{% url 'events:manage' site.id %}">Cancel</a>
+            </section>
+            <div class="gh-editor-tip"><strong>Tickets come next</strong>Create the event first, then add free or paid ticket options to any date.</div>
+        </aside>
+    </form>
+</div>
 {% endblock %}

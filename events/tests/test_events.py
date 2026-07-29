@@ -5,6 +5,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
+from contacts.models import Contact
 from events.models import Event, EventOccurrence
 from events.services import (
     create_event_series,
@@ -137,3 +138,82 @@ def test_calendar_lists_public_events_but_direct_unlisted_links_work(client):
     assert invite_only.title not in calendar_content
     assert unlisted_response.status_code == 200
     assert private_response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_event_editor_guides_owner_through_access_and_recurrence(client):
+    owner, site = create_site()
+    client.force_login(owner)
+
+    response = client.get(reverse("events:create", args=(site.id,)))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert 'data-event-editor' in content
+    assert "Who can attend?" in content
+    assert "Does it repeat?" in content
+    assert "Create event and continue" in content
+    assert response.context["form"].initial["host_name"] == site.display_name
+
+
+@pytest.mark.django_db
+def test_new_event_redirects_to_highlighted_next_actions(client):
+    owner, site = create_site()
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("events:create", args=(site.id,)),
+        {
+            "title": "Friday Night Line Dance",
+            "slug": "friday-night-line-dance",
+            "description": "A friendly social dance for all levels.",
+            "host_name": site.display_name,
+            "visibility": Event.Visibility.PUBLIC,
+            "status": Event.Status.PUBLISHED,
+            "recurrence": Event.Recurrence.NONE,
+            "recurrence_interval": 1,
+            "recurrence_until": "",
+            "max_guests": 2,
+            "start_date": "2026-09-18",
+            "start_time": "19:00",
+            "end_date": "2026-09-18",
+            "end_time": "21:00",
+            "venue_name": "Town Hall",
+            "venue_address": "100 Main Street",
+            "capacity": 60,
+        },
+    )
+
+    event = Event.objects.get(slug="friday-night-line-dance")
+    assert response.status_code == 302
+    assert response.url.endswith(f"?created={event.id}")
+
+    followup = client.get(response.url)
+    content = followup.content.decode()
+    assert "What would you like to do next?" in content
+    assert "Invite contacts" in content
+    assert "Add tickets" in content
+    assert "Friday Night Line Dance" in content
+
+
+@pytest.mark.django_db
+def test_invitation_picker_shows_contact_email_and_search_controls(client):
+    owner, site = create_site()
+    event = create_series(site, owner)
+    occurrence = event.occurrences.first()
+    Contact.objects.create(
+        site=site,
+        first_name="Pat",
+        last_name="Dancer",
+        email="pat@example.com",
+    )
+    client.force_login(owner)
+
+    response = client.get(reverse("events:invite", args=(site.id, occurrence.id)))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert 'data-invite-picker' in content
+    assert "Pat Dancer - pat@example.com" in content
+    assert "Search by name or email" in content
+    assert "Personal invitation links" in content

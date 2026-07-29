@@ -46,10 +46,22 @@ def _public_site(request):
 def manage_events(request, site_id):
     site = request.authorized_site
     events = Event.objects.for_site(site).prefetch_related("occurrences")
+    created_event_id = request.GET.get("created", "")
     for event in events:
-        for occurrence in event.occurrences.all():
+        event.just_created = str(event.id) == created_event_id
+        occurrences = list(event.occurrences.all())
+        event.first_occurrence = occurrences[0] if occurrences else None
+        for occurrence in occurrences:
             occurrence.metrics = occurrence_metrics(occurrence)
-    return render(request, "events/manage.html", {"site": site, "events": events})
+    return render(
+        request,
+        "events/manage.html",
+        {
+            "site": site,
+            "events": events,
+            "canonical_domain": site.domains.filter(is_canonical=True).first(),
+        },
+    )
 
 
 @site_staff_required
@@ -96,7 +108,9 @@ def event_create(request, site_id):
             request=request,
         )
         messages.success(request, "Event and its calendar occurrences were created.")
-        return redirect("events:manage", site_id=site.id)
+        return redirect(
+            f"{reverse('events:manage', kwargs={'site_id': site.id})}?created={event.id}"
+        )
     return render(request, "events/event_form.html", {"site": site, "form": form})
 
 

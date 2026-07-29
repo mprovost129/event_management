@@ -140,3 +140,83 @@
     updateChannel();
     updateAudience();
 })();
+
+(() => {
+    const editor = document.querySelector("[data-event-editor]");
+    if (!editor) return;
+
+    const title = editor.elements.namedItem("title");
+    const slug = editor.elements.namedItem("slug");
+    let slugWasEdited = slug.value.trim() !== "";
+    slug.addEventListener("input", () => {
+        slugWasEdited = true;
+    });
+    title.addEventListener("input", () => {
+        if (slugWasEdited) return;
+        slug.value = title.value
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+            .slice(0, 180);
+    });
+
+    const updateRecurrence = () => {
+        const repeats = editor.elements.namedItem("recurrence").value !== "none";
+        editor.querySelectorAll("[data-recurrence-section]").forEach((section) => {
+            section.hidden = !repeats;
+        });
+    };
+    editor.querySelectorAll('input[name="recurrence"]').forEach((input) => {
+        input.addEventListener("change", updateRecurrence);
+    });
+
+    const startDate = editor.elements.namedItem("start_date");
+    const endDate = editor.elements.namedItem("end_date");
+    startDate.addEventListener("change", () => {
+        if (!endDate.value) endDate.value = startDate.value;
+    });
+    updateRecurrence();
+})();
+
+(() => {
+    const picker = document.querySelector("[data-invite-picker]");
+    if (!picker) return;
+    const choices = [...picker.querySelectorAll("[data-contact-choice]")];
+    const search = picker.querySelector("[data-invite-search]");
+    const selectAll = picker.querySelector("[data-select-all]");
+    const count = picker.querySelector("[data-selected-count]");
+    const noResults = picker.querySelector("[data-no-contact-results]");
+
+    const visibleChoices = () => choices.filter((choice) => !choice.hidden);
+    const updateCount = () => {
+        const selected = choices.filter((choice) => choice.querySelector("input").checked).length;
+        if (count) count.value = `${selected} selected`;
+        if (selectAll) {
+            const visible = visibleChoices();
+            const allVisibleSelected = visible.length > 0 && visible.every((choice) => choice.querySelector("input").checked);
+            selectAll.textContent = allVisibleSelected ? "Clear shown" : "Select all shown";
+        }
+    };
+
+    choices.forEach((choice) => {
+        choice.querySelector("input").addEventListener("change", updateCount);
+    });
+    search?.addEventListener("input", () => {
+        const query = search.value.trim().toLowerCase();
+        choices.forEach((choice) => {
+            choice.hidden = query !== "" && !choice.textContent.toLowerCase().includes(query);
+        });
+        if (noResults) noResults.hidden = visibleChoices().length !== 0;
+        updateCount();
+    });
+    selectAll?.addEventListener("click", () => {
+        const visible = visibleChoices();
+        const shouldSelect = !visible.every((choice) => choice.querySelector("input").checked);
+        visible.forEach((choice) => {
+            choice.querySelector("input").checked = shouldSelect;
+        });
+        updateCount();
+    });
+    updateCount();
+})();

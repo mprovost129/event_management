@@ -1,24 +1,51 @@
 {% extends 'base.html' %}
 {% load tz %}
-{% block title %}Events · {{ site.display_name }}{% endblock %}
+{% block title %}Events | {{ site.display_name }}{% endblock %}
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-    <div><h1>Events</h1><p class="text-secondary mb-0">{{ site.display_name }}</p></div>
-    <div><a class="btn btn-outline-primary" href="{% url 'sites:dashboard' site.id %}">Dashboard</a> <a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create event</a></div>
+<div class="gh-events-hub">
+    <div class="gh-builder-head">
+        <div>
+            <a class="gh-back-link" href="{% url 'sites:dashboard' site.id %}">&larr; Dashboard</a>
+            <p class="gh-step-label mt-3">Events</p>
+            <h1>Plan it once. Keep everyone on the same page.</h1>
+            <p>Manage dates, invitations, tickets, responses, and attendance for every gathering.</p>
+        </div>
+        <a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create event</a>
+    </div>
+
+    {% timezone site.timezone %}
+    {% for event in events %}
+    <article class="gh-event-manage-card{% if event.just_created %} is-new-event{% endif %}">
+        {% if event.just_created %}
+        <section class="gh-event-next-steps" aria-labelledby="event-next-steps-{{ event.id }}">
+            <div><p class="gh-step-label">Event created</p><h2 id="event-next-steps-{{ event.id }}">What would you like to do next?</h2><p>You can return here anytime. These actions apply to the first event date.</p></div>
+            {% if event.first_occurrence %}<div class="gh-event-next-actions"><a class="btn btn-light" href="{% url 'events:invite' site.id event.first_occurrence.id %}">Invite contacts</a><a class="btn btn-outline-light" href="{% url 'payments:ticket_type_create' site.id event.first_occurrence.id %}">Add tickets</a><a class="btn btn-outline-light" href="{% url 'attendance:roster' site.id event.first_occurrence.id %}">Open roster</a></div>{% endif %}
+        </section>
+        {% endif %}
+
+        <header class="gh-event-manage-head">
+            <div>
+                <div class="d-flex flex-wrap gap-2 mb-2"><span class="gh-content-status gh-content-status-{{ event.status }}">{{ event.get_status_display }}</span><span class="gh-event-access">{{ event.get_visibility_display }}</span><span class="gh-event-access">{{ event.get_recurrence_display }}</span></div>
+                <h2>{{ event.title }}</h2>
+                {% if event.description %}<p>{{ event.description|truncatechars:180 }}</p>{% endif %}
+            </div>
+            <div class="gh-event-manage-actions"><a href="{% url 'events:edit' site.id event.id %}">Edit details</a>{% if site.is_published and canonical_domain and event.status == 'published' and event.visibility != 'invite_only' %}<a href="//{{ canonical_domain.hostname }}{% url 'events:detail' event.slug %}">View page &nearr;</a>{% endif %}{% if event.status != 'canceled' %}<form method="post" action="{% url 'events:cancel' site.id event.id %}">{% csrf_token %}<button class="btn btn-link text-danger p-0" type="submit">Cancel event</button></form>{% endif %}</div>
+        </header>
+
+        <div class="gh-occurrence-list">
+            {% for occurrence in event.occurrences.all %}
+            <section class="gh-occurrence-row">
+                <div class="gh-occurrence-date"><span>{{ occurrence.starts_at|date:"M" }}</span><strong>{{ occurrence.starts_at|date:"j" }}</strong><small>{{ occurrence.starts_at|date:"Y" }}</small></div>
+                <div class="gh-occurrence-main"><h3>{{ occurrence.starts_at|date:"l, g:i A" }}</h3><p>{{ occurrence.venue_name|default:"Venue TBD" }}{% if occurrence.venue_address %} &middot; {{ occurrence.venue_address }}{% endif %}</p><span class="gh-content-status gh-content-status-{{ occurrence.status }}">{{ occurrence.get_status_display }}</span></div>
+                <dl class="gh-occurrence-metrics"><div><dt>Going</dt><dd>{{ occurrence.metrics.going }}</dd></div><div><dt>Maybe</dt><dd>{{ occurrence.metrics.maybe }}</dd></div><div><dt>People</dt><dd>{{ occurrence.metrics.participants }}</dd></div>{% if occurrence.metrics.capacity_remaining != None %}<div><dt>Spots left</dt><dd>{{ occurrence.metrics.capacity_remaining }}</dd></div>{% endif %}</dl>
+                <nav class="gh-occurrence-actions" aria-label="Actions for {{ event.title }} on {{ occurrence.starts_at|date:'F j' }}"><a href="{% url 'events:invite' site.id occurrence.id %}">Invite</a><a href="{% url 'attendance:roster' site.id occurrence.id %}">Roster</a><a href="{% url 'payments:ticket_type_create' site.id occurrence.id %}">Tickets</a><a href="{% url 'events:occurrence_edit' site.id occurrence.id %}">Edit date</a></nav>
+            </section>
+            {% empty %}<p class="text-secondary p-3">No calendar dates remain for this event.</p>{% endfor %}
+        </div>
+    </article>
+    {% empty %}
+    <div class="gh-empty-note gh-event-empty"><span class="gh-event-calendar-mark" aria-hidden="true">+1</span><h2>Create your first event</h2><p>Add a date, choose who can attend, then invite contacts or share the public page.</p><a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create event</a></div>
+    {% endfor %}
+    {% endtimezone %}
 </div>
-{% timezone site.timezone %}
-{% for event in events %}
-<section class="card mb-3"><div class="card-body">
-    <div class="d-flex justify-content-between gap-3"><div><h2 class="h4">{{ event.title }}</h2><p>{{ event.get_status_display }} · {{ event.get_visibility_display }} · {{ event.get_recurrence_display }}</p></div><div><a href="{% url 'events:edit' site.id event.id %}">Edit details</a>{% if event.status != 'canceled' %}<form method="post" action="{% url 'events:cancel' site.id event.id %}" class="d-inline ms-2">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Cancel event</button></form>{% endif %}</div></div>
-    <ul class="list-group list-group-flush">
-        {% for occurrence in event.occurrences.all %}
-        <li class="list-group-item">
-            <div class="d-flex flex-wrap justify-content-between gap-2"><span>{{ occurrence.starts_at|date:"M j, Y g:i A" }} · {{ occurrence.venue_name|default:"Venue TBD" }}</span><span><a href="{% url 'events:occurrence_edit' site.id occurrence.id %}">Edit</a> · <a href="{% url 'events:invite' site.id occurrence.id %}">Invite</a> · <a href="{% url 'attendance:roster' site.id occurrence.id %}">Roster</a> · <a href="{% url 'payments:ticket_type_create' site.id occurrence.id %}">Add tickets</a></span></div>
-            <small class="text-secondary">{{ occurrence.metrics.going }} going · {{ occurrence.metrics.maybe }} maybe · {{ occurrence.metrics.participants }} confirmed participants · {{ occurrence.metrics.checked_in }} checked in{% if occurrence.metrics.capacity_remaining != None %} · {{ occurrence.metrics.capacity_remaining }} spots remaining{% endif %}</small>
-        </li>
-        {% endfor %}
-    </ul>
-</div></section>
-{% empty %}<p class="text-secondary">No events yet.</p>{% endfor %}
-{% endtimezone %}
 {% endblock %}

@@ -1,4 +1,33 @@
 {% extends 'base.html' %}
 {% load tz %}
-{% block title %}Invite contacts · {{ occurrence.event.title }}{% endblock %}
-{% block content %}{% timezone site.timezone %}<h1>Invite contacts</h1><p class="text-secondary">{{ occurrence.event.title }} · {{ occurrence.starts_at|date:"F j, Y · g:i A" }}</p><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">Queue invitations</button> <a class="btn btn-link" href="{% url 'events:manage' site.id %}">Cancel</a></form>{% endtimezone %}{% endblock %}
+{% block title %}Invite contacts | {{ occurrence.event.title }}{% endblock %}
+{% block content %}
+{% timezone site.timezone %}
+<div class="gh-content-editor gh-invite-editor">
+    <div class="gh-editor-head">
+        <div><a class="gh-back-link" href="{% url 'events:manage' site.id %}">&larr; Events</a><p class="gh-step-label mt-3">Invite contacts</p><h1>Fill the room for {{ occurrence.event.title }}.</h1><p>{{ occurrence.starts_at|date:"l, F j, Y" }} at {{ occurrence.starts_at|date:"g:i A" }}{% if occurrence.venue_name %} &middot; {{ occurrence.venue_name }}{% endif %}</p></div>
+        <span class="gh-event-access">{{ occurrence.event.get_visibility_display }}</span>
+    </div>
+
+    <form method="post" class="gh-invite-layout" data-invite-picker>
+        {% csrf_token %}
+        <section class="gh-editor-card">
+            <div class="gh-invite-picker-head"><div><p class="gh-step-label">Recipients</p><h2>Choose from your contacts</h2><p>Only active contacts with an email address are shown.</p></div>{% if form.contacts.field.queryset %}<button class="btn btn-sm btn-outline-primary" type="button" data-select-all> Select all</button>{% endif %}</div>
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+            {% if form.contacts.field.queryset %}
+            <label class="visually-hidden" for="invite-search">Search contacts</label><input class="gh-invite-search" id="invite-search" type="search" placeholder="Search by name or email" data-invite-search>
+            <div class="gh-contact-choices">
+                {% for checkbox in form.contacts %}<label data-contact-choice>{{ checkbox.tag }}<span>{{ checkbox.choice_label }}</span></label>{% endfor %}
+            </div>
+            <p class="gh-no-contact-results" data-no-contact-results hidden>No matching contacts.</p>
+            <div class="gh-field-row mt-3"><span class="gh-field-help">{{ form.contacts.help_text }}</span><output data-selected-count>0 selected</output></div>
+            {% for error in form.contacts.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            {% else %}
+            <div class="gh-empty-note"><h3>No contacts are ready to invite</h3><p>Add a contact with an email address, then come back to this event.</p><a class="btn btn-outline-primary" href="{% url 'contacts:create' site.id %}">Add contact</a></div>
+            {% endif %}
+        </section>
+        <aside class="gh-editor-sidebar"><section class="gh-launch-card"><p class="gh-step-label">Send</p><h2>Personal invitation links</h2><p>Each selected person receives their own secure response link for this date. Existing invitations will not be duplicated.</p><button class="btn btn-light w-100" type="submit"{% if not form.contacts.field.queryset %} disabled{% endif %}>Queue invitations</button><a class="btn btn-link text-white w-100" href="{% url 'events:manage' site.id %}">Cancel</a></section><div class="gh-editor-tip"><strong>Going, Maybe, or Not going</strong>Responses flow into the event roster automatically, including each guest's name.</div></aside>
+    </form>
+</div>
+{% endtimezone %}
+{% endblock %}
