@@ -69,3 +69,58 @@ def user_site_roles(user):
     if not getattr(user, "is_authenticated", False):
         return SiteRole.objects.none()
     return SiteRole.objects.filter(user=user, is_active=True).select_related("site")
+
+
+def site_setup_progress(site):
+    from contacts.models import Contact
+    from events.models import Event
+    from payments.models import ConnectedAccount
+
+    connected = ConnectedAccount.objects.filter(site=site).first()
+    subscription = site.platform_subscription
+    checks = [
+        {
+            "key": "website",
+            "label": "Publish your website",
+            "description": "Choose your design and make the site visible to your group.",
+            "complete": site.is_published,
+        },
+        {
+            "key": "event",
+            "label": "Publish your first event",
+            "description": "Add the date, venue, guest allowance, and RSVP settings.",
+            "complete": Event.objects.for_site(site)
+            .filter(status=Event.Status.PUBLISHED)
+            .exists(),
+        },
+        {
+            "key": "contacts",
+            "label": "Add your first contact",
+            "description": "Start the list you will use for invitations and updates.",
+            "complete": Contact.objects.for_site(site).exists(),
+        },
+        {
+            "key": "stripe",
+            "label": "Connect Stripe",
+            "description": "Complete hosted onboarding for tickets and member dues.",
+            "complete": bool(connected and connected.commerce_ready),
+        },
+        {
+            "key": "subscription",
+            "label": "Choose monthly or yearly billing",
+            "description": "Subscribe before the 14-day trial ends to keep the site active.",
+            "complete": bool(
+                subscription.stripe_customer_id
+                and subscription.stripe_subscription_id
+                and subscription.billing_interval
+            ),
+        },
+    ]
+    completed = sum(check["complete"] for check in checks)
+    return {
+        "checks": checks,
+        "completed": completed,
+        "total": len(checks),
+        "percent": round(completed * 100 / len(checks)),
+        "next": next((check for check in checks if not check["complete"]), None),
+    }

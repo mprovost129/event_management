@@ -7,9 +7,11 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError, transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
+from events.models import EventOccurrence
 from ops.services import record_audit_event
 from subscriptions.gateway import billing_options
 
@@ -23,7 +25,7 @@ from .permissions import (
     subscriber_recovery_required,
 )
 from .reporting import event_comparison, site_summary
-from .services import create_subscriber_site, user_site_roles
+from .services import create_subscriber_site, site_setup_progress, user_site_roles
 
 
 @login_required
@@ -63,6 +65,34 @@ def dashboard(request, site_id):
     remaining_seconds = max(
         0, (subscription.trial_ends_at - timezone.now()).total_seconds()
     )
+    setup = None
+    if (
+        request.site_role.role == SiteRole.Role.SUBSCRIBER_ADMIN
+        and site.accepts_public_traffic
+    ):
+        setup = site_setup_progress(site)
+        action_urls = {
+            "website": reverse("content:presentation", kwargs={"site_id": site.id}),
+            "event": reverse("events:create", kwargs={"site_id": site.id}),
+            "contacts": reverse("contacts:create", kwargs={"site_id": site.id}),
+            "stripe": reverse("payments:manage", kwargs={"site_id": site.id}),
+            "subscription": f"{request.path}#subscription",
+        }
+        for check in setup["checks"]:
+            check["action_url"] = action_urls[check["key"]]
+
+    upcoming_occurrence = None
+    if site.accepts_public_traffic:
+        upcoming_occurrence = (
+            EventOccurrence.objects.for_site(site)
+            .filter(
+                status=EventOccurrence.Status.SCHEDULED,
+                ends_at__gte=timezone.now(),
+            )
+            .select_related("event")
+            .first()
+        )
+
     context = {
         "site": site,
         "site_role": request.site_role,
@@ -74,6 +104,9 @@ def dashboard(request, site_id):
         "manager_form": ExistingManagerForm(),
         "billing_options": billing_options(),
         "summary": site_summary(site),
+        "canonical_domain": site.domains.filter(is_canonical=True).first(),
+        "setup": setup,
+        "upcoming_occurrence": upcoming_occurrence,
     }
     return render(request, "sites/dashboard.html", context)
 

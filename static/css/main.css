@@ -142,6 +142,389 @@ header, main, footer {
     }
 }
 
+/* =============================================================================
+   Subscriber workspace dashboard
+   ============================================================================= */
+
+.gh-dashboard {
+    --gh-dashboard-navy: #17233c;
+    --gh-dashboard-orange: #c95e32;
+    --gh-dashboard-sage: #4f7655;
+    color: var(--gh-dashboard-navy);
+}
+
+.gh-dashboard-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e0db;
+}
+
+.gh-dashboard-head h1 {
+    margin-bottom: .25rem;
+    font-size: clamp(2.1rem, 4vw, 3.4rem);
+    font-weight: 750;
+    letter-spacing: -.045em;
+}
+
+.gh-dashboard-domain {
+    color: #626a77;
+}
+
+.gh-role-label,
+.gh-status-pill,
+.gh-trial-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.7rem;
+    padding: .2rem .6rem;
+    border-radius: 99rem;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.gh-role-label {
+    background: #eef1f5;
+    color: #505967;
+}
+
+.gh-trial-pill,
+.gh-status-trialing {
+    background: #fff0e8;
+    color: #99451f;
+}
+
+.gh-status-active,
+.gh-status-ready {
+    background: #e5f2e7;
+    color: #35613b;
+}
+
+.gh-status-grace,
+.gh-status-restricted,
+.gh-status-suspended {
+    background: #fff3cd;
+    color: #725800;
+}
+
+.gh-status-canceled,
+.gh-status-archived,
+.gh-status-disconnected {
+    background: #f2e7e7;
+    color: #783838;
+}
+
+.gh-setup-panel {
+    display: grid;
+    grid-template-columns: minmax(16rem, .8fr) minmax(24rem, 1.2fr);
+    gap: clamp(2rem, 5vw, 4rem);
+    margin-bottom: 2.5rem;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    border-radius: 1.25rem;
+    background: #17233c;
+    color: #fff;
+}
+
+.gh-setup-summary h2 {
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    font-weight: 750;
+    letter-spacing: -.035em;
+}
+
+.gh-setup-summary > p:not(.gh-step-label) {
+    color: #cad0da;
+}
+
+.gh-setup-progress {
+    height: .55rem;
+    background: rgba(255, 255, 255, .16);
+}
+
+.gh-setup-progress .progress-bar {
+    background: #8ec397;
+}
+
+.gh-setup-list {
+    display: grid;
+    gap: .65rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.gh-setup-list li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: .75rem;
+    align-items: center;
+    padding: .7rem .8rem;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: .75rem;
+    background: rgba(255, 255, 255, .06);
+}
+
+.gh-setup-list li.is-complete {
+    color: #aeb6c4;
+}
+
+.gh-setup-list small {
+    display: block;
+    color: #bfc6d1;
+    font-size: .77rem;
+}
+
+.gh-setup-list a {
+    color: #fff;
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.gh-setup-check {
+    display: grid;
+    width: 1.8rem;
+    height: 1.8rem;
+    border: 1px solid rgba(255, 255, 255, .35);
+    border-radius: 50%;
+    font-size: .75rem;
+    font-weight: 800;
+    place-items: center;
+}
+
+.is-complete .gh-setup-check {
+    border-color: #8ec397;
+    background: #8ec397;
+    color: #17233c;
+}
+
+.gh-next-event {
+    padding: 1.5rem;
+    border: 1px solid #e3ded8;
+    border-radius: 1rem;
+    background: #fffaf3;
+}
+
+.gh-next-event h2 {
+    font-size: clamp(1.6rem, 3vw, 2.15rem);
+    font-weight: 750;
+    letter-spacing: -.035em;
+}
+
+.gh-event-date {
+    margin: 2rem 0 .5rem;
+    color: var(--gh-dashboard-orange);
+    font-size: .8rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.gh-event-date span {
+    margin-left: .5rem;
+    color: #626a77;
+}
+
+.gh-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .8rem;
+}
+
+.gh-metric-grid > div {
+    display: flex;
+    min-height: 7.3rem;
+    padding: 1rem;
+    border: 1px solid #e3ded8;
+    border-radius: .85rem;
+    background: #fff;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.gh-metric-grid span {
+    color: #626a77;
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.gh-metric-grid strong {
+    font-size: 2rem;
+    letter-spacing: -.04em;
+}
+
+.gh-metric-grid small {
+    color: #626a77;
+    font-size: .9rem;
+}
+
+.gh-section-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.gh-section-row h2 {
+    margin-bottom: 0;
+    font-size: clamp(1.6rem, 3vw, 2.15rem);
+    font-weight: 750;
+    letter-spacing: -.035em;
+}
+
+.gh-workspace-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .85rem;
+}
+
+.gh-workspace-grid > a {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    min-width: 0;
+    padding: 1.1rem;
+    border: 1px solid #e3ded8;
+    border-radius: .85rem;
+    color: var(--gh-dashboard-navy);
+    text-decoration: none;
+}
+
+.gh-workspace-grid > a:hover {
+    border-color: rgba(201, 94, 50, .55);
+    box-shadow: 0 .75rem 1.75rem rgba(23, 35, 60, .08);
+}
+
+.gh-workspace-grid h3 {
+    margin-bottom: .15rem;
+    font-size: 1rem;
+    font-weight: 750;
+}
+
+.gh-workspace-grid p {
+    margin-bottom: 0;
+    overflow: hidden;
+    color: #626a77;
+    font-size: .8rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gh-tool-mark {
+    display: grid;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: .65rem;
+    background: #eef3ed;
+    color: #426548;
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    place-items: center;
+}
+
+.gh-admin-section {
+    margin-top: 2rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid #e3ded8;
+    border-radius: 1rem;
+}
+
+.gh-billing-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    padding: 1.25rem;
+    border-radius: .85rem;
+    background: #f7f5f2;
+}
+
+.gh-billing-option h3 {
+    margin-bottom: .25rem;
+    font-size: 1rem;
+}
+
+.gh-billing-option p {
+    margin-bottom: 0;
+}
+
+.gh-billing-option span {
+    color: #426548;
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.gh-recovery-panel {
+    max-width: 50rem;
+    margin: 3rem auto;
+    padding: clamp(1.5rem, 4vw, 3rem);
+    border: 1px solid #e8cf9d;
+    border-radius: 1.25rem;
+    background: #fff8e7;
+}
+
+.gh-recovery-panel h2 {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 750;
+    letter-spacing: -.04em;
+}
+
+@media (max-width: 991.98px) {
+    .gh-setup-panel {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .gh-workspace-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .gh-dashboard-head > div:last-child,
+    .gh-dashboard-head .btn {
+        width: 100%;
+    }
+
+    .gh-setup-panel {
+        padding: 1.15rem;
+    }
+
+    .gh-setup-list li {
+        grid-template-columns: auto 1fr;
+    }
+
+    .gh-setup-list li > a {
+        grid-column: 2;
+    }
+
+    .gh-metric-grid {
+        gap: .55rem;
+    }
+
+    .gh-metric-grid > div {
+        min-height: 6.4rem;
+    }
+
+    .gh-workspace-grid p {
+        white-space: normal;
+    }
+
+    .gh-billing-option {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

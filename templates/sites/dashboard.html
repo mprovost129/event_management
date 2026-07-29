@@ -1,114 +1,148 @@
 {% extends 'base.html' %}
+{% load tz %}
 
-{% block title %}{{ site.display_name }} dashboard{% endblock %}
+{% block title %}{{ site.display_name }} dashboard | {{ platform_name }}{% endblock %}
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-    <div>
-        <p class="text-uppercase text-secondary small fw-semibold mb-1">{{ site_role.get_role_display }}</p>
-        <h1>{{ site.display_name }}</h1>
-        <p class="text-secondary mb-0">{{ site.domains.first.hostname }}</p>
-    </div>
-    <a class="btn btn-outline-primary" href="//{{ site.domains.first.hostname }}">View site</a>
-</div>
+<div class="gh-dashboard">
+    <header class="gh-dashboard-head">
+        <div>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <span class="gh-role-label">{{ site_role.get_role_display }}</span>
+                <span class="gh-status-pill gh-status-{{ site.status }}">{{ site.get_status_display }}</span>
+                {% if subscription.status == 'trialing' %}<span class="gh-trial-pill">{{ trial_days_remaining }} trial day{{ trial_days_remaining|pluralize }} left</span>{% endif %}
+            </div>
+            <h1>{{ site.display_name }}</h1>
+            {% if canonical_domain %}<p class="gh-dashboard-domain mb-0">{{ canonical_domain.hostname }}</p>{% endif %}
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            {% if site.accepts_public_traffic %}<a class="btn btn-outline-primary" href="{% url 'content:presentation' site.id %}">Website settings</a>{% endif %}
+            {% if site.is_published and canonical_domain %}<a class="btn btn-primary" href="//{{ canonical_domain.hostname }}">View live site</a>{% endif %}
+        </div>
+    </header>
 
-<section class="mb-5"><div class="d-flex justify-content-between align-items-center"><h2>Activity summary</h2><a href="{% url 'sites:reports' site.id %}">View reports</a></div><div class="row g-3"><div class="col-md"><div class="card"><div class="card-body"><small>Registrations</small><div class="h3">{{ summary.registrations }}</div></div></div></div><div class="col-md"><div class="card"><div class="card-body"><small>Participants</small><div class="h3">{{ summary.participants }}</div></div></div></div><div class="col-md"><div class="card"><div class="card-body"><small>Checked in</small><div class="h3">{{ summary.checked_in }}</div></div></div></div><div class="col-md"><div class="card"><div class="card-body"><small>Rating</small><div class="h3">{{ summary.rating_average|default:0|floatformat:1 }}/5</div></div></div></div></div></section>
-
-<div class="row g-3 mb-5">
-    <div class="col-md-4">
-        <div class="card h-100"><div class="card-body">
-            <h2 class="h6 text-secondary">Site status</h2>
-            <p class="h4 mb-0">{{ site.get_status_display }}</p>
-        </div></div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100"><div class="card-body">
-            <h2 class="h6 text-secondary">Trial</h2>
-            <p class="h4 mb-0">{{ trial_days_remaining }} day{{ trial_days_remaining|pluralize }} remaining</p>
-        </div></div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100"><div class="card-body">
-            <h2 class="h6 text-secondary">Template</h2>
-            <p class="h4 mb-0 text-capitalize">{{ site.template_key }}</p>
-        </div></div>
-    </div>
-</div>
-
-<section class="mb-5">
-    <h2>Manage your site</h2>
-    <div class="row g-3">
-        <div class="col-md-4"><a class="card h-100 text-decoration-none" href="{% url 'content:manage' site.id %}"><div class="card-body"><h3 class="h5">Website &amp; blog</h3><p class="text-secondary mb-0">Edit pages, branding, publishing, and posts.</p></div></a></div>
-        <div class="col-md-4"><a class="card h-100 text-decoration-none" href="{% url 'events:manage' site.id %}"><div class="card-body"><h3 class="h5">Events &amp; calendar</h3><p class="text-secondary mb-0">Create single or recurring events and manage dates.</p></div></a></div>
-        <div class="col-md-4"><a class="card h-100 text-decoration-none" href="{% url 'contacts:list' site.id %}"><div class="card-body"><h3 class="h5">Contacts</h3><p class="text-secondary mb-0">Manage people, tags, notes, and consent.</p></div></a></div>
-        <div class="col-md-4"><a class="card h-100 text-decoration-none" href="{% url 'payments:manage' site.id %}"><div class="card-body"><h3 class="h5">Payments &amp; memberships</h3><p class="text-secondary mb-0">Connect Stripe, manage tickets, orders, refunds, and member dues.</p></div></a></div>
-        <div class="col-md-4"><a class="card h-100 text-decoration-none" href="{% url 'communications:campaign_list' site.id %}"><div class="card-body"><h3 class="h5">Newsletters &amp; SMS</h3><p class="text-secondary mb-0">Compose campaigns, select audiences, schedule delivery, and review results.</p></div></a></div>
-        <div class="col-md-4"><a class="card h-100 text-decoration-none" href="{% url 'reviews:manage' site.id %}"><div class="card-body"><h3 class="h5">Reviews</h3><p class="text-secondary mb-0">Read attendee feedback, respond, and report concerns.</p></div></a></div>
-    </div>
-</section>
-
-{% if site_role.role == 'subscriber_admin' %}
-<section class="mb-5">
-    <h2>Subscription</h2>
-    <p>
-        Standard plan status: <strong>{{ subscription.get_status_display }}</strong>{% if subscription.billing_interval %},
-        billed <strong>{{ subscription.get_billing_interval_display|lower }}</strong>{% endif %}.
-    </p>
-    {% if not subscription.stripe_customer_id %}
-    <div class="row g-3">
-        {% for option in billing_options %}
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-body d-flex flex-column">
-                    <h3 class="h5">{{ option.label }}</h3>
-                    <p class="h3 mb-1">${{ option.amount|floatformat:2 }}</p>
-                    <p class="text-secondary">per {{ option.interval|slice:":-2" }}{% if option.annual_savings %} &middot; Save ${{ option.annual_savings|floatformat:2 }} per year{% endif %}</p>
-                    <form method="post" action="{% url 'subscriptions:checkout' site.id %}" class="mt-auto">
-                        {% csrf_token %}
-                        <input type="hidden" name="billing_interval" value="{{ option.interval }}">
-                        <button class="btn btn-primary" type="submit">Choose {{ option.label|lower }}</button>
-                    </form>
+    {% if not site.accepts_public_traffic %}
+    <section class="gh-recovery-panel" aria-labelledby="recovery-title">
+        <p class="gh-step-label">Owner recovery</p>
+        <h2 id="recovery-title">Your site is {{ site.get_status_display|lower }}.</h2>
+        <p>Public pages and normal management tools are paused. You can still manage billing or download your site data without changing event or payment records.</p>
+        <div class="d-flex flex-wrap gap-2">
+            {% if site_role.role == 'subscriber_admin' and subscription.stripe_customer_id %}
+            <form method="post" action="{% url 'subscriptions:portal' site.id %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Open billing portal</button></form>
+            {% endif %}
+            {% if site_role.role == 'subscriber_admin' %}<a class="btn btn-outline-primary" href="{% url 'sites:export_data' site.id %}">Download site data</a>{% endif %}
+        </div>
+    </section>
+    {% else %}
+        {% if setup and setup.completed < setup.total %}
+        <section class="gh-setup-panel" aria-labelledby="setup-title">
+            <div class="gh-setup-summary">
+                <p class="gh-step-label">Getting started</p>
+                <h2 id="setup-title">Your headquarters is {{ setup.percent }}% ready.</h2>
+                <p>Complete these essentials before inviting your pilot group. You can come back to any step.</p>
+                <div class="progress gh-setup-progress" role="progressbar" aria-label="Site setup progress" aria-valuenow="{{ setup.percent }}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar" style="width: {{ setup.percent }}%"></div>
                 </div>
+                {% if setup.next %}<a class="btn btn-primary mt-3" href="{{ setup.next.action_url }}">Next: {{ setup.next.label }}</a>{% endif %}
+            </div>
+            <ol class="gh-setup-list">
+                {% for check in setup.checks %}
+                <li class="{% if check.complete %}is-complete{% endif %}">
+                    <span class="gh-setup-check" aria-hidden="true">{% if check.complete %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+                    <div><strong>{{ check.label }}</strong><small>{{ check.description }}</small></div>
+                    {% if not check.complete %}<a href="{{ check.action_url }}">Start</a>{% endif %}
+                </li>
+                {% endfor %}
+            </ol>
+        </section>
+        {% endif %}
+
+        <div class="row g-4 mb-5">
+            <div class="col-lg-5">
+                <section class="gh-next-event h-100" aria-labelledby="next-event-title">
+                    <div class="d-flex justify-content-between align-items-center gap-3">
+                        <p class="gh-step-label mb-0">Up next</p>
+                        <a href="{% url 'events:manage' site.id %}">All events</a>
+                    </div>
+                    {% if upcoming_occurrence %}
+                    {% timezone site.timezone %}
+                    <p class="gh-event-date">{{ upcoming_occurrence.starts_at|date:"D, M j" }} <span>{{ upcoming_occurrence.starts_at|date:"g:i A" }}</span></p>
+                    <h2 id="next-event-title">{{ upcoming_occurrence.event.title }}</h2>
+                    <p>{{ upcoming_occurrence.venue_name|default:"Venue to be announced" }}</p>
+                    {% endtimezone %}
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <a class="btn btn-sm btn-primary" href="{% url 'attendance:roster' site.id upcoming_occurrence.id %}">Open roster</a>
+                        <a class="btn btn-sm btn-outline-primary" href="{% url 'events:invite' site.id upcoming_occurrence.id %}">Send invitations</a>
+                    </div>
+                    {% else %}
+                    <h2 id="next-event-title">Plan your first gathering.</h2>
+                    <p class="text-secondary">Add a single or recurring event, choose who can see it, and set the RSVP details.</p>
+                    <a class="btn btn-primary mt-2" href="{% url 'events:create' site.id %}">Create an event</a>
+                    {% endif %}
+                </section>
+            </div>
+            <div class="col-lg-7">
+                <section class="h-100" aria-labelledby="activity-title">
+                    <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0" id="activity-title">Activity at a glance</h2><a href="{% url 'sites:reports' site.id %}">Full reports</a></div>
+                    <div class="gh-metric-grid">
+                        <div><span>Registrations</span><strong>{{ summary.registrations }}</strong></div>
+                        <div><span>Participants</span><strong>{{ summary.participants }}</strong></div>
+                        <div><span>Checked in</span><strong>{{ summary.checked_in }}</strong></div>
+                        <div><span>Rating</span><strong>{{ summary.rating_average|default:0|floatformat:1 }}<small>/5</small></strong></div>
+                    </div>
+                </section>
             </div>
         </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div>
-        <form method="post" action="{% url 'subscriptions:portal' site.id %}">
-            {% csrf_token %}
-            <button class="btn btn-outline-primary" type="submit">Manage billing</button>
-        </form>
-    </div>
-    {% endif %}
-</section>
 
-<section>
-    <h2>Site managers</h2>
-    <p><a href="{% url 'sites:export_data' site.id %}">Download site data export</a></p>
-    <p class="text-secondary">Managers can operate the site but cannot change billing or manager access.</p>
-    <form method="post" action="{% url 'sites:add_manager' site.id %}" class="row g-2 align-items-end mb-3">
-        {% csrf_token %}
-        <div class="col-md-6">
-            <label class="form-label" for="{{ manager_form.email.id_for_label }}">Verified account email</label>
-            {{ manager_form.email }}
-        </div>
-        <div class="col-auto"><button class="btn btn-outline-primary" type="submit">Add manager</button></div>
-    </form>
-    {% if managers %}
-    <ul class="list-group">
-        {% for manager in managers %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ manager.user.email }}
-            <form method="post" action="{% url 'sites:remove_manager' site.id manager.id %}">
-                {% csrf_token %}
-                <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
-            </form>
-        </li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p>No site managers have been added.</p>
+        <section class="mb-5" aria-labelledby="workspace-title">
+            <div class="gh-section-row"><div><p class="gh-step-label mb-1">Your workspace</p><h2 id="workspace-title">Everything for your group</h2></div></div>
+            <div class="gh-workspace-grid">
+                <a href="{% url 'content:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">WE</span><div><h3>Website &amp; blog</h3><p>Pages, branding, publishing, and posts</p></div><span aria-hidden="true">→</span></a>
+                <a href="{% url 'events:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">EV</span><div><h3>Events &amp; calendar</h3><p>Dates, recurrences, invitations, and rosters</p></div><span aria-hidden="true">→</span></a>
+                <a href="{% url 'contacts:list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">CO</span><div><h3>Contacts</h3><p>People, tags, notes, and consent</p></div><span aria-hidden="true">→</span></a>
+                <a href="{% url 'payments:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">PA</span><div><h3>Payments &amp; memberships</h3><p>Stripe, tickets, orders, refunds, and dues</p></div><span aria-hidden="true">→</span></a>
+                <a href="{% url 'communications:campaign_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">NE</span><div><h3>Newsletters &amp; SMS</h3><p>Campaigns, audiences, schedules, and results</p></div><span aria-hidden="true">→</span></a>
+                <a href="{% url 'reviews:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">RE</span><div><h3>Reviews</h3><p>Participant feedback and responses</p></div><span aria-hidden="true">→</span></a>
+            </div>
+        </section>
     {% endif %}
-</section>
-{% endif %}
+
+    {% if site_role.role == 'subscriber_admin' %}
+    <section class="gh-admin-section" id="subscription" aria-labelledby="subscription-title">
+        <div class="gh-section-row">
+            <div><p class="gh-step-label mb-1">Standard plan</p><h2 id="subscription-title">Subscription &amp; billing</h2></div>
+            <span class="gh-status-pill gh-status-{{ subscription.status }}">{{ subscription.get_status_display }}</span>
+        </div>
+        {% if not subscription.stripe_customer_id %}
+        <p class="text-secondary">Your trial has {{ trial_days_remaining }} day{{ trial_days_remaining|pluralize }} remaining. Choose a billing schedule now or any time before it ends.</p>
+        <div class="row g-3">
+            {% for option in billing_options %}
+            <div class="col-md-6"><article class="gh-billing-option h-100">
+                <div><h3>{{ option.label }}</h3><p><strong>${{ option.amount|floatformat:2 }}</strong> per {% if option.interval == 'monthly' %}month{% else %}year{% endif %}</p>{% if option.annual_savings %}<span>Save ${{ option.annual_savings|floatformat:2 }} per year</span>{% endif %}</div>
+                <form method="post" action="{% url 'subscriptions:checkout' site.id %}">{% csrf_token %}<input type="hidden" name="billing_interval" value="{{ option.interval }}"><button class="btn btn-primary" type="submit">Choose {{ option.label|lower }}</button></form>
+            </article></div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>Billing is <strong>{{ subscription.get_billing_interval_display|default:"configured"|lower }}</strong>{% if subscription.current_period_ends_at %}; the current period ends {{ subscription.current_period_ends_at|date:"M j, Y" }}{% endif %}.</p>
+        <form method="post" action="{% url 'subscriptions:portal' site.id %}">{% csrf_token %}<button class="btn btn-outline-primary" type="submit">Manage billing</button></form>
+        {% endif %}
+        <p class="mt-3 mb-0"><a href="{% url 'sites:export_data' site.id %}">Download site data export</a></p>
+    </section>
+
+        {% if site.accepts_public_traffic %}
+        <section class="gh-admin-section" aria-labelledby="managers-title">
+            <div class="gh-section-row"><div><p class="gh-step-label mb-1">Team access</p><h2 id="managers-title">Site managers</h2></div></div>
+            <p class="text-secondary">Managers can operate the site but cannot change billing or manager access. They must already have a verified Gather HQs account.</p>
+            <form method="post" action="{% url 'sites:add_manager' site.id %}" class="row g-2 align-items-end mb-3">
+                {% csrf_token %}
+                <div class="col-md-7"><label class="form-label fw-semibold" for="{{ manager_form.email.id_for_label }}">Verified account email</label>{{ manager_form.email }}</div>
+                <div class="col-auto"><button class="btn btn-outline-primary" type="submit">Add manager</button></div>
+            </form>
+            {% if managers %}
+            <ul class="list-group">{% for manager in managers %}<li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2"><span>{{ manager.user.email }}</span><form method="post" action="{% url 'sites:remove_manager' site.id manager.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form></li>{% endfor %}</ul>
+            {% else %}<p class="text-secondary mb-0">No site managers have been added.</p>{% endif %}
+        </section>
+        {% endif %}
+    {% endif %}
+</div>
 {% endblock %}

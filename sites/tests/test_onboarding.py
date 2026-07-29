@@ -6,9 +6,12 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from contacts.models import Contact
+from events.models import Event
 from ops.models import AuditEvent
+from payments.models import ConnectedAccount
 from sites.models import Site, SiteDomain, SiteRole, SiteTheme
-from sites.services import create_subscriber_site
+from sites.services import create_subscriber_site, site_setup_progress
 from subscriptions.models import PlatformSubscription
 from users.models import User
 
@@ -126,6 +129,53 @@ def test_subscriber_dashboard_offers_monthly_and_yearly_standard_billing(client)
     assert 'name="billing_interval" value="monthly"' in content
     assert 'name="billing_interval" value="yearly"' in content
     assert "Save $20.00 per year" in content
+    assert "Your headquarters is 0% ready" in content
+    assert "Next: Publish your website" in content
+
+
+@pytest.mark.django_db
+def test_setup_progress_tracks_pilot_launch_essentials():
+    owner = verified_user("owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+    assert site_setup_progress(site)["completed"] == 0
+
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    Event.objects.create(
+        site=site,
+        title="Friday dance",
+        slug="friday-dance",
+        status=Event.Status.PUBLISHED,
+    )
+    Contact.objects.create(
+        site=site,
+        first_name="Alex",
+        last_name="Dancer",
+        email="alex@example.com",
+    )
+    ConnectedAccount.objects.create(
+        site=site,
+        stripe_account_id="acct_ready",
+        status=ConnectedAccount.Status.READY,
+        charges_enabled=True,
+        payouts_enabled=True,
+        details_submitted=True,
+    )
+    subscription = site.platform_subscription
+    subscription.stripe_customer_id = "cus_ready"
+    subscription.stripe_subscription_id = "sub_ready"
+    subscription.billing_interval = PlatformSubscription.BillingInterval.MONTHLY
+    subscription.save()
+
+    progress = site_setup_progress(site)
+    assert progress["completed"] == progress["total"] == 5
+    assert progress["percent"] == 100
+    assert progress["next"] is None
 
 
 @pytest.mark.django_db
@@ -239,10 +289,14 @@ def test_suspended_site_exposes_only_owner_recovery_routes(client):
     site.save(update_fields=("status", "updated_at"))
 
     client.force_login(owner)
-    assert (
-        client.get(reverse("sites:dashboard", kwargs={"site_id": site.id})).status_code
-        == 200
+    recovery_dashboard = client.get(
+        reverse("sites:dashboard", kwargs={"site_id": site.id})
     )
+    assert recovery_dashboard.status_code == 200
+    recovery_content = recovery_dashboard.content.decode()
+    assert "Owner recovery" in recovery_content
+    assert "Everything for your group" not in recovery_content
+    assert "Site managers" not in recovery_content
     assert (
         client.get(
             reverse("sites:export_data", kwargs={"site_id": site.id})
