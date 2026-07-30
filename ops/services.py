@@ -107,7 +107,7 @@ def request_site_deletion(*, site, actor, reason, request=None):
 @transaction.atomic
 def approve_site_deletion(*, deletion, actor, request=None):
     deletion = (
-        SiteDeletionRequest.objects.select_for_update()
+        SiteDeletionRequest.objects.select_for_update(of=("self",))
         .select_related("site")
         .get(pk=deletion.pk)
     )
@@ -161,7 +161,7 @@ def cancel_site_deletion(*, deletion, actor, reason, request=None):
 @transaction.atomic
 def execute_site_deletion(*, deletion):
     deletion = (
-        SiteDeletionRequest.objects.select_for_update()
+        SiteDeletionRequest.objects.select_for_update(of=("self",))
         .select_related("site")
         .get(pk=deletion.pk)
     )

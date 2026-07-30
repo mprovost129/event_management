@@ -82,7 +82,7 @@ def process_provider_callback(
                 pk=callback.pk
             )
             message = (
-                OutboundMessage.objects.select_for_update()
+                OutboundMessage.objects.select_for_update(of=("self",))
                 .select_related("contact", "campaign_recipient")
                 .filter(provider=provider, provider_message_id=provider_message_id)
                 .first()

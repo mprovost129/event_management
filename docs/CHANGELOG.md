@@ -44,6 +44,7 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Fixed
 
+- PostgreSQL row locks now target only their primary records when related data is optional, preventing campaign, delivery, review, and site-deletion operations from failing on nullable outer joins.
 - `/admin/` now redirects to the canonical `/platform-admin/` interface; superusers receive an Admin navigation link, while platform routes remain unavailable on tenant subdomains.
 - Authenticated site staff now retain their session on tenant subdomains and receive a clear public-site link back to the management dashboard.
 - Separate staff notifications without dedupe keys no longer collapse into one notification.

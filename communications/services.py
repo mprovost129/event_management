@@ -156,7 +156,7 @@ def _consume_sms(message):
 def deliver_message(message_id):
     with transaction.atomic():
         message = (
-            OutboundMessage.objects.select_for_update()
+            OutboundMessage.objects.select_for_update(of=("self",))
             .select_related(
                 "contact", "campaign", "campaign_recipient", "sms_allowance"
             )
