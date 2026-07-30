@@ -11,7 +11,11 @@ from events.models import Event
 from ops.models import AuditEvent
 from payments.models import ConnectedAccount
 from sites.models import Site, SiteDomain, SiteRole, SiteTheme
-from sites.services import create_subscriber_site, site_setup_progress
+from sites.services import (
+    SiteCreationNotAllowed,
+    create_subscriber_site,
+    site_setup_progress,
+)
 from subscriptions.models import PlatformSubscription
 from users.models import User
 
@@ -70,6 +74,126 @@ def test_onboarding_explains_site_address_and_subscription_boundary(client, sett
     assert f".{settings.PLATFORM_DOMAIN}" in content
     assert "One website is included with each subscription" in content
     assert "Create my site and start trial" in content
+
+
+@pytest.mark.django_db
+def test_subscriber_cannot_start_another_site_while_a_trial_exists(client):
+    owner = verified_user("owner@example.com")
+    create_subscriber_site(
+        owner=owner,
+        display_name="First Organization",
+        slug="first-organization",
+        timezone_name="America/New_York",
+    )
+    client.force_login(owner)
+
+    onboarding = client.get(reverse("sites:onboarding"))
+    dashboard = client.get(reverse("sites:account_dashboard"))
+    blocked_post = client.post(
+        reverse("sites:onboarding"),
+        {
+            "display_name": "Second Organization",
+            "slug": "second-organization",
+            "timezone": "America/New_York",
+            "template_key": "classic",
+        },
+    )
+
+    assert onboarding.status_code == 200
+    assert blocked_post.status_code == 403
+    assert "already have an organization in its trial" in onboarding.content.decode()
+    assert "Create another organization" not in dashboard.content.decode()
+    assert Site.objects.count() == 1
+    with pytest.raises(SiteCreationNotAllowed):
+        create_subscriber_site(
+            owner=owner,
+            display_name="Service Bypass",
+            slug="service-bypass",
+            timezone_name="America/New_York",
+        )
+
+
+@pytest.mark.django_db
+def test_active_subscriber_can_start_one_additional_trial_but_not_a_third(client):
+    owner = verified_user("owner@example.com")
+    paid_site = create_subscriber_site(
+        owner=owner,
+        display_name="Paid Organization",
+        slug="paid-organization",
+        timezone_name="America/New_York",
+    )
+    paid_subscription = paid_site.platform_subscription
+    paid_subscription.status = PlatformSubscription.Status.ACTIVE
+    paid_subscription.save(update_fields=("status", "updated_at"))
+    paid_site.status = Site.Status.ACTIVE
+    paid_site.save(update_fields=("status", "updated_at"))
+    client.force_login(owner)
+
+    dashboard = client.get(reverse("sites:account_dashboard"))
+    second_site = client.post(
+        reverse("sites:onboarding"),
+        {
+            "display_name": "Second Organization",
+            "slug": "second-organization",
+            "timezone": "America/New_York",
+            "template_key": "classic",
+        },
+    )
+    third_site = client.post(
+        reverse("sites:onboarding"),
+        {
+            "display_name": "Third Organization",
+            "slug": "third-organization",
+            "timezone": "America/New_York",
+            "template_key": "classic",
+        },
+    )
+
+    assert dashboard.status_code == 200
+    assert "Create another organization" in dashboard.content.decode()
+    assert second_site.status_code == 302
+    assert Site.objects.get(slug="second-organization").platform_subscription.status == (
+        PlatformSubscription.Status.TRIALING
+    )
+    assert third_site.status_code == 403
+    assert not Site.objects.filter(slug="third-organization").exists()
+
+
+@pytest.mark.django_db
+def test_manager_roles_do_not_prevent_a_first_owned_site(client):
+    subscriber = verified_user("subscriber@example.com")
+    manager = verified_user("manager@example.com")
+    managed_site = create_subscriber_site(
+        owner=subscriber,
+        display_name="Managed Organization",
+        slug="managed-organization",
+        timezone_name="America/New_York",
+    )
+    SiteRole.objects.create(
+        site=managed_site,
+        user=manager,
+        role=SiteRole.Role.SITE_MANAGER,
+    )
+    client.force_login(manager)
+
+    onboarding = client.get(reverse("sites:onboarding"))
+    created = client.post(
+        reverse("sites:onboarding"),
+        {
+            "display_name": "Manager's Organization",
+            "slug": "managers-organization",
+            "timezone": "America/New_York",
+            "template_key": "classic",
+        },
+    )
+
+    assert onboarding.status_code == 200
+    assert created.status_code == 302
+    assert SiteRole.objects.filter(
+        site__slug="managers-organization",
+        user=manager,
+        role=SiteRole.Role.SUBSCRIBER_ADMIN,
+    ).exists()
 
 
 @pytest.mark.django_db

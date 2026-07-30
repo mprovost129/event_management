@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import NamedTuple
 
 from django.conf import settings
 from django.db import transaction
@@ -8,6 +9,42 @@ from ops.services import record_audit_event
 from subscriptions.models import PlatformSubscription
 
 from .models import Site, SiteDomain, SiteRole, SiteTheme
+
+
+class SiteCreationDecision(NamedTuple):
+    allowed: bool
+    reason: str = ""
+
+
+class SiteCreationNotAllowed(Exception):
+    pass
+
+
+def subscriber_site_creation_decision(user):
+    owned_subscriptions = PlatformSubscription.objects.filter(
+        site__roles__user=user,
+        site__roles__role=SiteRole.Role.SUBSCRIBER_ADMIN,
+        site__roles__is_active=True,
+    )
+    if not owned_subscriptions.exists():
+        return SiteCreationDecision(True)
+    if owned_subscriptions.filter(
+        status=PlatformSubscription.Status.TRIALING
+    ).exists():
+        return SiteCreationDecision(
+            False,
+            "You already have an organization in its trial. Upgrade it before "
+            "starting another trial.",
+        )
+    if not owned_subscriptions.filter(
+        status=PlatformSubscription.Status.ACTIVE
+    ).exists():
+        return SiteCreationDecision(
+            False,
+            "Additional organizations require an active paid Gather HQs "
+            "subscription.",
+        )
+    return SiteCreationDecision(True)
 
 
 @transaction.atomic
@@ -21,6 +58,13 @@ def create_subscriber_site(
     template_key="classic",
     request=None,
 ):
+    locked_owner = (
+        owner.__class__._default_manager.select_for_update().get(pk=owner.pk)
+    )
+    decision = subscriber_site_creation_decision(locked_owner)
+    if not decision.allowed:
+        raise SiteCreationNotAllowed(decision.reason)
+
     now = timezone.now()
     site = Site.objects.create(
         display_name=display_name,
@@ -40,7 +84,7 @@ def create_subscriber_site(
     SiteTheme.objects.create(site=site)
     SiteRole.objects.create(
         site=site,
-        user=owner,
+        user=locked_owner,
         role=SiteRole.Role.SUBSCRIBER_ADMIN,
         is_active=True,
     )
@@ -56,7 +100,7 @@ def create_subscriber_site(
     initialize_site_content(site)
     record_audit_event(
         action="site.created",
-        actor=owner,
+        actor=locked_owner,
         site_id=site.id,
         target=site,
         summary={"status": site.status, "slug": site.slug},

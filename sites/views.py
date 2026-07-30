@@ -26,13 +26,28 @@ from .permissions import (
 )
 from .readiness import pilot_readiness
 from .reporting import event_comparison, occurrence_comparison, site_summary
-from .services import create_subscriber_site, site_setup_progress, user_site_roles
+from .services import (
+    SiteCreationNotAllowed,
+    create_subscriber_site,
+    site_setup_progress,
+    subscriber_site_creation_decision,
+    user_site_roles,
+)
 
 
 @login_required
 def account_dashboard(request):
     roles = user_site_roles(request.user)
-    return render(request, "sites/account_dashboard.html", {"roles": roles})
+    decision = subscriber_site_creation_decision(request.user)
+    return render(
+        request,
+        "sites/account_dashboard.html",
+        {
+            "roles": roles,
+            "can_create_site": decision.allowed,
+            "site_creation_reason": decision.reason,
+        },
+    )
 
 
 @login_required
@@ -40,6 +55,18 @@ def account_dashboard(request):
 def onboarding(request):
     if not request.user.is_email_verified:
         raise PermissionDenied
+    decision = subscriber_site_creation_decision(request.user)
+    if not decision.allowed:
+        return render(
+            request,
+            "sites/onboarding.html",
+            {
+                "form": None,
+                "can_create_site": False,
+                "site_creation_reason": decision.reason,
+            },
+            status=403 if request.method == "POST" else 200,
+        )
     form = SiteOnboardingForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
@@ -51,12 +78,27 @@ def onboarding(request):
                 template_key=form.cleaned_data["template_key"],
                 request=request,
             )
+        except SiteCreationNotAllowed as exc:
+            return render(
+                request,
+                "sites/onboarding.html",
+                {
+                    "form": None,
+                    "can_create_site": False,
+                    "site_creation_reason": str(exc),
+                },
+                status=403,
+            )
         except IntegrityError:
             form.add_error("slug", "That site address was just claimed. Try another.")
         else:
             messages.success(request, "Your site and 14-day trial are ready.")
             return redirect("sites:dashboard", site_id=site.id)
-    return render(request, "sites/onboarding.html", {"form": form})
+    return render(
+        request,
+        "sites/onboarding.html",
+        {"form": form, "can_create_site": True},
+    )
 
 
 @site_dashboard_required

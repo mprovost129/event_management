@@ -14,6 +14,7 @@
         </ol>
     </section>
     <div class="gh-auth-card">
+        {% if can_create_site %}
         <p class="gh-step-label">Site setup · About 2 minutes</p>
         <h2>Your starting details</h2>
         <p class="text-secondary">Nothing here is permanent except the web address. You can update your name and design later.</p>
@@ -35,7 +36,14 @@
             {% endfor %}
             <button class="btn btn-primary btn-lg w-100" type="submit">Create my site and start trial</button>
         </form>
-        <p class="gh-auth-footer">One website is included with each subscription.</p>
+        <p class="gh-auth-footer">One website is included with each subscription. Additional organizations require separate subscriptions.</p>
+        {% else %}
+        <p class="gh-step-label">Additional organization</p>
+        <h2>Another trial isn't available yet.</h2>
+        <div class="alert alert-info" role="alert">{{ site_creation_reason }}</div>
+        <p>Each organization has its own website, data, billing, and subscription.{% if support_email %} If you need another organization now, <a href="mailto:{{ support_email }}">contact support</a>.{% endif %}</p>
+        <a class="btn btn-primary w-100" href="{% url 'sites:account_dashboard' %}">Return to your organizations</a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

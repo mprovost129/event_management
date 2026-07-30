@@ -6,6 +6,9 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Added
 
+- Subscriber-level site creation policy: one self-service trial at a time,
+  active paid status before another owned organization, separate subscriptions,
+  invited-manager access excluded, and transaction-safe enforcement.
 - An idempotent subscription-schema repair migration that restores
   `last_stripe_event_created_at` when an earlier deployed removal left the
   production database out of sync with the restored model.

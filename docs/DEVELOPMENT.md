@@ -67,6 +67,11 @@ The Standard plan is $20 monthly or $220 yearly. Platform billing also requires 
 - Account signup: `/accounts/signup/`
 - Account dashboard: `/dashboard/`
 - Subscriber onboarding: `/start/`
+
+The first subscriber-owned organization is self-service. A subscriber may start
+one trial at a time and must have an active paid organization before starting an
+additional organization. Site-manager roles on other organizations do not count
+against this policy. Every organization retains its own platform subscription.
 - Stripe platform webhook: `/billing/stripe/`
 - Platform administration: `/platform-admin/`
 
