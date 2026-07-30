@@ -76,6 +76,10 @@ DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS = tuple(
         ("csv", "doc", "docx", "jpeg", "jpg", "pdf", "png", "txt", "xls", "xlsx"),
     )
 )
+DOCUMENT_UPLOAD_SCAN_BACKEND = env("DOCUMENT_UPLOAD_SCAN_BACKEND", "disabled").lower()
+CLAMAV_HOST = env("CLAMAV_HOST", "localhost")
+CLAMAV_PORT = env_int("CLAMAV_PORT", 3310)
+CLAMAV_TIMEOUT_SECONDS = env_int("CLAMAV_TIMEOUT_SECONDS", 10)
 
 INSTALLED_APPS = [
     "django.contrib.admin",

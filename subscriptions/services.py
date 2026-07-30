@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -8,6 +9,8 @@ from ops.services import record_audit_event
 from sites.models import Site
 
 from .models import PlatformSubscription, StripeWebhookEvent
+
+logger = logging.getLogger(__name__)
 
 SITE_STATUS_BY_SUBSCRIPTION = {
     PlatformSubscription.Status.TRIALING: Site.Status.TRIALING,
@@ -126,7 +129,11 @@ def process_stripe_event(event):
             inbox = StripeWebhookEvent.objects.select_for_update().get(pk=inbox.pk)
             if inbox.status == StripeWebhookEvent.Status.PROCESSED:
                 return inbox
-            _apply_stripe_event(event_type, stripe_object)
+            _apply_stripe_event(
+                event_type,
+                stripe_object,
+                event_created_at=_as_datetime(event.get("created")),
+            )
             inbox.status = StripeWebhookEvent.Status.PROCESSED
             inbox.error = ""
             inbox.processed_at = timezone.now()
@@ -135,11 +142,20 @@ def process_stripe_event(event):
         inbox.status = StripeWebhookEvent.Status.FAILED
         inbox.error = str(exc)[:2000]
         inbox.save(update_fields=("status", "error"))
+        logger.exception("Stripe subscription webhook failed event_id=%s", event_id)
         raise
     return inbox
 
 
-def _apply_stripe_event(event_type, stripe_object):
+def _event_is_stale(subscription, event_created_at):
+    return bool(
+        event_created_at
+        and subscription.last_stripe_event_created_at
+        and event_created_at < subscription.last_stripe_event_created_at
+    )
+
+
+def _apply_stripe_event(event_type, stripe_object, *, event_created_at=None):
     if event_type == "checkout.session.completed":
         metadata = stripe_object.get("metadata", {})
         subscription_id = metadata.get("platform_subscription_id")
@@ -148,6 +164,8 @@ def _apply_stripe_event(event_type, stripe_object):
         subscription = PlatformSubscription.objects.select_for_update().get(
             pk=subscription_id
         )
+        if _event_is_stale(subscription, event_created_at):
+            return
         subscription.stripe_customer_id = stripe_object.get("customer") or ""
         subscription.stripe_subscription_id = (
             stripe_object.get("subscription") or subscription.stripe_subscription_id
@@ -157,15 +175,17 @@ def _apply_stripe_event(event_type, stripe_object):
             metadata.get("price_id", ""),
             metadata.get("billing_interval", ""),
         )
-        subscription.save(
-            update_fields=(
-                "stripe_customer_id",
-                "stripe_subscription_id",
-                "stripe_price_id",
-                "billing_interval",
-                "updated_at",
-            )
-        )
+        update_fields = [
+            "stripe_customer_id",
+            "stripe_subscription_id",
+            "stripe_price_id",
+            "billing_interval",
+            "updated_at",
+        ]
+        if event_created_at:
+            subscription.last_stripe_event_created_at = event_created_at
+            update_fields.append("last_stripe_event_created_at")
+        subscription.save(update_fields=update_fields)
         return
 
     stripe_subscription_id = stripe_object.get("subscription")
@@ -179,6 +199,10 @@ def _apply_stripe_event(event_type, stripe_object):
         .select_related("site")
         .get(stripe_subscription_id=stripe_subscription_id)
     )
+    if _event_is_stale(subscription, event_created_at):
+        return
+    if event_created_at:
+        subscription.last_stripe_event_created_at = event_created_at
     now = timezone.now()
 
     if event_type in {"invoice.paid", "customer.subscription.resumed"}:

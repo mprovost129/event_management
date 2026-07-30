@@ -1,7 +1,12 @@
+import logging
+
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.text import slugify
 
 from .models import Activity
+
+logger = logging.getLogger(__name__)
 
 
 def record_activity(
@@ -35,6 +40,10 @@ def run_automation_rule(rule, *, trigger_data=None, actor=None, contact=None):
         if isinstance(value, (str, int, float))
     }
     try:
+        if contact is not None and contact.site_id != rule.site_id:
+            raise ValidationError(
+                "The automation contact must belong to the automation site."
+            )
         if rule.action == rule.Action.CREATE_TASK:
             config = rule.action_config
             task = WorkTask.objects.create(
@@ -99,6 +108,11 @@ def run_automation_rule(rule, *, trigger_data=None, actor=None, contact=None):
         )
         return run
     except Exception as exc:
+        logger.exception(
+            "Automation rule failed rule_id=%s site_id=%s",
+            rule.id,
+            rule.site_id,
+        )
         return AutomationRun.objects.create(
             site=rule.site,
             rule=rule,

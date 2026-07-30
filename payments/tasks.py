@@ -1,9 +1,13 @@
+import logging
+
 import stripe
 from celery import shared_task
 from django.db.models import F
 
 from .models import ConnectedAccount
 from .services import refresh_connected_account, release_expired_holds
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task
@@ -26,6 +30,11 @@ def reconcile_connected_accounts(limit=100):
             refresh_connected_account(connected)
         except stripe.StripeError:
             failed += 1
+            logger.exception(
+                "Connected-account reconciliation failed account_id=%s site_id=%s",
+                connected.id,
+                connected.site_id,
+            )
         else:
             refreshed += 1
     return {"refreshed": refreshed, "failed": failed}

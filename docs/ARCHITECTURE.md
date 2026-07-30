@@ -114,7 +114,7 @@ Production uploads should use object storage rather than ephemeral application d
 - Private-by-default access
 - Authorization on download
 - Safe filenames and generated storage keys
-- Optional malware-scanning path
+- Fail-closed ClamAV streaming before organization documents reach storage
 - Retention/deletion policy
 - Tenant-aware storage prefixes
 

@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
@@ -19,6 +20,14 @@ TERMINAL_MESSAGE_STATUSES = (
     OutboundMessage.Status.UNSUBSCRIBED,
     OutboundMessage.Status.SUPPRESSED,
 )
+
+
+def _validate_site_relationships(site, **relationships):
+    for label, related in relationships.items():
+        if related is not None and related.site_id != site.id:
+            raise ValidationError(
+                f"The outbound message {label} must belong to the same site."
+            )
 
 
 def _dispatch_after_commit(message_id):
@@ -52,6 +61,16 @@ def enqueue_message(
     sms_allowance=None,
     dispatch=True,
 ):
+    _validate_site_relationships(
+        site,
+        occurrence=occurrence,
+        registration=registration,
+        invitation=invitation,
+        contact=contact,
+        campaign=campaign,
+        campaign_recipient=campaign_recipient,
+        sms_allowance=sms_allowance,
+    )
     values = {
         "kind": kind,
         "channel": channel,

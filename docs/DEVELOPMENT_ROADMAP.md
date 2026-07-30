@@ -161,9 +161,14 @@ Make the existing platform reliable, consistent, responsive, accessible, and rea
 - Consolidated reporting and commerce status totals into bounded aggregate queries with a regression query ceiling.
 - Added scoped data-table headers, named keyboard-scroll regions, labeled platform-operation controls, and confirmations for destructive platform actions, backed by static template checks.
 - Added immutable release identifiers to plain and structured logs through `RELEASE_VERSION` or Render's `RENDER_GIT_COMMIT`.
+- Enforced tenant consistency inside outbound-message and automation service boundaries and added safe contextual logging to durable provider/background failure paths.
+- Expanded the subscriber data export to include communications, notifications, Phase 1–7 workspace data, form/waiver responses, AI drafts, and tenant audit history.
+- Added fail-closed streamed ClamAV scanning for organization documents plus production deployment checks and scanner protocol tests.
+- Added Stripe event-time ordering so delayed older subscription webhooks cannot regress newer billing state; migration `subscriptions/0004` stores the last applied provider event time.
+- Replaced per-ticket inventory queries on the commerce dashboard with a fixed-query aggregate map.
 - Documented the implemented staff role matrix in `ROLE_MATRIX.md`.
 
-Phase 8 remains in progress. Production service validation, remaining tenant-owned service/background/export coverage, manual accessibility/mobile user acceptance testing, production monitoring, backup/restore testing, and malware-scanning strategy remain open.
+Phase 8 code-side stabilization is substantially complete. Production service validation, manual accessibility/mobile user acceptance testing, monitoring and alert routing, backup/restore testing, and deployment validation of private storage and the ClamAV service remain open.
 
 ---
 

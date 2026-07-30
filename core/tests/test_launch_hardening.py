@@ -138,6 +138,25 @@ def test_document_upload_configuration_rejects_unsafe_limits_and_extensions():
     assert "platform.E030" in issue_ids
 
 
+@override_settings(
+    DOCUMENT_UPLOAD_SCAN_BACKEND="unsupported",
+    CLAMAV_PORT=0,
+    CLAMAV_TIMEOUT_SECONDS=0,
+)
+def test_document_scanner_configuration_rejects_invalid_values():
+    issue_ids = {issue.id for issue in product_configuration_check(None)}
+
+    assert "platform.E031" in issue_ids
+    assert "platform.E032" in issue_ids
+
+
+@override_settings(DEBUG=False, DOCUMENT_UPLOAD_SCAN_BACKEND="disabled")
+def test_production_deployment_requires_document_malware_scanning():
+    issue_ids = {issue.id for issue in deployment_product_check(None)}
+
+    assert "platform.E033" in issue_ids
+
+
 @pytest.mark.django_db
 def test_production_error_pages_are_safe_branded_and_traceable(client):
     missing = client.get(

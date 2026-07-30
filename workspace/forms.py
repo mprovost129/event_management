@@ -10,6 +10,7 @@ from django.utils.text import slugify
 from contacts.models import Contact
 from events.models import Event
 
+from .file_scanning import scan_upload
 from .models import (
     AIContentDraft,
     AutomationRule,
@@ -130,6 +131,7 @@ class DocumentForm(forms.ModelForm):
         if upload.size > settings.DOCUMENT_UPLOAD_MAX_BYTES:
             limit_mb = settings.DOCUMENT_UPLOAD_MAX_BYTES / (1024 * 1024)
             raise ValidationError(f"Files must be {limit_mb:g} MB or smaller.")
+        scan_upload(upload)
         return upload
 
 

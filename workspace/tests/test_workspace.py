@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from django.core.cache import cache
@@ -13,6 +14,7 @@ from sites.models import SiteRole
 from sites.services import create_subscriber_site
 from users.models import User
 from workspace.ai_services import generate_content
+from workspace.file_scanning import MalwareDetected
 from workspace.forms import DocumentForm, VolunteerProfileForm
 from workspace.models import (
     Activity,
@@ -29,6 +31,7 @@ from workspace.models import (
     WorkTask,
 )
 from workspace.reporting import organization_insights
+from workspace.services import run_automation_rule
 
 
 def create_site(slug, email):
@@ -373,6 +376,50 @@ def test_document_upload_validation_and_admin_visibility(settings):
     )
     assert not manager_form.is_valid()
     assert "visibility" in manager_form.errors
+
+
+@pytest.mark.django_db
+def test_document_upload_fails_closed_when_malware_is_detected():
+    site, _ = create_site("first-group", "first@example.com")
+    with patch(
+        "workspace.forms.scan_upload",
+        side_effect=MalwareDetected("Malware detected."),
+    ):
+        form = DocumentForm(
+            {
+                "title": "Unsafe document",
+                "category": Document.Category.OTHER,
+                "visibility": Document.Visibility.STAFF,
+            },
+            {"file": SimpleUploadedFile("notes.txt", b"unsafe")},
+            site=site,
+        )
+
+        assert not form.is_valid()
+        assert "Malware detected" in form.errors["file"][0]
+
+
+@pytest.mark.django_db
+def test_automation_service_rejects_a_contact_from_another_tenant():
+    site, owner = create_site("first-group", "first@example.com")
+    other_site, _ = create_site("second-group", "second@example.com")
+    foreign_contact = Contact.objects.create(
+        site=other_site, first_name="Foreign", last_name="Contact"
+    )
+    rule = AutomationRule.objects.create(
+        site=site,
+        name="Tag contact",
+        trigger=AutomationRule.Trigger.MANUAL,
+        action=AutomationRule.Action.ADD_CONTACT_TAG,
+        action_config={"tag": "Follow up"},
+        created_by=owner,
+    )
+
+    run = run_automation_rule(rule, contact=foreign_contact, actor=owner)
+
+    assert run.status == AutomationRun.Status.FAILED
+    assert "automation site" in run.error_detail
+    assert not foreign_contact.tags.exists()
 
 
 @pytest.mark.django_db

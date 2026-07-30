@@ -90,6 +90,20 @@ def product_configuration_check(app_configs, **kwargs):
                 id="platform.E030",
             )
         )
+    if settings.DOCUMENT_UPLOAD_SCAN_BACKEND not in {"disabled", "clamav"}:
+        issues.append(
+            Error(
+                "DOCUMENT_UPLOAD_SCAN_BACKEND must be 'disabled' or 'clamav'.",
+                id="platform.E031",
+            )
+        )
+    if settings.CLAMAV_PORT <= 0 or settings.CLAMAV_TIMEOUT_SECONDS <= 0:
+        issues.append(
+            Error(
+                "ClamAV port and timeout settings must be greater than zero.",
+                id="platform.E032",
+            )
+        )
     if settings.EMAIL_DELIVERY_BACKEND not in {"django", "resend"}:
         issues.append(
             Error(
@@ -206,6 +220,17 @@ def deployment_product_check(app_configs, **kwargs):
                 "Production media must use durable object storage.",
                 hint="Set MEDIA_STORAGE_BACKEND=s3 and configure the S3-compatible bucket.",
                 id="platform.E004",
+            )
+        )
+    if settings.DOCUMENT_UPLOAD_SCAN_BACKEND == "disabled":
+        issues.append(
+            Error(
+                "Production document uploads require malware scanning.",
+                hint=(
+                    "Set DOCUMENT_UPLOAD_SCAN_BACKEND=clamav and configure "
+                    "CLAMAV_HOST, CLAMAV_PORT, and CLAMAV_TIMEOUT_SECONDS."
+                ),
+                id="platform.E033",
             )
         )
     if settings.SMS_DELIVERY_BACKEND == "console":

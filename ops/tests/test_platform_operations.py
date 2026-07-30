@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from attendance.services import set_check_in
+from communications.models import Campaign
 from contacts.models import Contact
 from events.models import Event, EventOccurrence, Participant, Registration
 from ops.models import AuditEvent, SiteDeletionRequest
@@ -26,6 +27,7 @@ from sites.models import SiteRole
 from sites.reporting import event_comparison, site_summary
 from sites.services import create_subscriber_site
 from users.models import User
+from workspace.models import WorkTask
 
 
 def operations_fixture():
@@ -110,6 +112,31 @@ def test_site_summary_uses_a_bounded_number_of_aggregate_queries():
 @pytest.mark.django_db
 def test_data_export_is_subscriber_admin_only_and_audited():
     owner, site, _ = operations_fixture()
+    WorkTask.objects.create(site=site, title="Local export task")
+    Campaign.objects.create(
+        site=site,
+        name="Local export campaign",
+        subject="Local news",
+        body="Local campaign body",
+    )
+    other_owner = User.objects.create_user(
+        email="other-owner@example.com",
+        password="Strong-Test-Pass-2026!",
+        email_verified_at=timezone.now(),
+    )
+    other_site = create_subscriber_site(
+        owner=other_owner,
+        display_name="Other Site",
+        slug="other-site",
+        timezone_name="America/New_York",
+    )
+    WorkTask.objects.create(site=other_site, title="Foreign export task")
+    Campaign.objects.create(
+        site=other_site,
+        name="Foreign export campaign",
+        subject="Foreign news",
+        body="Foreign campaign body",
+    )
     manager = User.objects.create_user(
         email="manager@example.com",
         password="Strong-Test-Pass-2026!",
@@ -127,6 +154,12 @@ def test_data_export_is_subscriber_admin_only_and_audited():
     assert response["Content-Disposition"].endswith('boot-scooters-export.json"')
     assert response.json()["format"] == "gather-hqs-site-export-v1"
     assert len(response.json()["participants"]) == 1
+    assert [item["title"] for item in response.json()["work_tasks"]] == [
+        "Local export task"
+    ]
+    assert [item["name"] for item in response.json()["campaigns"]] == [
+        "Local export campaign"
+    ]
     assert AuditEvent.objects.filter(action="site.data_exported", actor=owner).exists()
 
 

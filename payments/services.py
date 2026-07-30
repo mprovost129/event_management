@@ -1,3 +1,4 @@
+import logging
 import secrets
 from datetime import datetime, timedelta
 
@@ -28,6 +29,8 @@ from .models import (
     Ticket,
     TicketType,
 )
+
+logger = logging.getLogger(__name__)
 
 CHECKOUT_HOLD_MINUTES = 30
 REGISTRATION_TOKEN_SALT = "payments.registration-checkout"
@@ -243,6 +246,46 @@ def ticket_inventory(ticket_type, *, now=None):
         "held": held,
         "remaining": max(0, ticket_type.quantity - sold - held),
     }
+
+
+def ticket_inventory_map(ticket_types, *, now=None):
+    now = now or timezone.now()
+    ticket_types = list(ticket_types)
+    ticket_type_ids = [ticket_type.id for ticket_type in ticket_types]
+    sold_by_type = {
+        row["ticket_type_id"]: row["total"] or 0
+        for row in OrderLine.objects.filter(
+            ticket_type_id__in=ticket_type_ids,
+            order__status__in=(
+                Order.Status.PAID,
+                Order.Status.PARTIALLY_REFUNDED,
+                Order.Status.REFUNDED,
+                Order.Status.DISPUTED,
+            ),
+        )
+        .values("ticket_type_id")
+        .annotate(total=Sum("quantity"))
+    }
+    held_by_type = {
+        row["ticket_type_id"]: row["total"] or 0
+        for row in InventoryHold.objects.filter(
+            ticket_type_id__in=ticket_type_ids,
+            status=InventoryHold.Status.HELD,
+            expires_at__gt=now,
+        )
+        .values("ticket_type_id")
+        .annotate(total=Sum("quantity"))
+    }
+    inventory = {}
+    for ticket_type in ticket_types:
+        sold = sold_by_type.get(ticket_type.id, 0)
+        held = held_by_type.get(ticket_type.id, 0)
+        inventory[ticket_type.id] = {
+            "sold": sold,
+            "held": held,
+            "remaining": max(0, ticket_type.quantity - sold - held),
+        }
+    return inventory
 
 
 @transaction.atomic
@@ -894,6 +937,11 @@ def process_connect_event(event):
         inbox.error = str(exc)[:2000]
         inbox.attempts += 1
         inbox.save(update_fields=("status", "error", "attempts"))
+        logger.exception(
+            "Stripe Connect webhook failed event_id=%s account_id=%s",
+            event_id,
+            account_id,
+        )
         raise
     return inbox
 

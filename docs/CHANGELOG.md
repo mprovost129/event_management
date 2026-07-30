@@ -20,6 +20,9 @@ All notable changes should be recorded here. Until the project adopts a formal r
 - Cross-tenant object-ID regression coverage across the principal tenant applications.
 - Automated baseline checks for data-table, responsive-region, and image accessibility markup.
 - Immutable release identifiers in plain and JSON application logs.
+- Fail-closed ClamAV streaming for organization-document uploads.
+- Stripe subscription event-time tracking in migration `subscriptions/0004`.
+- Later-phase workspace, communications, notifications, forms, AI, and audit records in subscriber data exports.
 
 ### Changed
 
@@ -34,6 +37,10 @@ All notable changes should be recorded here. Until the project adopts a formal r
 - Destructive event, contact, review, document, and team actions request explicit confirmation.
 - Destructive platform suspension, deletion, approval, and moderation actions request explicit confirmation.
 - Responsive data tables expose scoped headers and named keyboard-scroll regions.
+- Outbound-message and automation services reject cross-tenant related objects at the service boundary.
+- Provider and background failures emit contextual logs while retaining durable failure records.
+- Commerce ticket inventory summaries now use fixed-query aggregation.
+- Delayed older Stripe subscription webhooks no longer regress newer billing state.
 
 ### Fixed
 

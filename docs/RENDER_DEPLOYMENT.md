@@ -101,6 +101,12 @@ Before inviting any real user:
 
 1. Export and verify the database, then change `gather-hqs-db` from `free` to
    `basic-256mb`, add a 5 GB disk, and enable the reviewed backup policy.
+
+   Provision a private ClamAV-compatible scanning service reachable from the web
+   service. Set `DOCUMENT_UPLOAD_SCAN_BACKEND=clamav`, `CLAMAV_HOST`,
+   `CLAMAV_PORT` (normally `3310`), and `CLAMAV_TIMEOUT_SECONDS`. The deployment
+   check rejects disabled scanning, and document uploads fail closed if the
+   scanner cannot return a clean result.
 2. Change `gather-hqs-key-value` from `free` to `starter` and set persistence to
    `journal-snapshot`. The upgrade clears the free instance, so perform it
    before live work is queued. Restart the worker and scheduler afterward.

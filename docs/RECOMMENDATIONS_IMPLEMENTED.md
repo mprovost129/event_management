@@ -136,3 +136,10 @@ The roadmap identifies production hardening and design-system refinement as the 
 - Consolidated reporting and commerce summaries into filtered aggregate queries and enforced a query ceiling.
 - Added accessible data-table headers, named keyboard-scroll regions, labeled platform-operation fields, and destructive-action confirmations.
 - Added release identifiers to structured and plain logs using `RELEASE_VERSION` or Render's commit identifier.
+- Added service-boundary tenant checks for outbound messages and automations.
+- Expanded subscriber exports through the Phase 1–7 operational modules and audit history.
+- Added a streamed, fail-closed ClamAV upload scanner and production configuration checks.
+- Added out-of-order Stripe subscription webhook protection in migration `subscriptions/0004_platformsubscription_last_stripe_event_created_at.py`.
+- Replaced commerce-dashboard per-ticket inventory queries with a bounded aggregate map.
+
+Run `python manage.py migrate` during deployment to apply the subscription event-order migration.
