@@ -102,7 +102,7 @@ MIDDLEWARE = [
     "core.middleware.SecurityHeadersMiddleware",
     "core.middleware.RequestContextMiddleware",
     "sites.middleware.SiteResolutionMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
+    "core.middleware.PlatformSessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",

@@ -1,11 +1,30 @@
 import re
 import uuid
 
+from django.conf import settings
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.utils.deprecation import MiddlewareMixin
 
 from .request_context import request_id_var, site_id_var
 
 SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{8,64}$")
+
+
+class PlatformSessionMiddleware(SessionMiddleware):
+    """Share login sessions across production subscriber subdomains."""
+
+    def process_response(self, request, response):
+        response = super().process_response(request, response)
+        cookie = response.cookies.get(settings.SESSION_COOKIE_NAME)
+        platform_domain = settings.PLATFORM_DOMAIN.lower().strip(".")
+        host = request.get_host().split(":", 1)[0].lower().rstrip(".")
+        if (
+            cookie is not None
+            and "." in platform_domain
+            and (host == platform_domain or host.endswith(f".{platform_domain}"))
+        ):
+            cookie["domain"] = f".{platform_domain}"
+        return response
 
 
 class RequestContextMiddleware(MiddlewareMixin):

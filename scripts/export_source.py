@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -54,7 +53,9 @@ def create_archive(root: Path, output: Path) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", type=Path, default=Path("dist/gatherhqs-source.zip"))
+    parser.add_argument(
+        "--output", type=Path, default=Path("dist/gatherhqs-source.zip")
+    )
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     output = args.output.resolve()
