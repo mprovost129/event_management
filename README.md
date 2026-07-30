@@ -58,6 +58,8 @@ See [implementation status](docs/IMPLEMENTATION_STATUS.md) for verification resu
 - [Development and environment guide](docs/DEVELOPMENT.md)
 - [Render deployment guide](docs/RENDER_DEPLOYMENT.md)
 - [Architecture decisions](docs/adr)
+- [Legal launch review](docs/LEGAL_LAUNCH_REVIEW.md)
+- [Application review - July 30, 2026](docs/APPLICATION_REVIEW_2026-07-30.md)
 
 ## Quick start
 
@@ -71,24 +73,19 @@ docker compose exec web python manage.py migrate
 
 Open `http://localhost:8000`. See the development guide for quality and deployment checks.
 
-### Organization workspace
+### Organization workspace integration status
 
-Gather HQs includes People/CRM profiles, organization and event tasks, documents, and an activity feed. After deploying this version, run:
+The ZIP contains source, migrations, and tests for tasks, documents, activity,
+volunteers, sponsors, forms and waivers, workflow automation, AI drafting,
+insights, and in-app notifications. Those two app packages are not yet
+registered or routed, and their templates and shared helpers are not present in
+this package. Treat them as integration work in progress rather than deployed
+features. See
+[the July 30 application review](docs/APPLICATION_REVIEW_2026-07-30.md) before
+enabling them.
 
-```bash
-python manage.py migrate
-```
-
-Uploaded organization documents use the configured Django default storage backend. Production deployments should confirm persistent object storage is configured before relying on uploads.
-
-### Phase 2 workspace modules
-The organization workspace now includes volunteer and sponsor management. Administrators and site managers can create volunteer profiles from existing CRM contacts, schedule and staff shifts, record service hours, maintain sponsor profiles, and track sponsorship commitments.
-
-### Phase 4 workflow automation
-Administrators and site managers can create workflow rules under **Automations**. The first production trigger is form submission; rules can create follow-up tasks, apply a CRM tag when supported by the contact model, or add an activity-feed entry. Each execution records a success, skip, or failure result for operational review.
-
-### Phase 7 guided onboarding
-Administrators and site managers can open **Quick start** from the organization dashboard. The guide separates required launch essentials from optional workspace tools and updates automatically as the site is configured. This phase does not require a database migration.
+The separate Contacts/CRM feature listed in the core milestone is installed and
+active.
 
 ## Project planning documents
 

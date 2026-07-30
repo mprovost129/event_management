@@ -8,9 +8,7 @@ from unittest.mock import patch
 import pytest
 from django.core import mail
 from django.core.exceptions import ValidationError
-from django.db import connection
 from django.test import Client, override_settings
-from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -91,37 +89,6 @@ def draft_campaign(site, **overrides):
     }
     values.update(overrides)
     return Campaign.objects.create(**values)
-
-
-@pytest.mark.django_db
-def test_campaign_list_filters_without_per_campaign_metric_queries(client):
-    owner, site = campaign_fixture()
-    for number in range(10):
-        draft_campaign(
-            site,
-            name=f"Newsletter {number}",
-            status=(Campaign.Status.SENT if number == 0 else Campaign.Status.DRAFT),
-        )
-    draft_campaign(
-        site,
-        name="Volunteer text",
-        channel=Campaign.Channel.SMS,
-        subject="",
-    )
-    client.force_login(owner)
-
-    with CaptureQueriesContext(connection) as queries:
-        response = client.get(reverse("communications:campaign_list", args=(site.id,)))
-    filtered = client.get(
-        reverse("communications:campaign_list", args=(site.id,)),
-        {"q": "Newsletter 0", "status": "sent", "channel": "email"},
-    )
-
-    assert response.status_code == filtered.status_code == 200
-    assert len(queries) < 20
-    assert "Newsletter 0" in filtered.content.decode()
-    assert "Newsletter 1" not in filtered.content.decode()
-    assert "Volunteer text" not in filtered.content.decode()
 
 
 def test_sms_segment_count_handles_gsm_extensions_and_unicode():

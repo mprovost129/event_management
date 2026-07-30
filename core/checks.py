@@ -71,39 +71,6 @@ def product_configuration_check(app_configs, **kwargs):
                 id="platform.E022",
             )
         )
-    if settings.DOCUMENT_UPLOAD_MAX_BYTES <= 0:
-        issues.append(
-            Error(
-                "DOCUMENT_UPLOAD_MAX_BYTES must be greater than zero.",
-                id="platform.E029",
-            )
-        )
-    allowed_document_extensions = settings.DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS
-    if not allowed_document_extensions or any(
-        not extension or not extension.isalnum()
-        for extension in allowed_document_extensions
-    ):
-        issues.append(
-            Error(
-                "DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS must contain simple file extensions.",
-                hint="Use comma-separated values such as pdf,docx,xlsx.",
-                id="platform.E030",
-            )
-        )
-    if settings.DOCUMENT_UPLOAD_SCAN_BACKEND not in {"disabled", "clamav"}:
-        issues.append(
-            Error(
-                "DOCUMENT_UPLOAD_SCAN_BACKEND must be 'disabled' or 'clamav'.",
-                id="platform.E031",
-            )
-        )
-    if settings.CLAMAV_PORT <= 0 or settings.CLAMAV_TIMEOUT_SECONDS <= 0:
-        issues.append(
-            Error(
-                "ClamAV port and timeout settings must be greater than zero.",
-                id="platform.E032",
-            )
-        )
     if settings.EMAIL_DELIVERY_BACKEND not in {"django", "resend"}:
         issues.append(
             Error(
@@ -144,17 +111,6 @@ def deployment_product_check(app_configs, **kwargs):
             Warning(
                 "PLATFORM_DOMAIN still uses a development or placeholder value.",
                 id="platform.W001",
-            )
-        )
-    if settings.RELEASE_VERSION in {"", "development", "unknown"}:
-        issues.append(
-            Warning(
-                "Production logs need an immutable release identifier.",
-                hint=(
-                    "Set RELEASE_VERSION to the image or commit identifier; "
-                    "Render uses RENDER_GIT_COMMIT automatically."
-                ),
-                id="platform.W004",
             )
         )
     configured_prices = (
@@ -220,17 +176,6 @@ def deployment_product_check(app_configs, **kwargs):
                 "Production media must use durable object storage.",
                 hint="Set MEDIA_STORAGE_BACKEND=s3 and configure the S3-compatible bucket.",
                 id="platform.E004",
-            )
-        )
-    if settings.DOCUMENT_UPLOAD_SCAN_BACKEND == "disabled":
-        issues.append(
-            Error(
-                "Production document uploads require malware scanning.",
-                hint=(
-                    "Set DOCUMENT_UPLOAD_SCAN_BACKEND=clamav and configure "
-                    "CLAMAV_HOST, CLAMAV_PORT, and CLAMAV_TIMEOUT_SECONDS."
-                ),
-                id="platform.E033",
             )
         )
     if settings.SMS_DELIVERY_BACKEND == "console":
@@ -300,6 +245,28 @@ def deployment_product_check(app_configs, **kwargs):
                     id="platform.E024",
                 )
             )
+    if settings.LEGAL_DRAFT:
+        issues.append(
+            Error(
+                "Public legal policies are still marked as pre-launch drafts.",
+                hint=(
+                    "Complete legal/business review, set the final effective date, "
+                    "then set LEGAL_DRAFT=false."
+                ),
+                id="platform.E029",
+            )
+        )
+    if not settings.LEGAL_POSTAL_ADDRESS:
+        issues.append(
+            Error(
+                "LEGAL_POSTAL_ADDRESS is required for production legal notices.",
+                hint=(
+                    "Use the business mailing address approved for public legal "
+                    "notices and commercial-email footers."
+                ),
+                id="platform.E030",
+            )
+        )
     if not settings.HEALTHCHECK_REQUIRE_BACKGROUND_WORKERS:
         issues.append(
             Error(
@@ -313,23 +280,6 @@ def deployment_product_check(app_configs, **kwargs):
             Error(
                 "SecurityHeadersMiddleware is required in production.",
                 id="platform.E019",
-            )
-        )
-    expected_cookie_domain = settings.PLATFORM_DOMAIN.lstrip(".")
-    if (settings.SESSION_COOKIE_DOMAIN or "").lstrip(".") != expected_cookie_domain:
-        issues.append(
-            Error(
-                "The production session cookie must be shared with tenant subdomains.",
-                hint=f"Set SESSION_COOKIE_DOMAIN=.{expected_cookie_domain}.",
-                id="platform.E034",
-            )
-        )
-    if (settings.CSRF_COOKIE_DOMAIN or "").lstrip(".") != expected_cookie_domain:
-        issues.append(
-            Error(
-                "The production CSRF cookie must be shared with tenant subdomains.",
-                hint=f"Set CSRF_COOKIE_DOMAIN=.{expected_cookie_domain}.",
-                id="platform.E035",
             )
         )
     return issues

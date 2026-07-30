@@ -66,6 +66,14 @@ worker where needed:
 
 | Variable | Required value |
 | --- | --- |
+| `LEGAL_BUSINESS_NAME` | Approved legal or registered business name operating Gather HQs |
+| `LEGAL_POSTAL_ADDRESS` | Public business mailing address approved for legal notices and commercial email |
+| `LEGAL_EFFECTIVE_DATE` | Approval/effective date displayed on the current policy version |
+| `LEGAL_GOVERNING_LAW` | Counsel-approved governing-law description |
+| `LEGAL_VENUE` | Counsel-approved court or venue description |
+| `PRIVACY_EMAIL` | Staffed address for privacy requests |
+| `SECURITY_EMAIL` | Staffed address for security reports |
+| `LEGAL_DRAFT` | Keep `true` until approval; set `false` only for the approved production version |
 | `STRIPE_STANDARD_MONTHLY_PRICE_ID` | Standard $20/month price for the selected Stripe mode |
 | `STRIPE_STANDARD_YEARLY_PRICE_ID` | Standard $220/year price for the selected Stripe mode |
 | `STRIPE_SECRET_KEY` | Matching restricted or secret platform key |
@@ -101,12 +109,6 @@ Before inviting any real user:
 
 1. Export and verify the database, then change `gather-hqs-db` from `free` to
    `basic-256mb`, add a 5 GB disk, and enable the reviewed backup policy.
-
-   Provision a private ClamAV-compatible scanning service reachable from the web
-   service. Set `DOCUMENT_UPLOAD_SCAN_BACKEND=clamav`, `CLAMAV_HOST`,
-   `CLAMAV_PORT` (normally `3310`), and `CLAMAV_TIMEOUT_SECONDS`. The deployment
-   check rejects disabled scanning, and document uploads fail closed if the
-   scanner cannot return a clean result.
 2. Change `gather-hqs-key-value` from `free` to `starter` and set persistence to
    `journal-snapshot`. The upgrade clears the free instance, so perform it
    before live work is queued. Restart the worker and scheduler afterward.

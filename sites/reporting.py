@@ -28,69 +28,48 @@ def site_summary(site, *, now=None):
     invitations = Invitation.objects.for_site(site)
     registrations = Registration.objects.for_site(site)
     participants = _active_participants(site)
+    ended_participants = participants.filter(registration__occurrence__ends_at__lte=now)
     checked_in = AttendanceStatus.objects.for_site(site).filter(
         participant__in=participants, checked_in_at__isnull=False
+    )
+    ended_checked_in = checked_in.filter(
+        participant__registration__occurrence__ends_at__lte=now
     )
     visible_reviews = (
         Review.objects.for_site(site)
         .filter(deleted_at__isnull=True)
         .exclude(moderation_status=Review.ModerationStatus.HIDDEN)
     )
-    invitation_stats = invitations.aggregate(
-        total=Count("id"),
-        responded=Count("id", filter=Q(status=Invitation.Status.RESPONDED)),
-    )
-    registration_stats = registrations.aggregate(
-        total=Count("id"),
-        going=Count("id", filter=Q(response=Registration.Response.GOING)),
-        maybe=Count("id", filter=Q(response=Registration.Response.MAYBE)),
-        not_going=Count("id", filter=Q(response=Registration.Response.NOT_GOING)),
-    )
-    participant_stats = participants.aggregate(
-        total=Count("id"),
-        guests=Count("id", filter=Q(is_primary=False)),
-        ended=Count("id", filter=Q(registration__occurrence__ends_at__lte=now)),
-    )
-    attendance_stats = checked_in.aggregate(
-        total=Count("id"),
-        ended=Count(
-            "id",
-            filter=Q(participant__registration__occurrence__ends_at__lte=now),
-        ),
-    )
-    review_stats = visible_reviews.aggregate(total=Count("id"), average=Avg("rating"))
+    rating = visible_reviews.aggregate(average=Avg("rating"))
     capacity = (
         EventOccurrence.objects.for_site(site)
         .filter(capacity__isnull=False)
         .aggregate(total=Sum("capacity"))["total"]
         or 0
     )
-    invited_count = invitation_stats["total"]
-    responded_invites = invitation_stats["responded"]
-    ended_count = participant_stats["ended"]
-    checked_in_ended_count = attendance_stats["ended"]
+    invited_count = invitations.count()
+    responded_invites = invitations.filter(status=Invitation.Status.RESPONDED).count()
+    ended_count = ended_participants.count()
+    checked_in_ended_count = ended_checked_in.count()
     finance = commerce_summary(site)
-    membership_stats = MemberSubscription.objects.for_site(site).aggregate(
-        active=Count("id", filter=Q(status=MemberSubscription.Status.ACTIVE)),
-        past_due=Count("id", filter=Q(status=MemberSubscription.Status.PAST_DUE)),
-        canceled=Count("id", filter=Q(status=MemberSubscription.Status.CANCELED)),
-        expired=Count("id", filter=Q(status=MemberSubscription.Status.EXPIRED)),
-    )
+    memberships = MemberSubscription.objects.for_site(site)
     sent_campaigns = Campaign.objects.for_site(site).filter(status=Campaign.Status.SENT)
     campaign_recipients = CampaignRecipient.objects.for_site(site)
     return {
         "invitations": invited_count,
-        "registrations": registration_stats["total"],
-        "going": registration_stats["going"],
-        "maybe": registration_stats["maybe"],
-        "not_going": registration_stats["not_going"],
+        "registrations": registrations.count(),
+        "going": registrations.filter(response=Registration.Response.GOING).count(),
+        "maybe": registrations.filter(response=Registration.Response.MAYBE).count(),
+        "not_going": registrations.filter(
+            response=Registration.Response.NOT_GOING
+        ).count(),
         "invite_response_rate": (
             round(responded_invites * 100 / invited_count, 1) if invited_count else 0
         ),
-        "participants": participant_stats["total"],
-        "guests": participant_stats["guests"],
+        "participants": participants.count(),
+        "guests": participants.filter(is_primary=False).count(),
         "capacity": capacity,
-        "checked_in": attendance_stats["total"],
+        "checked_in": checked_in.count(),
         "attendance_rate": (
             round(checked_in_ended_count * 100 / ended_count, 1) if ended_count else 0
         ),
@@ -99,8 +78,8 @@ def site_summary(site, *, now=None):
             if ended_count
             else 0
         ),
-        "review_count": review_stats["total"],
-        "rating_average": review_stats["average"],
+        "review_count": visible_reviews.count(),
+        "rating_average": rating["average"],
         "campaigns_sent": sent_campaigns.count(),
         "campaign_failures": campaign_recipients.filter(
             status__in=(
@@ -108,10 +87,18 @@ def site_summary(site, *, now=None):
                 CampaignRecipient.Status.BOUNCED,
             )
         ).count(),
-        "active_members": membership_stats["active"],
-        "past_due_members": membership_stats["past_due"],
-        "canceled_members": membership_stats["canceled"],
-        "expired_members": membership_stats["expired"],
+        "active_members": memberships.filter(
+            status=MemberSubscription.Status.ACTIVE
+        ).count(),
+        "past_due_members": memberships.filter(
+            status=MemberSubscription.Status.PAST_DUE
+        ).count(),
+        "canceled_members": memberships.filter(
+            status=MemberSubscription.Status.CANCELED
+        ).count(),
+        "expired_members": memberships.filter(
+            status=MemberSubscription.Status.EXPIRED
+        ).count(),
         "ticket_gross_display": Decimal(finance["ticket_gross_cents"]) / 100,
         "ticket_net_display": Decimal(finance["ticket_net_cents"]) / 100,
         "refunds_display": Decimal(finance["refunds_cents"]) / 100,

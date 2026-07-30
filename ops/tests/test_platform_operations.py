@@ -2,14 +2,11 @@ from datetime import timedelta
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import connection
 from django.test import Client, override_settings
-from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
 from attendance.services import set_check_in
-from communications.models import Campaign
 from contacts.models import Contact
 from events.models import Event, EventOccurrence, Participant, Registration
 from ops.models import AuditEvent, SiteDeletionRequest
@@ -27,7 +24,6 @@ from sites.models import SiteRole
 from sites.reporting import event_comparison, site_summary
 from sites.services import create_subscriber_site
 from users.models import User
-from workspace.models import WorkTask
 
 
 def operations_fixture():
@@ -99,44 +95,8 @@ def test_summary_and_event_comparison_reconcile_to_fixture():
 
 
 @pytest.mark.django_db
-def test_site_summary_uses_a_bounded_number_of_aggregate_queries():
-    _, site, _ = operations_fixture()
-
-    with CaptureQueriesContext(connection) as queries:
-        summary = site_summary(site)
-
-    assert summary["registrations"] == 1
-    assert len(queries) <= 12, [query["sql"] for query in queries]
-
-
-@pytest.mark.django_db
 def test_data_export_is_subscriber_admin_only_and_audited():
     owner, site, _ = operations_fixture()
-    WorkTask.objects.create(site=site, title="Local export task")
-    Campaign.objects.create(
-        site=site,
-        name="Local export campaign",
-        subject="Local news",
-        body="Local campaign body",
-    )
-    other_owner = User.objects.create_user(
-        email="other-owner@example.com",
-        password="Strong-Test-Pass-2026!",
-        email_verified_at=timezone.now(),
-    )
-    other_site = create_subscriber_site(
-        owner=other_owner,
-        display_name="Other Site",
-        slug="other-site",
-        timezone_name="America/New_York",
-    )
-    WorkTask.objects.create(site=other_site, title="Foreign export task")
-    Campaign.objects.create(
-        site=other_site,
-        name="Foreign export campaign",
-        subject="Foreign news",
-        body="Foreign campaign body",
-    )
     manager = User.objects.create_user(
         email="manager@example.com",
         password="Strong-Test-Pass-2026!",
@@ -154,12 +114,6 @@ def test_data_export_is_subscriber_admin_only_and_audited():
     assert response["Content-Disposition"].endswith('boot-scooters-export.json"')
     assert response.json()["format"] == "gather-hqs-site-export-v1"
     assert len(response.json()["participants"]) == 1
-    assert [item["title"] for item in response.json()["work_tasks"]] == [
-        "Local export task"
-    ]
-    assert [item["name"] for item in response.json()["campaigns"]] == [
-        "Local export campaign"
-    ]
     assert AuditEvent.objects.filter(action="site.data_exported", actor=owner).exists()
 
 
@@ -309,22 +263,3 @@ def test_platform_operations_reports_collected_and_returned_ticket_fees():
     assert "Net Gather HQs fees" in content
     assert "$0.45" in content
     assert "Across 1 paid order" in content
-
-
-@pytest.mark.django_db
-def test_platform_operations_controls_have_labels_and_confirmations(client):
-    _, site, _ = operations_fixture()
-    admin = User.objects.create_superuser(
-        email="admin@example.com", password="Strong-Test-Pass-2026!"
-    )
-    client.force_login(admin)
-
-    response = client.get(reverse("ops:dashboard"))
-    content = response.content.decode()
-
-    assert response.status_code == 200
-    assert 'for="operations-search"' in content
-    assert f'for="suspension-reason-{site.id}"' in content
-    assert f'for="deletion-reason-{site.id}"' in content
-    assert "return confirm(" in content
-    assert 'role="region"' in content

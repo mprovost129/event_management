@@ -1,0 +1,65 @@
+{% extends "core/legal/base.html" %}
+
+{% block legal_intro %}Rules that protect attendees, contacts, subscribers, service providers, and the integrity of the Gather HQs platform.{% endblock %}
+
+{% block legal_content %}
+<section>
+    <h2>1. Use the Service lawfully and honestly</h2>
+    <p>Do not use Gather HQs to violate law, regulation, court order, contract, intellectual-property right, privacy right, publicity right, or another person’s legal rights. Do not misrepresent an event, organization, price, availability, host, venue, membership benefit, charity status, sponsorship, refund promise, or affiliation.</p>
+</section>
+
+<section>
+    <h2>2. Safety and prohibited activities</h2>
+    <p>Do not create, promote, facilitate, or collect payment for:</p>
+    <ul>
+        <li>fraudulent, nonexistent, or materially deceptive events or memberships;</li>
+        <li>violence, credible threats, stalking, trafficking, exploitation, non-consensual conduct, or instructions intended to cause serious harm;</li>
+        <li>illegal gambling, illegal goods or services, unlawful weapons activity, or controlled substances sold or distributed contrary to law;</li>
+        <li>sexual exploitation or abuse, especially involving a child; or</li>
+        <li>an activity that requires a license, permit, insurance, authorization, or safety control the subscriber knowingly lacks.</li>
+    </ul>
+    <p>A subscriber that permits lawful higher-risk activity remains responsible for suitable disclosures, trained supervision, emergency planning, waivers where appropriate, insurance, and all legal requirements.</p>
+</section>
+
+<section>
+    <h2>3. Respectful conduct and content</h2>
+    <p>Do not post or send content that contains targeted harassment, credible threats, doxxing, discriminatory abuse, impersonation, defamation, non-consensual intimate material, graphic exploitation, or another person’s private information without authority. Do not use another person’s logo, image, writing, music, trademark, or other protected material without permission or another lawful basis.</p>
+</section>
+
+<section>
+    <h2>4. Contacts, consent, and communications</h2>
+    <p>You must have a legitimate relationship or other lawful basis for contacts entered into the Service. You may not:</p>
+    <ul>
+        <li>buy, scrape, harvest, or import contact lists without the required permission;</li>
+        <li>send unsolicited bulk messages, deceptive subject lines, misleading sender information, or messages that omit required identification or notices;</li>
+        <li>send marketing after consent is withdrawn or a contact is suppressed;</li>
+        <li>evade unsubscribe links, text opt-outs, provider suppression, rate limits, or delivery safeguards; or</li>
+        <li>use transactional message types to disguise marketing.</li>
+    </ul>
+</section>
+
+<section>
+    <h2>5. Privacy, sensitive information, and minors</h2>
+    <p>Collect only information reasonably needed for the stated event or group purpose and limit access to authorized people. Do not upload full payment-card details, account passwords, government identification numbers, medical records, or similarly sensitive information the Service does not request.</p>
+    <p>Children under 13 may not use Gather HQs directly. A subscriber that offers youth events must use adult-controlled registration, obtain required parental or guardian authorization, minimize information about minors, and implement appropriate supervision and access controls. Never use the Service to groom, exploit, locate, profile, or inappropriately contact a child.</p>
+</section>
+
+<section>
+    <h2>6. Security and platform integrity</h2>
+    <p>Do not:</p>
+    <ul>
+        <li>access an account, subscriber site, invitation, review, form, file, or record without authorization;</li>
+        <li>probe, scan, exploit, or test the Service without written permission, except for good-faith research reported under the <a href="{% url 'core:security' %}">responsible disclosure process</a>;</li>
+        <li>introduce malware, destructive code, denial-of-service traffic, credential attacks, or automated requests that unreasonably burden the Service;</li>
+        <li>circumvent permissions, tenant boundaries, payment controls, capacity rules, usage limits, or protective measures;</li>
+        <li>reverse engineer or copy protected portions of the Service except where law expressly permits it; or</li>
+        <li>resell, sublicense, or operate the Service for an unrelated third party without written permission.</li>
+    </ul>
+</section>
+
+<section>
+    <h2>7. Enforcement and appeals</h2>
+    <p>We may remove content, pause delivery, restrict commerce, revoke a capability link, preserve evidence, limit features, or suspend an account or subscriber site while investigating suspected abuse, fraud, security risk, legal exposure, or harm. We consider context, severity, history, intent, and available evidence. Immediate action may be taken when delay could cause harm.</p>
+    <p>Where reasonable and lawful, we will notify the affected account and explain available corrective steps. An account holder may appeal an enforcement decision by contacting support with the site, decision, relevant facts, and reason reconsideration is requested. We may decline to disclose information that would compromise safety, security, privacy, or an investigation.</p>
+</section>
+{% endblock %}

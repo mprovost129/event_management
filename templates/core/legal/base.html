@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}{{ legal_document.title|default:"Legal center" }} · {{ platform_name }}{% endblock %}
+{% block meta_description %}{{ legal_document.description|default:"Gather HQs policies for subscriptions, privacy, payments, content, security, and platform use." }}{% endblock %}
+{% block social_meta %}
+<link rel="canonical" href="https://{{ platform_domain }}{{ request.path }}">
+{% if legal_draft %}<meta name="robots" content="noindex,nofollow">{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="gh-legal-shell">
+    <header class="gh-legal-header">
+        <div>
+            <a class="gh-legal-back" href="{% url 'core:legal' %}">&larr; Legal center</a>
+            {% if legal_draft %}
+            <p class="gh-legal-status is-draft">Pre-launch policy draft — legal review required before public launch</p>
+            {% else %}
+            <p class="gh-legal-status">Effective {{ legal_effective_date }}</p>
+            {% endif %}
+            <h1>{% block legal_title %}{{ legal_document.title|default:"Legal center" }}{% endblock %}</h1>
+            <p class="gh-legal-intro">{% block legal_intro %}Policies written for the way Gather HQs actually works.{% endblock %}</p>
+        </div>
+        <dl class="gh-legal-meta">
+            <div>
+                <dt>Effective date</dt>
+                <dd>{{ legal_effective_date }}</dd>
+            </div>
+            <div>
+                <dt>Applies to</dt>
+                <dd>Gather HQs and subscriber sites</dd>
+            </div>
+        </dl>
+    </header>
+
+    <div class="gh-legal-layout">
+        <aside class="gh-legal-sidebar">
+            <nav aria-label="Legal center documents">
+                <p>Policies</p>
+                {% for item in legal_documents %}
+                <a href="{% url item.route %}"{% if legal_document.key == item.key %} class="is-current" aria-current="page"{% endif %}>{{ item.short_title }}</a>
+                {% endfor %}
+            </nav>
+            <section aria-labelledby="legal-help-heading">
+                <h2 id="legal-help-heading">Questions?</h2>
+                <p>For an event, ticket, membership, or subscriber-held record, contact the group that operates the subscriber site first.</p>
+                {% if support_email %}
+                <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+                {% endif %}
+            </section>
+        </aside>
+
+        <article class="gh-legal-document">
+            {% block legal_content %}{% endblock %}
+
+            <footer class="gh-legal-contact">
+                <h2>Contact</h2>
+                <p>
+                    <strong>{{ legal_business_name }}</strong><br>
+                    {% if legal_postal_address %}{{ legal_postal_address|linebreaksbr }}<br>{% endif %}
+                    {% if support_email %}<a href="mailto:{{ support_email }}">{{ support_email }}</a>{% endif %}
+                </p>
+                {% if legal_draft and not legal_postal_address %}
+                <p class="gh-legal-draft-note">The approved public mailing address must be configured before launch.</p>
+                {% endif %}
+            </footer>
+        </article>
+    </div>
+</div>
+{% endblock %}

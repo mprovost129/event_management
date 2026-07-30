@@ -52,7 +52,6 @@ from .services import (
     start_member_subscription,
     submit_refund,
     ticket_inventory,
-    ticket_inventory_map,
 )
 
 
@@ -75,14 +74,13 @@ def _ticket_application_fee_percent():
 def manage(request, site_id):
     site = request.authorized_site
     connected = ConnectedAccount.objects.filter(site=site).first()
-    ticket_types = list(
+    ticket_types = (
         TicketType.objects.for_site(site)
         .select_related("occurrence__event")
         .order_by("occurrence__starts_at", "name")
     )
-    inventory_by_type = ticket_inventory_map(ticket_types)
     for ticket_type in ticket_types:
-        ticket_type.inventory = inventory_by_type[ticket_type.id]
+        ticket_type.inventory = ticket_inventory(ticket_type)
         ticket_type.price_display = _money(ticket_type.amount_cents)
     orders = Order.objects.for_site(site).select_related(
         "purchaser", "occurrence__event"

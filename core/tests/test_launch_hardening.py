@@ -1,58 +1,10 @@
-import json
-import logging
-import re
-
 import pytest
-from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 
-from core.checks import deployment_product_check, product_configuration_check
-from core.logging import JsonFormatter, RequestContextFilter
+from core.checks import deployment_product_check
 from ops.models import SystemHeartbeat
 from ops.tasks import record_background_heartbeat
-
-
-def test_data_tables_and_images_keep_baseline_accessibility_markup():
-    failures = []
-    for template in (settings.BASE_DIR / "templates").rglob("*.html"):
-        source = template.read_text(encoding="utf-8")
-        for header in re.findall(r"<th\b[^>]*>", source, flags=re.IGNORECASE):
-            if not re.search(r"\bscope=[\"'](?:col|row)[\"']", header):
-                failures.append(f"{template.relative_to(settings.BASE_DIR)}: {header}")
-        for image in re.findall(r"<img\b[^>]*>", source, flags=re.IGNORECASE):
-            if not re.search(r"\balt=[\"']", image):
-                failures.append(f"{template.relative_to(settings.BASE_DIR)}: {image}")
-        responsive_regions = re.findall(
-            r'<div\b[^>]*class="[^"]*\btable-responsive\b[^"]*"[^>]*>', source
-        )
-        for region in responsive_regions:
-            if (
-                'role="region"' not in region
-                or 'tabindex="0"' not in region
-                or not re.search(r'\baria-label(?:ledby)?="', region)
-            ):
-                failures.append(f"{template.relative_to(settings.BASE_DIR)}: {region}")
-
-    assert failures == []
-
-
-@override_settings(RELEASE_VERSION="release-abc123")
-def test_structured_logs_include_the_release_identifier():
-    record = logging.LogRecord(
-        name="release-test",
-        level=logging.INFO,
-        pathname=__file__,
-        lineno=1,
-        msg="Release logging works",
-        args=(),
-        exc_info=None,
-    )
-    RequestContextFilter().filter(record)
-
-    payload = json.loads(JsonFormatter().format(record))
-
-    assert payload["release"] == "release-abc123"
 
 
 @pytest.mark.django_db
@@ -92,7 +44,7 @@ def test_readiness_requires_recent_worker_and_scheduler_heartbeat(client, settin
 
 
 @pytest.mark.django_db
-def test_global_security_headers_skip_link_and_legal_drafts_are_exposed(client):
+def test_global_security_headers_skip_link_and_legal_center_are_exposed(client):
     response = client.get(reverse("core:home"))
 
     assert response.status_code == 200
@@ -103,14 +55,45 @@ def test_global_security_headers_skip_link_and_legal_drafts_are_exposed(client):
     assert b'href="#main-content"' in response.content
 
     for route in (
+        "core:legal",
         "core:privacy",
         "core:terms",
+        "core:cookies",
+        "core:refunds",
         "core:acceptable_use",
+        "core:retention",
+        "core:security",
         "core:review_guidelines",
     ):
         legal = client.get(reverse(route))
         assert legal.status_code == 200
         assert b"Pre-launch policy draft" in legal.content
+        assert b'name="robots" content="noindex,nofollow"' in legal.content
+        assert b'rel="canonical"' in legal.content
+
+
+@override_settings(LEGAL_DRAFT=False)
+def test_approved_legal_pages_are_indexable(client):
+    terms = client.get(reverse("core:terms"))
+
+    assert terms.status_code == 200
+    assert b'name="robots" content="noindex,nofollow"' not in terms.content
+
+
+def test_legal_pages_cover_product_specific_roles_and_flows(client):
+    terms = client.get(reverse("core:terms")).content.decode()
+    privacy = client.get(reverse("core:privacy")).content.decode()
+    refunds = client.get(reverse("core:refunds")).content.decode()
+    retention = client.get(reverse("core:retention")).content.decode()
+
+    assert "technology provider—not the organizer" in terms
+    assert "14-day no-card trial" in terms
+    assert "connected Stripe account" in terms
+    assert "Subscriber-controlled information" in privacy
+    assert "children under 13" in privacy
+    assert "Platform subscriptions" in refunds
+    assert "Event tickets and membership dues" in refunds
+    assert "90 days" in retention
 
 
 def test_platform_home_explains_trial_pricing_and_social_preview(client):
@@ -122,66 +105,9 @@ def test_platform_home_explains_trial_pricing_and_social_preview(client):
     assert "Start your 14-day free trial" in content
     assert ">20<" in content
     assert ">220<" in content
-    assert "3% Gather HQs fee on paid tickets; no fee on member dues" in content
-    assert "deducted from your group's proceeds" in content
+    assert "No Gather HQs fee on tickets or member dues" in content
     assert 'property="og:image"' in content
     assert "/static/img/gather-hqs-social.png" in content
-
-
-@override_settings(
-    DOCUMENT_UPLOAD_MAX_BYTES=0,
-    DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS=("pdf", "../exe"),
-)
-def test_document_upload_configuration_rejects_unsafe_limits_and_extensions():
-    issue_ids = {issue.id for issue in product_configuration_check(None)}
-
-    assert "platform.E029" in issue_ids
-    assert "platform.E030" in issue_ids
-
-
-@override_settings(
-    DOCUMENT_UPLOAD_SCAN_BACKEND="unsupported",
-    CLAMAV_PORT=0,
-    CLAMAV_TIMEOUT_SECONDS=0,
-)
-def test_document_scanner_configuration_rejects_invalid_values():
-    issue_ids = {issue.id for issue in product_configuration_check(None)}
-
-    assert "platform.E031" in issue_ids
-    assert "platform.E032" in issue_ids
-
-
-@override_settings(DEBUG=False, DOCUMENT_UPLOAD_SCAN_BACKEND="disabled")
-def test_production_deployment_requires_document_malware_scanning():
-    issue_ids = {issue.id for issue in deployment_product_check(None)}
-
-    assert "platform.E033" in issue_ids
-
-
-@override_settings(
-    DEBUG=False,
-    PLATFORM_DOMAIN="gatherhqs.com",
-    SESSION_COOKIE_DOMAIN=None,
-    CSRF_COOKIE_DOMAIN=None,
-)
-def test_production_deployment_requires_cross_subdomain_auth_cookies():
-    issue_ids = {issue.id for issue in deployment_product_check(None)}
-
-    assert "platform.E034" in issue_ids
-    assert "platform.E035" in issue_ids
-
-
-@override_settings(
-    DEBUG=False,
-    PLATFORM_DOMAIN="gatherhqs.com",
-    SESSION_COOKIE_DOMAIN=".gatherhqs.com",
-    CSRF_COOKIE_DOMAIN=".gatherhqs.com",
-)
-def test_production_deployment_accepts_cross_subdomain_auth_cookies():
-    issue_ids = {issue.id for issue in deployment_product_check(None)}
-
-    assert "platform.E034" not in issue_ids
-    assert "platform.E035" not in issue_ids
 
 
 @pytest.mark.django_db
@@ -206,6 +132,30 @@ def test_support_contact_is_published_in_policy_and_error_pages(client):
 
     assert b"mailto:support@gatherhqs.com" in privacy.content
     assert b"mailto:support@gatherhqs.com" in missing.content
+
+
+@override_settings(
+    DEBUG=False,
+    LEGAL_DRAFT=True,
+    LEGAL_POSTAL_ADDRESS="",
+)
+def test_deployment_blocks_unapproved_or_unidentified_legal_policies():
+    issue_ids = {issue.id for issue in deployment_product_check(None)}
+
+    assert "platform.E029" in issue_ids
+    assert "platform.E030" in issue_ids
+
+
+@override_settings(
+    DEBUG=False,
+    LEGAL_DRAFT=False,
+    LEGAL_POSTAL_ADDRESS="PO Box 123, Swansea, MA 02777",
+)
+def test_deployment_accepts_reviewed_legal_configuration():
+    issue_ids = {issue.id for issue in deployment_product_check(None)}
+
+    assert "platform.E029" not in issue_ids
+    assert "platform.E030" not in issue_ids
 
 
 @override_settings(

@@ -94,8 +94,6 @@ def dashboard(request, site_id):
             .first()
         )
 
-    from workspace.models import Activity, WorkTask
-
     context = {
         "site": site,
         "site_role": request.site_role,
@@ -110,99 +108,8 @@ def dashboard(request, site_id):
         "canonical_domain": site.domains.filter(is_canonical=True).first(),
         "setup": setup,
         "upcoming_occurrence": upcoming_occurrence,
-        "workspace_activities": Activity.objects.for_site(site).select_related("actor")[
-            :8
-        ],
-        "open_tasks": WorkTask.objects.for_site(site)
-        .exclude(status=WorkTask.Status.DONE)
-        .select_related("assignee", "event")[:6],
     }
     return render(request, "sites/dashboard.html", context)
-
-
-@site_staff_required
-def quick_start(request, site_id):
-    """Guided first-run workspace for administrators and site managers."""
-    site = request.authorized_site
-    setup = site_setup_progress(site)
-    action_urls = {
-        "website": reverse("content:presentation", kwargs={"site_id": site.id}),
-        "event": reverse("events:create", kwargs={"site_id": site.id}),
-        "contacts": reverse("contacts:create", kwargs={"site_id": site.id}),
-        "stripe": reverse("payments:manage", kwargs={"site_id": site.id}),
-        "subscription": f"{reverse('sites:dashboard', kwargs={'site_id': site.id})}#subscription",
-    }
-    for check in setup["checks"]:
-        check["action_url"] = action_urls[check["key"]]
-
-    from content.models import BlogPost, PublishingStatus, SitePage
-    from workspace.models import AutomationRule, Document, IntakeForm, WorkTask
-
-    growth_steps = [
-        {
-            "label": "Complete your public pages",
-            "description": "Publish the About and Contact pages so visitors know who you are and how to reach you.",
-            "complete": SitePage.objects.for_site(site)
-            .filter(
-                page_type__in=(SitePage.PageType.ABOUT, SitePage.PageType.CONTACT),
-                status=PublishingStatus.PUBLISHED,
-            )
-            .count()
-            >= 2,
-            "action_url": reverse("content:manage", kwargs={"site_id": site.id}),
-        },
-        {
-            "label": "Share your first update",
-            "description": "Publish a blog post or announcement to make the site feel active.",
-            "complete": BlogPost.objects.for_site(site)
-            .filter(status=PublishingStatus.PUBLISHED)
-            .exists(),
-            "action_url": reverse("content:blog_create", kwargs={"site_id": site.id}),
-        },
-        {
-            "label": "Create an operating task",
-            "description": "Assign a follow-up, deadline, or event preparation item to your team.",
-            "complete": WorkTask.objects.for_site(site).exists(),
-            "action_url": reverse("workspace:task_create", kwargs={"site_id": site.id}),
-        },
-        {
-            "label": "Create a form or waiver",
-            "description": "Collect information, applications, volunteer interest, or signed waivers.",
-            "complete": IntakeForm.objects.for_site(site).exists(),
-            "action_url": reverse("workspace:form_create", kwargs={"site_id": site.id}),
-        },
-        {
-            "label": "Upload an organization document",
-            "description": "Store a contract, policy, flyer, insurance certificate, or waiver.",
-            "complete": Document.objects.for_site(site).exists(),
-            "action_url": reverse(
-                "workspace:document_create", kwargs={"site_id": site.id}
-            ),
-        },
-        {
-            "label": "Create your first automation",
-            "description": "Automatically create a task, tag a contact, or record activity after a form response.",
-            "complete": AutomationRule.objects.for_site(site).exists(),
-            "action_url": reverse(
-                "workspace:automation_create", kwargs={"site_id": site.id}
-            ),
-        },
-    ]
-    growth_completed = sum(step["complete"] for step in growth_steps)
-    return render(
-        request,
-        "sites/quick_start.html",
-        {
-            "site": site,
-            "site_role": request.site_role,
-            "setup": setup,
-            "growth_steps": growth_steps,
-            "growth_completed": growth_completed,
-            "growth_total": len(growth_steps),
-            "growth_percent": round(growth_completed * 100 / len(growth_steps)),
-            "canonical_domain": site.domains.filter(is_canonical=True).first(),
-        },
-    )
 
 
 @site_staff_required

@@ -39,7 +39,6 @@ class PlatformSubscription(models.Model):
     cancel_at_period_end = models.BooleanField(default=False)
     canceled_at = models.DateTimeField(null=True, blank=True)
     suspended_at = models.DateTimeField(null=True, blank=True)
-    last_stripe_event_created_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

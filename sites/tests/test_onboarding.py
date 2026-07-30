@@ -250,32 +250,6 @@ def test_subdomain_resolves_site_and_unknown_platform_subdomain_returns_404(clie
 
 
 @pytest.mark.django_db
-def test_public_site_shows_dashboard_link_only_to_its_staff(client):
-    owner = verified_user("owner@example.com")
-    outsider = verified_user("outsider@example.com")
-    site = create_subscriber_site(
-        owner=owner,
-        display_name="Boot Scooters",
-        slug="boot-scooters",
-        timezone_name="America/New_York",
-    )
-    dashboard_url = reverse("sites:dashboard", args=(site.id,))
-
-    client.force_login(owner)
-    owner_view = client.get("/", headers={"host": "boot-scooters.localhost"})
-    client.force_login(outsider)
-    outsider_view = client.get("/", headers={"host": "boot-scooters.localhost"})
-    client.logout()
-    anonymous_view = client.get("/", headers={"host": "boot-scooters.localhost"})
-
-    assert owner_view.status_code == 200
-    assert dashboard_url in owner_view.content.decode()
-    assert "Back to dashboard" in owner_view.content.decode()
-    assert "Back to dashboard" not in outsider_view.content.decode()
-    assert "Back to dashboard" not in anonymous_view.content.decode()
-
-
-@pytest.mark.django_db
 @override_settings(
     PLATFORM_DOMAIN="gatherhqs.com",
     PLATFORM_CONTROL_HOSTS=("gatherhqs.com", "www.gatherhqs.com"),

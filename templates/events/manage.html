@@ -13,12 +13,6 @@
         <a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create event</a>
     </div>
 
-    <form method="get" class="row g-2 mb-4" role="search">
-        <div class="col-md"><label class="visually-hidden" for="event-search">Search events</label><input class="form-control" id="event-search" type="search" name="q" value="{{ query }}" placeholder="Search event title, description, or host"></div>
-        <div class="col-md-3"><label class="visually-hidden" for="event-status">Event status</label><select class="form-select" id="event-status" name="status"><option value="all">All statuses</option>{% for value, label in status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-        <div class="col-md-auto"><button class="btn btn-outline-primary" type="submit">Filter</button></div>
-    </form>
-
     {% timezone site.timezone %}
     {% for event in events %}
     <article class="gh-event-manage-card{% if event.just_created %} is-new-event{% endif %}">
@@ -35,7 +29,7 @@
                 <h2>{{ event.title }}</h2>
                 {% if event.description %}<p>{{ event.description|truncatechars:180 }}</p>{% endif %}
             </div>
-            <div class="gh-event-manage-actions"><a href="{% url 'events:edit' site.id event.id %}">Edit details</a>{% if site.is_published and canonical_domain and event.status == 'published' and event.visibility != 'invite_only' %}<a href="//{{ canonical_domain.hostname }}{% url 'events:detail' event.slug %}">View page &nearr;</a>{% endif %}{% if event.status != 'canceled' %}<form method="post" action="{% url 'events:cancel' site.id event.id %}" onsubmit="return confirm('Cancel this event and notify affected participants?')">{% csrf_token %}<button class="btn btn-link text-danger p-0" type="submit">Cancel event</button></form>{% endif %}</div>
+            <div class="gh-event-manage-actions"><a href="{% url 'events:edit' site.id event.id %}">Edit details</a>{% if site.is_published and canonical_domain and event.status == 'published' and event.visibility != 'invite_only' %}<a href="//{{ canonical_domain.hostname }}{% url 'events:detail' event.slug %}">View page &nearr;</a>{% endif %}{% if event.status != 'canceled' %}<form method="post" action="{% url 'events:cancel' site.id event.id %}">{% csrf_token %}<button class="btn btn-link text-danger p-0" type="submit">Cancel event</button></form>{% endif %}</div>
         </header>
 
         <div class="gh-occurrence-list">
@@ -50,7 +44,7 @@
         </div>
     </article>
     {% empty %}
-    <div class="gh-empty-note gh-event-empty"><span class="gh-event-calendar-mark" aria-hidden="true">+1</span><h2>{% if query or selected_status != 'all' %}No events match these filters{% else %}Create your first event{% endif %}</h2><p>{% if query or selected_status != 'all' %}Try another search or status.{% else %}Add a date, choose who can attend, then invite contacts or share the public page.{% endif %}</p>{% if not query and selected_status == 'all' %}<a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create event</a>{% endif %}</div>
+    <div class="gh-empty-note gh-event-empty"><span class="gh-event-calendar-mark" aria-hidden="true">+1</span><h2>Create your first event</h2><p>Add a date, choose who can attend, then invite contacts or share the public page.</p><a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create event</a></div>
     {% endfor %}
     {% endtimezone %}
 </div>

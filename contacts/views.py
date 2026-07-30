@@ -1,14 +1,10 @@
 from django.contrib import messages
-from django.db.models import Q, Sum
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
-from core.pagination import paginate
-from events.models import Registration
 from ops.services import record_audit_event
-from payments.models import Order
-from sites.models import SiteRole
 from sites.permissions import site_staff_required
 
 from .forms import ContactForm
@@ -51,107 +47,19 @@ def contact_list(request, site_id):
             | Q(phone__icontains=query)
             | Q(tags__name__icontains=query)
         ).distinct()
-    page_obj = paginate(
-        request,
-        contacts.select_related("membership").prefetch_related("tags"),
-    )
+    contacts = list(contacts.select_related("membership").prefetch_related("tags"))
     created_contact_id = request.GET.get("created", "")
-    for contact in page_obj.object_list:
+    for contact in contacts:
         contact.just_created = str(contact.id) == created_contact_id
     return render(
         request,
         "contacts/list.html",
         {
             "site": site,
-            "contacts": page_obj,
-            "page_obj": page_obj,
+            "contacts": contacts,
             "query": query,
             "selected_filter": selected_filter,
             "summary": summary,
-        },
-    )
-
-
-@site_staff_required
-def contact_detail(request, site_id, contact_id):
-    site = request.authorized_site
-    contact = get_object_or_404(
-        Contact.objects.for_site(site)
-        .select_related("membership")
-        .prefetch_related("tags", "consent_history"),
-        pk=contact_id,
-    )
-    registrations = contact.event_registrations.select_related(
-        "occurrence__event"
-    ).order_by("-responded_at")
-    invitations = contact.event_invitations.select_related(
-        "occurrence__event"
-    ).order_by("-created_at")
-    orders = contact.orders.select_related("occurrence__event").order_by("-created_at")
-    paid_orders = orders.filter(
-        status__in=[
-            Order.Status.PAID,
-            Order.Status.PARTIALLY_REFUNDED,
-            Order.Status.REFUNDED,
-        ]
-    )
-    documents = contact.documents.all()
-    if request.site_role.role != SiteRole.Role.SUBSCRIBER_ADMIN:
-        documents = documents.exclude(visibility="admin")
-    lifetime_spend_cents = paid_orders.aggregate(total=Sum("total_cents"))["total"] or 0
-    stats = {
-        "events_attended": registrations.filter(
-            response=Registration.Response.GOING
-        ).count(),
-        "events_invited": invitations.count(),
-        "responses": registrations.count(),
-        "lifetime_spend": lifetime_spend_cents / 100,
-    }
-    timeline = []
-    for registration in registrations[:30]:
-        timeline.append(
-            {
-                "at": registration.responded_at,
-                "label": f"Responded {registration.get_response_display()} to {registration.occurrence.event.title}",
-                "kind": "event",
-            }
-        )
-    for invitation in invitations[:30]:
-        timeline.append(
-            {
-                "at": invitation.created_at,
-                "label": f"Invited to {invitation.occurrence.event.title}",
-                "kind": "invitation",
-            }
-        )
-    for order in orders[:30]:
-        timeline.append(
-            {
-                "at": order.created_at,
-                "label": f"Order for {order.occurrence.event.title}: ${order.total_cents / 100:.2f} ({order.get_status_display()})",
-                "kind": "payment",
-            }
-        )
-    for document in documents[:30]:
-        timeline.append(
-            {
-                "at": document.created_at,
-                "label": f"Document uploaded: {document.title}",
-                "kind": "document",
-            }
-        )
-    timeline.sort(key=lambda item: item["at"], reverse=True)
-    return render(
-        request,
-        "contacts/detail.html",
-        {
-            "site": site,
-            "contact": contact,
-            "stats": stats,
-            "registrations": registrations[:20],
-            "orders": orders[:20],
-            "documents": documents,
-            "timeline": timeline[:50],
         },
     )
 

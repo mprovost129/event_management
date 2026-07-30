@@ -1,0 +1,54 @@
+{% extends "core/legal/base.html" %}
+
+{% block legal_intro %}How Gather HQs balances active service needs, safe deletion, subscriber export, financial integrity, consent evidence, legal obligations, and backup recovery.{% endblock %}
+
+{% block legal_content %}
+<section>
+    <h2>1. Retention principles</h2>
+    <p>Gather HQs keeps information only as long as reasonably needed to provide and secure the Service, honor subscriber and attendee requests, preserve reliable financial and consent history, resolve disputes, prevent fraud, meet legal obligations, and recover from operational failures. Different records require different periods.</p>
+</section>
+
+<section>
+    <h2>2. While a site or account is active</h2>
+    <p>Account, site, content, contact, event, registration, participant, attendance, membership, campaign, review, task, file, form, and related operational information is generally retained while the applicable account or subscriber site remains active and as needed afterward for the purposes in this policy.</p>
+    <p>Subscriber administrators can download a site data export where the Service provides one. An export may not include provider-controlled information, credentials, internal security data, or data that belongs to another person or tenant.</p>
+</section>
+
+<section>
+    <h2>3. Cancellation, suspension, and deletion requests</h2>
+    <p>Canceling a platform subscription stops future renewal as configured in the billing portal; it does not instantly erase a subscriber site. Immediate deletion could destroy refund, dispute, attendance, consent, safety, or tax evidence and could be difficult to reverse.</p>
+    <p>A site must be suspended, canceled, or archived before platform deletion can be requested. One platform administrator records the request and reason. A different platform administrator must approve it. After approval, the request remains cancelable and cannot be executed for at least <strong>{{ retention_days }} days</strong>. The final deletion action requires separate operator confirmation of the exact site.</p>
+    <p>This safeguarded period is a minimum operational hold, not a promise that every record will be erased exactly on day {{ retention_days }}. A request may be delayed when preservation is reasonably required by law, dispute, fraud investigation, security incident, court order, tax or accounting rule, provider obligation, or another documented exception.</p>
+</section>
+
+<section>
+    <h2>4. Records that may be kept longer</h2>
+    <p>Even after public content or an account is removed, Gather HQs or the relevant subscriber may retain limited records such as:</p>
+    <ul>
+        <li>orders, tickets, subscription invoices, refunds, disputes, application fees, payout references, and related financial transitions;</li>
+        <li>communication consent, withdrawal, unsubscribe, suppression, complaint, and delivery evidence;</li>
+        <li>security, authentication, moderation, support-access, export, deletion, and audit records;</li>
+        <li>agreement, waiver, attendance, incident, or event records needed for a valid legal or safety purpose;</li>
+        <li>information needed to detect duplicate abuse, enforce a restriction, or defend legal claims; and</li>
+        <li>de-identified or aggregated information that no longer identifies a person.</li>
+    </ul>
+    <p>Access to retained records is limited according to role and purpose. Retention does not permit use for an unrelated purpose.</p>
+</section>
+
+<section>
+    <h2>5. Messages, links, and temporary records</h2>
+    <p>Invitation, response, checkout, unsubscribe, and review capabilities are designed to expire, be revocable, or be stored in hashed form where the workflow permits. Queued message bodies are retained long enough for delivery and troubleshooting, then redacted after successful delivery or terminal failure under current operating rules. Provider identifiers and delivery status may remain for audit and suppression purposes.</p>
+    <p>Payment inventory holds and other temporary workflow records expire or are released under their applicable service rules. Expiration of a link does not necessarily delete the underlying event, consent, order, or attendance record.</p>
+</section>
+
+<section>
+    <h2>6. Backups and provider systems</h2>
+    <p>Encrypted or access-controlled backups are retained on a limited recovery cycle determined by the production infrastructure configuration. Deleted information may remain in a backup until that backup expires, but it is not restored to ordinary use unless needed for disaster recovery and remains subject to this policy.</p>
+    <p>Stripe, email providers, hosting providers, and other independent or contracted services retain information under their own legal and operational requirements. A Gather HQs deletion does not automatically erase a record another provider is legally entitled or required to retain.</p>
+</section>
+
+<section>
+    <h2>7. Individual requests</h2>
+    <p>For information held by a subscriber group, contact that group first. For a Gather HQs account or platform-controlled record, contact {% if privacy_email %}<a href="mailto:{{ privacy_email }}">{{ privacy_email }}</a>{% else %}support{% endif %}. We may verify identity, account ownership, or authority before exporting, correcting, or deleting information. We will explain an applicable exception when the law requires us to do so.</p>
+</section>
+{% endblock %}

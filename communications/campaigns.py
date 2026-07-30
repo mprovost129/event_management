@@ -233,7 +233,7 @@ def _marketing_body(campaign, unsubscribe_url):
 @transaction.atomic
 def expand_campaign(campaign_id):
     campaign = (
-        Campaign.objects.select_for_update(of=("self",))
+        Campaign.objects.select_for_update()
         .select_related("site", "sms_allowance")
         .get(pk=campaign_id)
     )

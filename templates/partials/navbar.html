@@ -13,9 +13,6 @@
             <a href="{% url 'payments:membership_plans' %}">Memberships</a>
             <a href="{% url 'content:newsletter' %}">{{ site_navigation.newsletter.navigation_label|default:"Newsletter" }}</a>
             {% if site_navigation.contact %}<a href="{% url 'content:contact' %}">{{ site_navigation.contact.navigation_label }}</a>{% endif %}
-            {% if public_site_management_role %}
-                <a class="btn btn-sm btn-outline-primary" href="{% url 'sites:dashboard' navbar_site.id %}">Back to dashboard</a>
-            {% endif %}
         </div>
         {% else %}
         <a class="navbar-brand fw-bold" href="{% url 'core:home' %}">{{ platform_name }}</a>
@@ -31,8 +28,7 @@
         {% else %}
         <div class="gh-navbar-actions ms-auto d-flex flex-wrap align-items-center gap-2">
             {% if user.is_authenticated %}
-                {% if user.is_superuser %}<a class="btn btn-outline-secondary" href="{% url 'ops:dashboard' %}">Platform operations</a><a class="btn btn-outline-secondary" href="{% url 'admin:index' %}">Admin</a>{% endif %}
-                <a class="btn btn-outline-secondary position-relative" href="{% url 'notifications:list' %}">Notifications{% if unread_notification_count %}<span class="badge text-bg-danger ms-1">{{ unread_notification_count }}</span>{% endif %}</a>
+                {% if user.is_superuser %}<a class="btn btn-outline-secondary" href="{% url 'ops:dashboard' %}">Platform operations</a>{% endif %}
                 <a class="btn btn-outline-primary" href="{% url 'sites:account_dashboard' %}">Dashboard</a>
                 <form method="post" action="{% url 'logout' %}" class="d-inline">
                     {% csrf_token %}

@@ -71,19 +71,13 @@ def operational_alerts(*, hours=24):
         threshold = timezone.now() - timedelta(
             seconds=settings.BACKGROUND_HEARTBEAT_MAX_AGE_SECONDS
         )
-        required_keys = ("worker_execution", "scheduler_dispatch_observed")
-        healthy_count = (
-            SystemHeartbeat.objects.filter(
-                key__in=required_keys, observed_at__gte=threshold
-            )
-            .values("key")
-            .distinct()
-            .count()
-        )
-        if healthy_count < len(required_keys):
-            add(
-                "background_processing_stale",
-                "Background processing heartbeat is stale",
-                1,
-            )
+        for key, label in (
+            ("worker_execution", "Worker heartbeat is stale"),
+            ("scheduler_dispatch_observed", "Scheduler heartbeat is stale"),
+        ):
+            healthy = SystemHeartbeat.objects.filter(
+                key=key, observed_at__gte=threshold
+            ).exists()
+            if not healthy:
+                add(f"{key}_stale", label, 1)
     return alerts

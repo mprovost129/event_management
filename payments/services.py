@@ -1,4 +1,3 @@
-import logging
 import secrets
 from datetime import datetime, timedelta
 
@@ -7,7 +6,7 @@ from django.conf import settings
 from django.core import signing
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from contacts.models import Contact, Member, MemberSubscription
@@ -29,8 +28,6 @@ from .models import (
     Ticket,
     TicketType,
 )
-
-logger = logging.getLogger(__name__)
 
 CHECKOUT_HOLD_MINUTES = 30
 REGISTRATION_TOKEN_SALT = "payments.registration-checkout"
@@ -246,46 +243,6 @@ def ticket_inventory(ticket_type, *, now=None):
         "held": held,
         "remaining": max(0, ticket_type.quantity - sold - held),
     }
-
-
-def ticket_inventory_map(ticket_types, *, now=None):
-    now = now or timezone.now()
-    ticket_types = list(ticket_types)
-    ticket_type_ids = [ticket_type.id for ticket_type in ticket_types]
-    sold_by_type = {
-        row["ticket_type_id"]: row["total"] or 0
-        for row in OrderLine.objects.filter(
-            ticket_type_id__in=ticket_type_ids,
-            order__status__in=(
-                Order.Status.PAID,
-                Order.Status.PARTIALLY_REFUNDED,
-                Order.Status.REFUNDED,
-                Order.Status.DISPUTED,
-            ),
-        )
-        .values("ticket_type_id")
-        .annotate(total=Sum("quantity"))
-    }
-    held_by_type = {
-        row["ticket_type_id"]: row["total"] or 0
-        for row in InventoryHold.objects.filter(
-            ticket_type_id__in=ticket_type_ids,
-            status=InventoryHold.Status.HELD,
-            expires_at__gt=now,
-        )
-        .values("ticket_type_id")
-        .annotate(total=Sum("quantity"))
-    }
-    inventory = {}
-    for ticket_type in ticket_types:
-        sold = sold_by_type.get(ticket_type.id, 0)
-        held = held_by_type.get(ticket_type.id, 0)
-        inventory[ticket_type.id] = {
-            "sold": sold,
-            "held": held,
-            "remaining": max(0, ticket_type.quantity - sold - held),
-        }
-    return inventory
 
 
 @transaction.atomic
@@ -937,11 +894,6 @@ def process_connect_event(event):
         inbox.error = str(exc)[:2000]
         inbox.attempts += 1
         inbox.save(update_fields=("status", "error", "attempts"))
-        logger.exception(
-            "Stripe Connect webhook failed event_id=%s account_id=%s",
-            event_id,
-            account_id,
-        )
         raise
     return inbox
 
@@ -1045,28 +997,22 @@ def commerce_summary(site):
             Order.Status.DISPUTED,
         )
     )
-    order_totals = settled_orders.aggregate(
-        gross=Sum("total_cents"),
-        refunds=Sum("refunded_cents"),
-        fees=Sum("stripe_fee_cents"),
-        application_fees=Sum("application_fee_cents"),
-        application_fee_refunds=Sum("application_fee_refunded_cents"),
+    gross = settled_orders.aggregate(total=Sum("total_cents"))["total"] or 0
+    refunds = settled_orders.aggregate(total=Sum("refunded_cents"))["total"] or 0
+    fees = settled_orders.aggregate(total=Sum("stripe_fee_cents"))["total"] or 0
+    application_fees = (
+        settled_orders.aggregate(total=Sum("application_fee_cents"))["total"] or 0
     )
-    gross = order_totals["gross"] or 0
-    refunds = order_totals["refunds"] or 0
-    fees = order_totals["fees"] or 0
-    application_fees = order_totals["application_fees"] or 0
-    application_fee_refunds = order_totals["application_fee_refunds"] or 0
+    application_fee_refunds = (
+        settled_orders.aggregate(total=Sum("application_fee_refunded_cents"))["total"]
+        or 0
+    )
     application_fee_net = application_fees - application_fee_refunds
     member_dues = (
         MembershipPayment.objects.for_site(site)
         .filter(status=MembershipPayment.Status.PAID)
         .aggregate(total=Sum("amount_paid_cents"))["total"]
         or 0
-    )
-    subscription_totals = subscriptions.aggregate(
-        active=Count("id", filter=Q(status=MemberSubscription.Status.ACTIVE)),
-        past_due=Count("id", filter=Q(status=MemberSubscription.Status.PAST_DUE)),
     )
     return {
         "ticket_gross_cents": gross,
@@ -1077,8 +1023,12 @@ def commerce_summary(site):
         "refunds_cents": refunds,
         "ticket_net_cents": gross - refunds - fees - application_fee_net,
         "member_dues_cents": member_dues,
-        "active_members": subscription_totals["active"],
-        "past_due_members": subscription_totals["past_due"],
+        "active_members": subscriptions.filter(
+            status=MemberSubscription.Status.ACTIVE
+        ).count(),
+        "past_due_members": subscriptions.filter(
+            status=MemberSubscription.Status.PAST_DUE
+        ).count(),
     }
 
 

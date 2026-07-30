@@ -8,7 +8,6 @@ urlpatterns = [
     path("dashboard/", views.account_dashboard, name="account_dashboard"),
     path("start/", views.onboarding, name="onboarding"),
     path("sites/<uuid:site_id>/", views.dashboard, name="dashboard"),
-    path("sites/<uuid:site_id>/quick-start/", views.quick_start, name="quick_start"),
     path(
         "sites/<uuid:site_id>/launch/",
         views.launch_center,

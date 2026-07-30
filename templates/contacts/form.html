@@ -15,6 +15,6 @@
 
         {% if contact and not contact.archived_at %}<section class="gh-archive-contact"><h2>Archive contact</h2><p>Removes this person from active directory and invitation choices. Historical event and payment records remain.</p><button class="btn btn-outline-danger" type="submit" form="archive-contact-form">Archive contact</button></section>{% endif %}</aside>
     </form>
-    {% if contact and not contact.archived_at %}<form method="post" action="{% url 'contacts:archive' site.id contact.id %}" id="archive-contact-form" onsubmit="return confirm('Archive this contact? Their historical records will remain.')">{% csrf_token %}</form>{% endif %}
+    {% if contact and not contact.archived_at %}<form method="post" action="{% url 'contacts:archive' site.id contact.id %}" id="archive-contact-form">{% csrf_token %}</form>{% endif %}
 </div>
 {% endblock %}

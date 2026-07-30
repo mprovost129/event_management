@@ -98,44 +98,6 @@ def test_paid_invoice_recovers_site_from_grace():
 
 
 @pytest.mark.django_db
-def test_delayed_older_webhook_cannot_regress_subscription_state():
-    _, site, subscription = create_subscription_fixture()
-    subscription.stripe_subscription_id = "sub_123"
-    subscription.status = PlatformSubscription.Status.GRACE
-    subscription.save()
-    site.status = Site.Status.GRACE
-    site.save()
-    newer = int(timezone.now().timestamp())
-
-    process_stripe_event(
-        {
-            "id": "evt_invoice_paid_newer",
-            "type": "invoice.paid",
-            "created": newer,
-            "data": {"object": {"id": "in_paid", "subscription": "sub_123"}},
-        }
-    )
-    process_stripe_event(
-        {
-            "id": "evt_payment_failed_older",
-            "type": "invoice.payment_failed",
-            "created": newer - 300,
-            "data": {"object": {"id": "in_failed", "subscription": "sub_123"}},
-        }
-    )
-
-    subscription.refresh_from_db()
-    site.refresh_from_db()
-    assert subscription.status == PlatformSubscription.Status.ACTIVE
-    assert subscription.grace_ends_at is None
-    assert site.status == Site.Status.ACTIVE
-    assert StripeWebhookEvent.objects.filter(
-        stripe_event_id="evt_payment_failed_older",
-        status=StripeWebhookEvent.Status.PROCESSED,
-    ).exists()
-
-
-@pytest.mark.django_db
 def test_paused_subscription_suspends_site_access():
     _, site, subscription = create_subscription_fixture()
     subscription.stripe_subscription_id = "sub_123"
