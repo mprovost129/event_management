@@ -6,6 +6,9 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Added
 
+- An idempotent subscription-schema repair migration that restores
+  `last_stripe_event_created_at` when an earlier deployed removal left the
+  production database out of sync with the restored model.
 - A fail-closed Cloudmersive Advanced Virus Scan backend, Render configuration
   for the free tier's 3.5 MB maximum, configuration checks, scanner tests,
   operating guidance, and privacy/subprocessor disclosure. ClamAV remains an
