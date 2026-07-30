@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from django.db import transaction
@@ -8,6 +9,8 @@ from contacts.models import ConsentStatus
 from contacts.services import set_consent_status
 
 from .models import CampaignRecipient, OutboundMessage, ProviderCallbackEvent
+
+logger = logging.getLogger(__name__)
 
 EVENT_STATUS = {
     "sent": OutboundMessage.Status.SENT,
@@ -79,7 +82,7 @@ def process_provider_callback(
                 pk=callback.pk
             )
             message = (
-                OutboundMessage.objects.select_for_update()
+                OutboundMessage.objects.select_for_update(of=("self",))
                 .select_related("contact", "campaign_recipient")
                 .filter(provider=provider, provider_message_id=provider_message_id)
                 .first()
@@ -152,6 +155,11 @@ def process_provider_callback(
         ProviderCallbackEvent.objects.filter(pk=callback.pk).update(
             status=ProviderCallbackEvent.Status.FAILED,
             error=str(exc)[:2000],
+        )
+        logger.exception(
+            "Provider callback failed provider=%s event_id=%s",
+            provider,
+            provider_event_id,
         )
         raise
     return callback

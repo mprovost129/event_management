@@ -37,9 +37,12 @@ def public_write_rate_limit(scope):
         def wrapped(request, *args, **kwargs):
             if request.method != "POST":
                 return view_func(request, *args, **kwargs)
+            resolved_scope = (
+                scope(request, *args, **kwargs) if callable(scope) else scope
+            )
             limit = settings.PUBLIC_WRITE_RATE_LIMIT_MAX
             window = settings.PUBLIC_WRITE_RATE_LIMIT_WINDOW_SECONDS
-            key = _rate_limit_key(request, scope)
+            key = _rate_limit_key(request, resolved_scope)
             try:
                 if cache.add(key, 1, timeout=window):
                     count = 1

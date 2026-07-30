@@ -19,6 +19,9 @@ PLATFORM_CONTROL_HOSTS = env_list(
     "PLATFORM_CONTROL_HOSTS", (PLATFORM_DOMAIN, f"www.{PLATFORM_DOMAIN}")
 )
 PLATFORM_DEFAULT_CURRENCY = env("PLATFORM_DEFAULT_CURRENCY", "usd").lower()
+RELEASE_VERSION = env(
+    "RELEASE_VERSION", env("RENDER_GIT_COMMIT", "development", allow_blank=True)
+)
 STRIPE_STANDARD_MONTHLY_PRICE_ID = env(
     "STRIPE_STANDARD_MONTHLY_PRICE_ID",
     "price_1TyGKX2dujKmWAFggUOrejZz",
@@ -65,6 +68,18 @@ PUBLIC_WRITE_RATE_LIMIT_WINDOW_SECONDS = env_int(
     "PUBLIC_WRITE_RATE_LIMIT_WINDOW_SECONDS", 900
 )
 RATE_LIMIT_TRUSTED_PROXY_COUNT = env_int("RATE_LIMIT_TRUSTED_PROXY_COUNT", 0)
+DOCUMENT_UPLOAD_MAX_BYTES = env_int("DOCUMENT_UPLOAD_MAX_BYTES", 10 * 1024 * 1024)
+DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS = tuple(
+    extension.lower().lstrip(".")
+    for extension in env_list(
+        "DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS",
+        ("csv", "doc", "docx", "jpeg", "jpg", "pdf", "png", "txt", "xls", "xlsx"),
+    )
+)
+DOCUMENT_UPLOAD_SCAN_BACKEND = env("DOCUMENT_UPLOAD_SCAN_BACKEND", "disabled").lower()
+CLAMAV_HOST = env("CLAMAV_HOST", "localhost")
+CLAMAV_PORT = env_int("CLAMAV_PORT", 3310)
+CLAMAV_TIMEOUT_SECONDS = env_int("CLAMAV_TIMEOUT_SECONDS", 10)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -88,6 +103,8 @@ INSTALLED_APPS = [
     "attendance.apps.AttendanceConfig",
     "payments.apps.PaymentsConfig",
     "reviews.apps.ReviewsConfig",
+    "notifications.apps.NotificationsConfig",
+    "workspace.apps.WorkspaceConfig",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -129,6 +146,8 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.platform",
                 "content.context_processors.site_navigation",
+                "sites.context_processors.site_management",
+                "notifications.context_processors.notifications",
             ],
         },
     },
@@ -241,16 +260,6 @@ EMAIL_HOST_USER = env("EMAIL_HOST_USER", "", allow_blank=True)
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "", allow_blank=True)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "webmaster@localhost")
 SUPPORT_EMAIL = env("SUPPORT_EMAIL", "", allow_blank=True)
-LEGAL_BUSINESS_NAME = env("LEGAL_BUSINESS_NAME", PLATFORM_NAME)
-LEGAL_POSTAL_ADDRESS = env("LEGAL_POSTAL_ADDRESS", "", allow_blank=True)
-LEGAL_EFFECTIVE_DATE = env("LEGAL_EFFECTIVE_DATE", "July 30, 2026")
-LEGAL_GOVERNING_LAW = env(
-    "LEGAL_GOVERNING_LAW", "the laws of the Commonwealth of Massachusetts"
-)
-LEGAL_VENUE = env("LEGAL_VENUE", "the state or federal courts located in Massachusetts")
-PRIVACY_EMAIL = env("PRIVACY_EMAIL", SUPPORT_EMAIL, allow_blank=True)
-SECURITY_EMAIL = env("SECURITY_EMAIL", SUPPORT_EMAIL, allow_blank=True)
-LEGAL_DRAFT = env_bool("LEGAL_DRAFT", True)
 EMAIL_DELIVERY_BACKEND = env("EMAIL_DELIVERY_BACKEND", "django").lower()
 RESEND_API_KEY = env("RESEND_API_KEY", "", allow_blank=True)
 RESEND_WEBHOOK_SECRET = env("RESEND_WEBHOOK_SECRET", "", allow_blank=True)
@@ -279,7 +288,7 @@ LOGGING = {
     "formatters": {
         "plain": {
             "format": "{levelname} {asctime} {name} request_id={request_id} "
-            "site_id={site_id} {message}",
+            "site_id={site_id} release={release} {message}",
             "style": "{",
         },
         "json": {
@@ -313,3 +322,7 @@ CSRF_COOKIE_SAMESITE = "Lax"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
+
+# Optional AI content assistant. Without a key, the workspace uses a clearly marked local draft template.
+OPENAI_API_KEY = env("OPENAI_API_KEY", "", allow_blank=True)
+OPENAI_MODEL = env("OPENAI_MODEL", "gpt-4.1-mini")

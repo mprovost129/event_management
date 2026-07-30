@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import RedirectView
 
 handler400 = "core.error_views.bad_request"
 handler403 = "core.error_views.permission_denied"
@@ -9,6 +10,13 @@ handler404 = "core.error_views.page_not_found"
 handler500 = "core.error_views.server_error"
 
 urlpatterns = [
+    path(
+        "admin/",
+        RedirectView.as_view(
+            pattern_name="admin:index", permanent=False, query_string=True
+        ),
+        name="admin_alias",
+    ),
     path("platform-admin/", admin.site.urls),
     path("", include("ops.urls")),
     path("accounts/", include("users.urls")),
@@ -21,6 +29,8 @@ urlpatterns = [
     path("", include("events.urls")),
     path("", include("attendance.urls")),
     path("", include("reviews.urls")),
+    path("", include("notifications.urls")),
+    path("", include("workspace.urls")),
     path("", include("sites.urls")),
     path("", include("core.urls")),
 ]

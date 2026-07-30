@@ -5,7 +5,9 @@ from unittest.mock import patch
 import pytest
 import stripe
 from django.core.exceptions import ValidationError
+from django.db import connection
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -40,6 +42,7 @@ from payments.services import (
     start_member_subscription,
     synchronize_connected_account,
     ticket_inventory,
+    ticket_inventory_map,
 )
 from payments.tasks import reconcile_connected_accounts
 from sites.services import create_subscriber_site
@@ -119,6 +122,30 @@ def test_paid_rsvp_waits_for_payment_before_capacity_or_check_in():
     assert occurrence_metrics(occurrence)["participants"] == 0
     with pytest.raises(ValidationError, match="Only active going"):
         set_check_in(participant=participant, actor=owner, checked_in=True)
+
+
+@pytest.mark.django_db
+def test_bulk_ticket_inventory_queries_do_not_grow_with_ticket_types():
+    _, site, _, occurrence, ticket_type, _ = commerce_fixture()
+    ticket_types = [ticket_type]
+    for index in range(9):
+        ticket_types.append(
+            TicketType.objects.create(
+                site=site,
+                occurrence=occurrence,
+                name=f"Admission {index}",
+                amount_cents=1000 + index,
+                currency=site.currency,
+                quantity=20,
+            )
+        )
+
+    with CaptureQueriesContext(connection) as queries:
+        inventory = ticket_inventory_map(ticket_types)
+
+    assert len(inventory) == 10
+    assert inventory[ticket_type.id]["remaining"] == ticket_type.quantity
+    assert len(queries) <= 2, [query["sql"] for query in queries]
 
 
 @pytest.mark.django_db

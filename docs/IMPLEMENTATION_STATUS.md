@@ -1,6 +1,6 @@
 # Implementation Status
 
-Last updated: July 30, 2026
+Last updated: July 29, 2026
 
 ## Phase 0 - Foundation and decision records
 
@@ -281,38 +281,3 @@ Automated verification includes cross-tenant denial, suspended-site recovery bou
 Verified locally: 156 tests pass, the PostgreSQL-only simultaneous-capacity assertion remains selected for CI, Ruff lint passes, migration drift is clean, and Django system checks report no issues. The strict production deployment check passes with zero warnings when all required production values are supplied. The Render Blueprint and deployment guide are ready for account-side review and application.
 
 Launch remains blocked until every external-evidence item in `LAUNCH_CHECKLIST.md` is signed off, especially real provider sandbox flows, the production-like 100-user drill, manual accessibility review, legal approval, and an isolated backup restore.
-
-## Legal center expansion
-
-Status: Product-specific draft implementation complete; business and
-professional approval remain launch blockers.
-
-Completed:
-
-- A responsive Legal Center with dedicated Terms, Privacy, Cookies,
-  Payments/Cancellations/Refunds, Acceptable Use, Retention, Security, and
-  Review Guidelines pages
-- Clear separation of Gather HQs platform responsibilities from each
-  subscriber's event, membership, communication, safety, and refund
-  responsibilities
-- Product-specific language for the no-card trial, recurring platform billing,
-  connected Stripe commerce, the ticket application fee, consent-aware
-  campaigns, minor-participant information, reviews, and delayed site deletion
-- Environment-controlled business identity, public postal address, effective
-  date, governing law, venue, privacy email, security email, and draft status
-- Production deployment failures while policies remain drafts or the public
-  postal address is missing
-- A legal launch review identifying the remaining product controls that policy
-  text cannot replace
-
-Verified for the installed core application set:
-
-- 160 tests pass and the PostgreSQL-only concurrency test is selected for CI
-- Ruff lint and formatting checks pass
-- All eight policy routes and the Legal Center render successfully
-
-Known package issue:
-
-- The separate `workspace` and `notifications` source trees remain unregistered
-  and incomplete in this ZIP. The default full test command stops during their
-  collection. See `APPLICATION_REVIEW_2026-07-30.md`.

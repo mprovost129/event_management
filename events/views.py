@@ -1,14 +1,16 @@
 from decimal import Decimal
 
 from django.contrib import messages
-from django.db.models import Avg
+from django.db.models import Avg, Count, Prefetch, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
+from core.pagination import paginate
 from core.rate_limits import public_write_rate_limit
+from notifications.services import notify_registration_response
 from ops.services import record_audit_event
 from payments.services import registration_checkout_token, ticket_inventory
 from sites.permissions import site_staff_required
@@ -45,20 +47,75 @@ def _public_site(request):
 @site_staff_required
 def manage_events(request, site_id):
     site = request.authorized_site
-    events = Event.objects.for_site(site).prefetch_related("occurrences")
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "all")
+    occurrences = EventOccurrence.objects.annotate(
+        going_metric=Count(
+            "registrations",
+            filter=Q(registrations__response=Registration.Response.GOING),
+            distinct=True,
+        ),
+        maybe_metric=Count(
+            "registrations",
+            filter=Q(registrations__response=Registration.Response.MAYBE),
+            distinct=True,
+        ),
+        participants_metric=Count(
+            "registrations__participants",
+            filter=Q(
+                registrations__payment_status__in=(
+                    Registration.PaymentStatus.NOT_REQUIRED,
+                    Registration.PaymentStatus.PAID,
+                ),
+                registrations__participants__status="active",
+            ),
+            distinct=True,
+        ),
+    )
+    events_qs = Event.objects.for_site(site).prefetch_related(
+        Prefetch("occurrences", queryset=occurrences)
+    )
+    if status in Event.Status.values:
+        events_qs = events_qs.filter(status=status)
+    else:
+        status = "all"
+    if query:
+        events_qs = events_qs.filter(
+            Q(title__icontains=query)
+            | Q(description__icontains=query)
+            | Q(host_name__icontains=query)
+        )
+    events = paginate(
+        request,
+        events_qs.order_by("title", "id"),
+        per_page=20,
+    )
     created_event_id = request.GET.get("created", "")
     for event in events:
         event.just_created = str(event.id) == created_event_id
         occurrences = list(event.occurrences.all())
         event.first_occurrence = occurrences[0] if occurrences else None
         for occurrence in occurrences:
-            occurrence.metrics = occurrence_metrics(occurrence)
+            occurrence.metrics = {
+                "going": occurrence.going_metric,
+                "maybe": occurrence.maybe_metric,
+                "participants": occurrence.participants_metric,
+                "capacity_remaining": (
+                    None
+                    if occurrence.capacity is None
+                    else max(0, occurrence.capacity - occurrence.participants_metric)
+                ),
+            }
     return render(
         request,
         "events/manage.html",
         {
             "site": site,
             "events": events,
+            "page_obj": events,
+            "query": query,
+            "selected_status": status,
+            "status_choices": Event.Status.choices,
             "canonical_domain": site.domains.filter(is_canonical=True).first(),
         },
     )
@@ -434,6 +491,7 @@ def public_response(request, slug, occurrence_id):
             form.add_error(None, str(exc))
         else:
             queue_confirmation(registration, history)
+            notify_registration_response(registration, history)
             return render(
                 request,
                 "public/rsvp_complete.html",
@@ -481,6 +539,7 @@ def invitation_response(request, token):
             form.add_error(None, str(exc))
         else:
             queue_confirmation(registration, history)
+            notify_registration_response(registration, history)
             return render(
                 request,
                 "public/rsvp_complete.html",

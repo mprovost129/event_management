@@ -6,10 +6,8 @@
                 {% if footer_site %}{{ footer_site.display_name }} &middot; Powered by Gather HQs{% else %}{{ platform_name }}{% endif %}
             </small>
             <nav class="d-flex flex-wrap gap-3" aria-label="Legal information">
-                <a href="{% url 'core:legal' %}">Legal center</a>
                 <a href="{% url 'core:privacy' %}">Privacy</a>
                 <a href="{% url 'core:terms' %}">Terms</a>
-                <a href="{% url 'core:refunds' %}">Payments &amp; refunds</a>
                 <a href="{% url 'core:acceptable_use' %}">Acceptable use</a>
                 <a href="{% url 'core:review_guidelines' %}">Review guidelines</a>
                 {% if support_email %}<a href="mailto:{{ support_email }}">Support</a>{% endif %}

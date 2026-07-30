@@ -12,6 +12,13 @@
         <a class="btn btn-primary" href="{% url 'communications:campaign_create' site.id %}">Create campaign</a>
     </div>
 
+    <form method="get" class="row g-2 mb-4" role="search">
+        <div class="col-md"><label class="visually-hidden" for="campaign-search">Search campaigns</label><input class="form-control" id="campaign-search" type="search" name="q" value="{{ query }}" placeholder="Search campaign name or content"></div>
+        <div class="col-md-3"><label class="visually-hidden" for="campaign-status">Campaign status</label><select class="form-select" id="campaign-status" name="status"><option value="all">All statuses</option>{% for value, label in status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><label class="visually-hidden" for="campaign-channel">Campaign channel</label><select class="form-select" id="campaign-channel" name="channel"><option value="all">All channels</option>{% for value, label in channel_choices %}<option value="{{ value }}"{% if selected_channel == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+        <div class="col-md-auto"><button class="btn btn-outline-primary" type="submit">Filter</button></div>
+    </form>
+
     {% if campaigns %}
     <div class="gh-campaign-list">
         {% for campaign in campaigns %}
@@ -32,7 +39,7 @@
         {% endfor %}
     </div>
     {% else %}
-    <div class="gh-empty-note gh-campaign-empty"><span class="gh-campaign-mark" aria-hidden="true">EM</span><h2>Send your first group update</h2><p>Start from scratch here, or write a blog post and use it as the beginning of a newsletter.</p><div><a class="btn btn-primary" href="{% url 'communications:campaign_create' site.id %}">Create campaign</a> <a class="btn btn-link" href="{% url 'content:blog_create' site.id %}">Write a blog post</a></div></div>
+    <div class="gh-empty-note gh-campaign-empty"><span class="gh-campaign-mark" aria-hidden="true">EM</span><h2>{% if query or selected_status != 'all' or selected_channel != 'all' %}No campaigns match these filters{% else %}Send your first group update{% endif %}</h2><p>{% if query or selected_status != 'all' or selected_channel != 'all' %}Try another search, status, or channel.{% else %}Start from scratch here, or write a blog post and use it as the beginning of a newsletter.{% endif %}</p>{% if not query and selected_status == 'all' and selected_channel == 'all' %}<div><a class="btn btn-primary" href="{% url 'communications:campaign_create' site.id %}">Create campaign</a> <a class="btn btn-link" href="{% url 'content:blog_create' site.id %}">Write a blog post</a></div>{% endif %}</div>
     {% endif %}
 </div>
 {% endblock %}

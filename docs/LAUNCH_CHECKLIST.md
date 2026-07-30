@@ -21,10 +21,7 @@
 - [ ] Keyboard-only, screen-reader, zoom, contrast, and small-phone checks are signed off using `ACCESSIBILITY_REVIEW.md`.
 - [ ] A backup restores into isolation and `post_restore_verify` plus representative UI checks pass.
 - [ ] Provider outage/recovery drill succeeds without manually changing payment or delivery state.
-- [ ] Terms, Privacy, Cookies, Payments/Cancellations/Refunds, Acceptable Use, Retention, Security, and Review Guidelines receive legal/business approval.
-- [ ] `LEGAL_BUSINESS_NAME`, `LEGAL_POSTAL_ADDRESS`, `LEGAL_EFFECTIVE_DATE`, governing law, venue, privacy email, and security email are final; `LEGAL_DRAFT=false`.
-- [ ] Paid-event setup collects and publicly displays the subscriber's event-specific refund/cancellation policy before checkout.
-- [ ] Marketing email includes the legally required sender identity and physical postal address for the initiating subscriber; SMS stays disabled until provider-level STOP/HELP and opt-out handling are proven.
+- [ ] Privacy notice, terms, acceptable-use policy, review guidelines, retention policy, support contact, and subscriber refund responsibilities receive legal/business approval.
 - [ ] DNS, TLS, object-storage CORS/access, sender DNS, monitoring destinations, and alert recipients are verified.
 - [ ] Root, `www`, and wildcard subscriber DNS resolve to Render without disturbing Resend's sending-domain records.
 - [ ] `SUPPORT_EMAIL` points to a staffed, tested mailbox on the production domain.

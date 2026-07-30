@@ -4,12 +4,14 @@ import json
 
 from django.conf import settings
 from django.contrib import messages
+from django.db.models import Count, Q
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 
 from content.models import BlogPost
+from core.pagination import paginate
 from ops.services import record_audit_event
 from sites.permissions import site_staff_required
 
@@ -32,13 +34,67 @@ from .resend_webhooks import process_resend_webhook
 @site_staff_required
 def campaign_list(request, site_id):
     site = request.authorized_site
-    campaigns = Campaign.objects.for_site(site).select_related("created_by")
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "all")
+    channel = request.GET.get("channel", "all")
+    campaigns_qs = (
+        Campaign.objects.for_site(site)
+        .select_related("created_by")
+        .annotate(
+            sent_metric=Count(
+                "recipients",
+                filter=Q(recipients__sent_at__isnull=False),
+                distinct=True,
+            ),
+            delivered_metric=Count(
+                "recipients",
+                filter=Q(recipients__delivered_at__isnull=False),
+                distinct=True,
+            ),
+            failed_metric=Count(
+                "recipients",
+                filter=Q(recipients__status="failed"),
+                distinct=True,
+            ),
+        )
+    )
+    if status in Campaign.Status.values:
+        campaigns_qs = campaigns_qs.filter(status=status)
+    else:
+        status = "all"
+    if channel in Campaign.Channel.values:
+        campaigns_qs = campaigns_qs.filter(channel=channel)
+    else:
+        channel = "all"
+    if query:
+        campaigns_qs = campaigns_qs.filter(
+            Q(name__icontains=query)
+            | Q(subject__icontains=query)
+            | Q(body__icontains=query)
+        )
+    campaigns = paginate(
+        request,
+        campaigns_qs.order_by("-created_at", "id"),
+    )
     for campaign in campaigns:
-        campaign.metrics = campaign_metrics(campaign)
+        campaign.metrics = {
+            "sent": campaign.sent_metric,
+            "delivered": campaign.delivered_metric,
+            "failed": campaign.failed_metric,
+        }
     return render(
         request,
         "communications/campaign_list.html",
-        {"site": site, "campaigns": campaigns},
+        {
+            "site": site,
+            "campaigns": campaigns,
+            "query": query,
+            "selected_status": status,
+            "selected_channel": channel,
+            "status_choices": Campaign.Status.choices,
+            "channel_choices": Campaign.Channel.choices,
+            "page_obj": campaigns,
+        },
     )
 
 

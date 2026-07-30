@@ -59,7 +59,7 @@ def participant_can_review(participant, *, now=None):
 @transaction.atomic
 def save_review(*, participant, rating, comment):
     participant = (
-        Participant.objects.select_for_update()
+        Participant.objects.select_for_update(of=("self",))
         .select_related("registration__occurrence", "attendance_status")
         .get(pk=participant.pk)
     )

@@ -37,6 +37,13 @@ Use `ruff check . --fix` and `ruff format .` for automated formatting. Migration
 
 Local tests use an isolated SQLite database by default for fast feedback. CI sets `TEST_DATABASE_ENGINE=postgresql` and remains the authoritative PostgreSQL integration gate.
 
+When a transactional queryset combines `select_for_update()` with
+`select_related()` across an optional foreign key or reverse one-to-one relation,
+scope the lock with `select_for_update(of=("self",))` or load the optional relation
+separately. PostgreSQL rejects an unscoped `FOR UPDATE` when a nullable relation
+requires an outer join; SQLite does not expose that incompatibility during local
+tests.
+
 ## Product configuration
 
 The confirmed production brand is Gather HQs, expanded as Gather Headquarters. The tenant root is `gatherhqs.com`, producing addresses such as `boot-scooters.gatherhqs.com`. The following remain environment values so local, CI, staging, and production hosts stay isolated:
@@ -52,22 +59,8 @@ The confirmed production brand is Gather HQs, expanded as Gather Headquarters. T
 - `STRIPE_STANDARD_YEARLY_LOOKUP_KEY`
 - `STANDARD_MONTHLY_AMOUNT_CENTS`
 - `STANDARD_YEARLY_AMOUNT_CENTS`
-- `LEGAL_BUSINESS_NAME`
-- `LEGAL_POSTAL_ADDRESS`
-- `LEGAL_EFFECTIVE_DATE`
-- `LEGAL_GOVERNING_LAW`
-- `LEGAL_VENUE`
-- `PRIVACY_EMAIL`
-- `SECURITY_EMAIL`
-- `LEGAL_DRAFT`
 
 The Standard plan is $20 monthly or $220 yearly. Platform billing also requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`; keep those secrets blank in local development when testing non-payment flows. Checkout fails closed with a useful message rather than attempting a provider call when its Stripe secret is unavailable.
-
-`LEGAL_DRAFT` must remain `true` until the business identity, public mailing
-address, policy text, governing law, and venue have been approved. Production
-deployment checks fail while the policies are marked as drafts or
-`LEGAL_POSTAL_ADDRESS` is blank. Set `LEGAL_DRAFT=false` only after the final
-review and set `LEGAL_EFFECTIVE_DATE` to the approved version date.
 
 ## Phase 1 flows
 
@@ -271,11 +264,17 @@ That command permanently deletes the site and its retained tenant records. Gener
 
 Production uses an S3-compatible bucket through `django-storages`. Configure `MEDIA_STORAGE_BACKEND=s3`, the bucket, its region or endpoint, and credentials supplied by the hosting platform. Local filesystem media is intentionally rejected by the deployment system check.
 
+Organization-document uploads are restricted by `DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS` and `DOCUMENT_UPLOAD_MAX_BYTES` (10 MiB by default). Staff downloads pass through tenant and role authorization before storage is read. Local development may use `DOCUMENT_UPLOAD_SCAN_BACKEND=disabled`. Production checks require `DOCUMENT_UPLOAD_SCAN_BACKEND=clamav`; uploads are streamed to the private ClamAV service configured by `CLAMAV_HOST`, `CLAMAV_PORT`, and `CLAMAV_TIMEOUT_SECONDS` before storage. Detection, scanner outages, and unexpected scanner responses fail closed and leave the upload unsaved.
+
 Subscriber-provided HTML, CSS, and JavaScript must not be written directly into static files. Public template customization will use validated theme tokens and media records.
 
 ## Request tracing and auditing
 
-Every response receives a bounded `X-Request-ID`. Application logs include that request ID and a site ID placeholder. Future host-resolution middleware will set the site context after it identifies the tenant.
+Every response receives a bounded `X-Request-ID`. Application logs include that request ID, a site ID placeholder, and the immutable release identifier from `RELEASE_VERSION` or Render's `RENDER_GIT_COMMIT`. Future host-resolution middleware will set the site context after it identifies the tenant.
+
+Production authentication is shared across the control domain and tenant subdomains with `SESSION_COOKIE_DOMAIN` and `CSRF_COOKIE_DOMAIN` set to `.gatherhqs.com`. This lets an authenticated site administrator open the public site and use the staff-only **Back to dashboard** navigation control. After changing either cookie-domain setting, sign out and sign back in so the browser receives the replacement domain cookie.
+
+Django administration is available to superusers at `/platform-admin/`. The familiar `/admin/` path redirects there, and authenticated superusers also receive an **Admin** navigation control. Platform administration and operations paths return 404 on tenant subdomains and must be used on the control domain.
 
 Use `ops.services.record_audit_event` for privileged or sensitive domain actions such as role changes, refunds, moderation, exports, support access, and deletion requests. Summaries must contain identifiers and safe state descriptions, not credentials, payment payloads, message bodies, or unrestricted personal data.
 

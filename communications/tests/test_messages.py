@@ -3,6 +3,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from django.core import mail
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from communications.models import OutboundMessage
@@ -79,6 +80,40 @@ def test_outbound_delivery_is_idempotent():
     assert message.status == OutboundMessage.Status.SENT
     assert message.body == ""
     assert len(mail.outbox) == 1
+
+
+@pytest.mark.django_db
+def test_outbound_service_rejects_cross_tenant_relationships():
+    _, site, _ = reminder_fixture()
+    other_owner = User.objects.create_user(
+        email="other@example.com",
+        password="Strong-Test-Pass-2026!",
+        email_verified_at=timezone.now(),
+    )
+    other_site = create_subscriber_site(
+        owner=other_owner,
+        display_name="Other Site",
+        slug="other-site",
+        timezone_name="America/New_York",
+    )
+    foreign_contact = Contact.objects.create(
+        site=other_site,
+        first_name="Foreign",
+        last_name="Contact",
+        email="foreign@example.com",
+    )
+
+    with pytest.raises(ValidationError, match="contact must belong"):
+        enqueue_message(
+            site=site,
+            contact=foreign_contact,
+            kind=OutboundMessage.Kind.EVENT_UPDATE,
+            recipient_email=foreign_contact.email,
+            subject="Wrong tenant",
+            body="This must not be created.",
+        )
+
+    assert not OutboundMessage.objects.filter(subject="Wrong tenant").exists()
 
 
 @pytest.mark.django_db
