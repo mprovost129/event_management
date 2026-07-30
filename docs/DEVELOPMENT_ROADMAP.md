@@ -149,6 +149,7 @@ Make the existing platform reliable, consistent, responsive, accessible, and rea
 
 - Restored a passing Ruff lint/format gate for the Phase 1–7 additions.
 - Corrected CI to run the suite against its PostgreSQL service, including the authoritative concurrency coverage.
+- Scoped transactional row locks away from nullable outer joins in campaign, delivery, review, and site-deletion workflows so PostgreSQL can execute the covered operations safely.
 - Added `notifications` and `workspace` to pytest discovery plus regression and cross-tenant coverage for their core workflows.
 - Added application-authorized private document downloads, upload size/type validation, and subscriber-administrator-only document enforcement.
 - Fixed notification creation without dedupe keys and organization-insight CSV export failures/formula injection risk.

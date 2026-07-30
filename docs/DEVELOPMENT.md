@@ -37,6 +37,13 @@ Use `ruff check . --fix` and `ruff format .` for automated formatting. Migration
 
 Local tests use an isolated SQLite database by default for fast feedback. CI sets `TEST_DATABASE_ENGINE=postgresql` and remains the authoritative PostgreSQL integration gate.
 
+When a transactional queryset combines `select_for_update()` with
+`select_related()` across an optional foreign key or reverse one-to-one relation,
+scope the lock with `select_for_update(of=("self",))` or load the optional relation
+separately. PostgreSQL rejects an unscoped `FOR UPDATE` when a nullable relation
+requires an outer join; SQLite does not expose that incompatibility during local
+tests.
+
 ## Product configuration
 
 The confirmed production brand is Gather HQs, expanded as Gather Headquarters. The tenant root is `gatherhqs.com`, producing addresses such as `boot-scooters.gatherhqs.com`. The following remain environment values so local, CI, staging, and production hosts stay isolated:

@@ -9,7 +9,6 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health/live/
     autoDeployTrigger: checksPass
-    maxShutdownDelaySeconds: 30
     domains:
       - gatherhqs.com
       - "*.gatherhqs.com"
