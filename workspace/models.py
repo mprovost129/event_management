@@ -22,6 +22,12 @@ class Activity(SiteOwnedModel):
     class Meta:
         ordering = ("-created_at",)
         verbose_name_plural = "activities"
+        indexes = [
+            models.Index(
+                fields=("site", "kind", "-created_at"),
+                name="ws_activity_site_kind_time",
+            )
+        ]
 
     def __str__(self):
         return self.verb
@@ -74,6 +80,12 @@ class WorkTask(SiteOwnedModel):
 
     class Meta:
         ordering = ("completed_at", "due_at", "-priority", "created_at")
+        indexes = [
+            models.Index(
+                fields=("site", "status", "due_at"),
+                name="ws_task_site_status_due",
+            )
+        ]
 
     def clean(self):
         super().clean()
@@ -192,6 +204,12 @@ class Document(SiteOwnedModel):
 
     class Meta:
         ordering = ("-created_at",)
+        indexes = [
+            models.Index(
+                fields=("site", "category", "-created_at"),
+                name="ws_doc_site_cat_time",
+            )
+        ]
 
     def clean(self):
         super().clean()
@@ -226,6 +244,9 @@ class VolunteerProfile(SiteOwnedModel):
 
     class Meta:
         ordering = ("contact__last_name", "contact__first_name")
+        indexes = [
+            models.Index(fields=("site", "status"), name="ws_volunteer_site_status")
+        ]
 
     def clean(self):
         super().clean()
@@ -236,6 +257,8 @@ class VolunteerProfile(SiteOwnedModel):
 
     @property
     def total_hours(self):
+        if hasattr(self, "total_hours_value"):
+            return self.total_hours_value
         return sum((entry.hours for entry in self.hour_entries.all()), 0)
 
     def __str__(self):
@@ -380,6 +403,9 @@ class Sponsor(SiteOwnedModel):
 
     class Meta:
         ordering = ("name",)
+        indexes = [
+            models.Index(fields=("site", "status"), name="ws_sponsor_site_status")
+        ]
 
     def __str__(self):
         return self.name
@@ -475,6 +501,9 @@ class IntakeForm(SiteOwnedModel):
             models.UniqueConstraint(
                 fields=("site", "slug"), name="workspace_unique_intake_form_slug"
             )
+        ]
+        indexes = [
+            models.Index(fields=("site", "is_active"), name="ws_form_site_active")
         ]
 
     def clean(self):
@@ -604,6 +633,12 @@ class AutomationRule(SiteOwnedModel):
 
     class Meta:
         ordering = ("name",)
+        indexes = [
+            models.Index(
+                fields=("site", "is_active", "trigger"),
+                name="ws_auto_site_active_trigger",
+            )
+        ]
 
     def clean(self):
         super().clean()
@@ -648,6 +683,12 @@ class AutomationRun(SiteOwnedModel):
 
     class Meta:
         ordering = ("-created_at",)
+        indexes = [
+            models.Index(
+                fields=("site", "status", "-created_at"),
+                name="ws_run_site_status_time",
+            )
+        ]
 
     def clean(self):
         super().clean()
@@ -699,6 +740,12 @@ class AIContentDraft(SiteOwnedModel):
 
     class Meta:
         ordering = ("-created_at",)
+        indexes = [
+            models.Index(
+                fields=("site", "status", "-created_at"),
+                name="ws_ai_site_status_time",
+            )
+        ]
 
     def __str__(self):
         return self.title

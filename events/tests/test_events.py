@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -52,6 +54,52 @@ def create_series(site, owner, *, visibility=Event.Visibility.PUBLIC, slug="less
         venue_name="Town Hall",
         capacity=40,
     )
+
+
+@pytest.mark.django_db
+def test_event_manager_filters_without_per_occurrence_metric_queries(client):
+    owner, site = create_site()
+    event = Event.objects.create(
+        site=site,
+        created_by=owner,
+        title="Welcome dance",
+        slug="welcome-dance",
+        status=Event.Status.PUBLISHED,
+    )
+    Event.objects.create(
+        site=site,
+        created_by=owner,
+        title="Archived dance",
+        slug="archived-dance",
+        status=Event.Status.ARCHIVED,
+    )
+    starts_at = timezone.now() + timedelta(days=1)
+    EventOccurrence.objects.bulk_create(
+        [
+            EventOccurrence(
+                site=site,
+                event=event,
+                starts_at=starts_at + timedelta(days=number),
+                ends_at=starts_at + timedelta(days=number, hours=2),
+                timezone=site.timezone,
+                capacity=50,
+            )
+            for number in range(10)
+        ]
+    )
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as queries:
+        response = client.get(reverse("events:manage", args=(site.id,)))
+    filtered = client.get(
+        reverse("events:manage", args=(site.id,)),
+        {"q": "Welcome", "status": "published"},
+    )
+
+    assert response.status_code == filtered.status_code == 200
+    assert len(queries) < 20
+    assert "Welcome dance" in filtered.content.decode()
+    assert "Archived dance" not in filtered.content.decode()
 
 
 @pytest.mark.django_db

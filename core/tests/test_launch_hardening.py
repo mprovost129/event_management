@@ -2,7 +2,7 @@ import pytest
 from django.test import override_settings
 from django.urls import reverse
 
-from core.checks import deployment_product_check
+from core.checks import deployment_product_check, product_configuration_check
 from ops.models import SystemHeartbeat
 from ops.tasks import record_background_heartbeat
 
@@ -77,6 +77,17 @@ def test_platform_home_explains_trial_pricing_and_social_preview(client):
     assert "No Gather HQs fee on tickets or member dues" in content
     assert 'property="og:image"' in content
     assert "/static/img/gather-hqs-social.png" in content
+
+
+@override_settings(
+    DOCUMENT_UPLOAD_MAX_BYTES=0,
+    DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS=("pdf", "../exe"),
+)
+def test_document_upload_configuration_rejects_unsafe_limits_and_extensions():
+    issue_ids = {issue.id for issue in product_configuration_check(None)}
+
+    assert "platform.E029" in issue_ids
+    assert "platform.E030" in issue_ids
 
 
 @pytest.mark.django_db

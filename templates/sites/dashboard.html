@@ -152,7 +152,7 @@
                 <div class="col-auto"><button class="btn btn-outline-primary" type="submit">Add manager</button></div>
             </form>
             {% if managers %}
-            <ul class="list-group">{% for manager in managers %}<li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2"><span>{{ manager.user.email }}</span><form method="post" action="{% url 'sites:remove_manager' site.id manager.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form></li>{% endfor %}</ul>
+            <ul class="list-group">{% for manager in managers %}<li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2"><span>{{ manager.user.email }}</span><form method="post" action="{% url 'sites:remove_manager' site.id manager.id %}" onsubmit="return confirm('Remove this manager’s access to the organization?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form></li>{% endfor %}</ul>
             {% else %}<p class="text-secondary mb-0">No site managers have been added.</p>{% endif %}
         </section>
         {% endif %}

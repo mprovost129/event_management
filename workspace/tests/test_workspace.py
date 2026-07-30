@@ -1,8 +1,10 @@
 from datetime import timedelta
 
 import pytest
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -23,6 +25,7 @@ from workspace.models import (
     Sponsor,
     Sponsorship,
     VolunteerProfile,
+    VolunteerShift,
     WorkTask,
 )
 from workspace.reporting import organization_insights
@@ -105,6 +108,151 @@ def test_workspace_task_list_is_paginated(client):
 
 
 @pytest.mark.django_db
+def test_workspace_list_filters_are_scoped_and_rendered(client):
+    site, owner = create_site("first-group", "first@example.com")
+    foreign_site, _ = create_site("second-group", "second@example.com")
+    alex = Contact.objects.create(
+        site=site, first_name="Alex", last_name="Rivera", email="alex@example.com"
+    )
+    taylor = Contact.objects.create(
+        site=site, first_name="Taylor", last_name="Reed", email="taylor@example.com"
+    )
+    WorkTask.objects.create(site=site, title="Prepare welcome packets")
+    WorkTask.objects.create(site=site, title="Unrelated task")
+    WorkTask.objects.create(site=foreign_site, title="Prepare foreign packets")
+    VolunteerProfile.objects.create(
+        site=site,
+        contact=alex,
+        status=VolunteerProfile.Status.ACTIVE,
+        skills="Welcome desk",
+    )
+    VolunteerProfile.objects.create(
+        site=site,
+        contact=taylor,
+        status=VolunteerProfile.Status.INACTIVE,
+        skills="Parking",
+    )
+    Sponsor.objects.create(site=site, name="Welcome Bank", status=Sponsor.Status.ACTIVE)
+    Sponsor.objects.create(
+        site=site, name="Archived Market", status=Sponsor.Status.INACTIVE
+    )
+    IntakeForm.objects.create(
+        site=site,
+        title="Welcome survey",
+        slug="welcome-survey",
+        is_active=True,
+    )
+    IntakeForm.objects.create(
+        site=site,
+        title="Archived survey",
+        slug="archived-survey",
+        is_active=False,
+    )
+    AutomationRule.objects.create(
+        site=site,
+        name="Welcome follow-up",
+        trigger=AutomationRule.Trigger.MANUAL,
+        action=AutomationRule.Action.RECORD_ACTIVITY,
+        is_active=True,
+    )
+    AutomationRule.objects.create(
+        site=site,
+        name="Archived follow-up",
+        trigger=AutomationRule.Trigger.MANUAL,
+        action=AutomationRule.Action.RECORD_ACTIVITY,
+        is_active=False,
+    )
+    AIContentDraft.objects.create(
+        site=site,
+        title="Welcome message",
+        instructions="Welcome new members",
+        status=AIContentDraft.Status.GENERATED,
+    )
+    AIContentDraft.objects.create(
+        site=site,
+        title="Archived message",
+        instructions="Old draft",
+        status=AIContentDraft.Status.DRAFT,
+    )
+    client.force_login(owner)
+
+    cases = (
+        (
+            "workspace:task_list",
+            {"q": "welcome", "status": "all"},
+            "Prepare welcome packets",
+            "Unrelated task",
+        ),
+        (
+            "workspace:volunteer_list",
+            {"q": "Alex", "status": "active"},
+            "Alex Rivera",
+            "Taylor Reed",
+        ),
+        (
+            "workspace:sponsor_list",
+            {"q": "Welcome", "status": "active"},
+            "Welcome Bank",
+            "Archived Market",
+        ),
+        (
+            "workspace:intake_form_list",
+            {"q": "Welcome", "status": "active"},
+            "Welcome survey",
+            "Archived survey",
+        ),
+        (
+            "workspace:automation_list",
+            {"q": "Welcome", "status": "active"},
+            "Welcome follow-up",
+            "Archived follow-up",
+        ),
+        (
+            "workspace:ai_draft_list",
+            {"q": "Welcome", "status": "generated"},
+            "Welcome message",
+            "Archived message",
+        ),
+    )
+    for route, params, expected, excluded in cases:
+        response = client.get(reverse(route, args=(site.id,)), params)
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert expected in content
+        assert excluded not in content
+
+
+@pytest.mark.django_db
+@override_settings(
+    PUBLIC_WRITE_RATE_LIMIT_MAX=1,
+    PUBLIC_WRITE_RATE_LIMIT_WINDOW_SECONDS=90,
+)
+def test_public_form_rate_limit_isolated_by_form(client):
+    site, _ = create_site("first-group", "first@example.com")
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    first_form = IntakeForm.objects.create(
+        site=site, title="First form", slug="first-form"
+    )
+    second_form = IntakeForm.objects.create(
+        site=site, title="Second form", slug="second-form"
+    )
+    cache.clear()
+    try:
+        first_url = reverse(
+            "workspace:intake_public", args=(first_form.id, first_form.slug)
+        )
+        second_url = reverse(
+            "workspace:intake_public", args=(second_form.id, second_form.slug)
+        )
+        assert client.post(first_url, {}).status_code == 200
+        assert client.post(first_url, {}).status_code == 429
+        assert client.post(second_url, {}).status_code == 200
+    finally:
+        cache.clear()
+
+
+@pytest.mark.django_db
 def test_workspace_forms_reject_cross_tenant_relationships():
     first_site, _ = create_site("first-group", "first@example.com")
     second_site, _ = create_site("second-group", "second@example.com")
@@ -126,6 +274,62 @@ def test_workspace_forms_reject_cross_tenant_relationships():
 
     assert not form.is_valid()
     assert "contact" in form.errors
+
+
+@pytest.mark.django_db
+def test_all_workspace_detail_views_reject_cross_tenant_ids(client):
+    first_site, first_owner = create_site("first-group", "first@example.com")
+    second_site, second_owner = create_site("second-group", "second@example.com")
+    contact = Contact.objects.create(
+        site=second_site, first_name="Foreign", last_name="Volunteer"
+    )
+    volunteer = VolunteerProfile.objects.create(site=second_site, contact=contact)
+    now = timezone.now()
+    shift = VolunteerShift.objects.create(
+        site=second_site,
+        title="Foreign shift",
+        starts_at=now + timedelta(days=1),
+        ends_at=now + timedelta(days=1, hours=2),
+    )
+    sponsor = Sponsor.objects.create(site=second_site, name="Foreign sponsor")
+    intake_form = IntakeForm.objects.create(
+        site=second_site, title="Foreign form", slug="foreign-form"
+    )
+    submission = IntakeSubmission.objects.create(
+        site=second_site,
+        intake_form=intake_form,
+        submitter_name="Foreign response",
+    )
+    rule = AutomationRule.objects.create(
+        site=second_site,
+        name="Foreign rule",
+        trigger=AutomationRule.Trigger.MANUAL,
+        action=AutomationRule.Action.RECORD_ACTIVITY,
+        created_by=second_owner,
+    )
+    draft = AIContentDraft.objects.create(
+        site=second_site,
+        title="Foreign draft",
+        instructions="Foreign instructions",
+        created_by=second_owner,
+    )
+    client.force_login(first_owner)
+
+    routes = (
+        reverse("workspace:volunteer_detail", args=(first_site.id, volunteer.id)),
+        reverse("workspace:shift_detail", args=(first_site.id, shift.id)),
+        reverse("workspace:sponsor_detail", args=(first_site.id, sponsor.id)),
+        reverse("workspace:intake_form_detail", args=(first_site.id, intake_form.id)),
+        reverse(
+            "workspace:intake_submission_detail",
+            args=(first_site.id, intake_form.id, submission.id),
+        ),
+        reverse("workspace:automation_detail", args=(first_site.id, rule.id)),
+        reverse("workspace:ai_draft_detail", args=(first_site.id, draft.id)),
+    )
+
+    for url in routes:
+        assert client.get(url).status_code == 404
 
 
 @pytest.mark.django_db

@@ -122,3 +122,13 @@ Added durable root-level project guidance:
 - `TESTING_CHECKLIST.md`
 
 The roadmap identifies production hardening and design-system refinement as the next priority before another major feature phase.
+
+## Phase 8 stabilization — July 2026
+
+- Added regression and tenant-isolation coverage for notifications and the Phase 1–7 workspace.
+- Corrected CI PostgreSQL selection and test discovery for the new applications.
+- Secured organization-document downloads and added configurable upload limits.
+- Added pagination and useful filtering to the principal tenant list views.
+- Added public-form abuse throttling, deterministic pagination, and composite workspace indexes.
+- Replaced event, campaign, volunteer, and sponsor list N+1 or memory-heavy queries with aggregates.
+- Added migration `workspace/0007_activity_ws_activity_site_kind_time_and_more.py`. Run `python manage.py migrate` during deployment.

@@ -135,7 +135,7 @@ Make the existing platform reliable, consistent, responsive, accessible, and rea
 - [x] Staff role matrix is documented and tested.
 - [ ] Core workflows pass desktop and mobile user acceptance testing.
 - [ ] Accessibility review has no critical issues.
-- [ ] Key list views support pagination and useful filtering.
+- [x] Key list views support pagination and useful filtering.
 - [ ] Background services and email delivery are verified in Render.
 - [ ] File uploads use production-safe storage and access controls.
 - [ ] Error monitoring and release logging are operational.
@@ -153,9 +153,13 @@ Make the existing platform reliable, consistent, responsive, accessible, and rea
 - Added application-authorized private document downloads, upload size/type validation, and subscriber-administrator-only document enforcement.
 - Fixed notification creation without dedupe keys and organization-insight CSV export failures/formula injection risk.
 - Added pagination to the principal tenant lists introduced before and during Phases 1–7.
+- Added search/status filters across people, tasks, documents, events, campaigns, volunteers, sponsors, forms, automations, and AI drafts.
+- Added tenant-specific rate limiting to public form submissions.
+- Removed per-record event and campaign metric queries, replaced memory-heavy relationship prefetches with aggregates, and added composite workspace indexes in migration `0007`.
+- Expanded cross-tenant detail-view coverage and added explicit confirmation to destructive event, contact, review, document, and team actions.
 - Documented the implemented staff role matrix in `ROLE_MATRIX.md`.
 
-Phase 8 remains in progress. Production service validation, comprehensive tenant-model coverage, accessibility/mobile user acceptance testing, query profiling, monitoring, backup/restore testing, and malware-scanning strategy remain open.
+Phase 8 remains in progress. Production service validation, comprehensive tenant-model coverage outside the workspace, accessibility/mobile user acceptance testing, broader query profiling, monitoring, backup/restore testing, and malware-scanning strategy remain open.
 
 ---
 

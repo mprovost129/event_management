@@ -71,6 +71,25 @@ def product_configuration_check(app_configs, **kwargs):
                 id="platform.E022",
             )
         )
+    if settings.DOCUMENT_UPLOAD_MAX_BYTES <= 0:
+        issues.append(
+            Error(
+                "DOCUMENT_UPLOAD_MAX_BYTES must be greater than zero.",
+                id="platform.E029",
+            )
+        )
+    allowed_document_extensions = settings.DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS
+    if not allowed_document_extensions or any(
+        not extension or not extension.isalnum()
+        for extension in allowed_document_extensions
+    ):
+        issues.append(
+            Error(
+                "DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS must contain simple file extensions.",
+                hint="Use comma-separated values such as pdf,docx,xlsx.",
+                id="platform.E030",
+            )
+        )
     if settings.EMAIL_DELIVERY_BACKEND not in {"django", "resend"}:
         issues.append(
             Error(

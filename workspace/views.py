@@ -1,10 +1,12 @@
 import csv
+from decimal import Decimal
 from pathlib import Path
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Coalesce
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -14,6 +16,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 from contacts.models import Contact
 from core.exports import spreadsheet_safe_cell
 from core.pagination import paginate
+from core.rate_limits import public_write_rate_limit
 from sites.models import SiteRole
 from sites.permissions import site_staff_required
 
@@ -59,6 +62,7 @@ from .services import (
 def task_list(request, site_id):
     site = request.authorized_site
     status = request.GET.get("status", "open")
+    query = request.GET.get("q", "").strip()
     tasks = WorkTask.objects.for_site(site).select_related("event", "assignee")
     if status == "done":
         tasks = tasks.filter(status=WorkTask.Status.DONE)
@@ -67,6 +71,13 @@ def task_list(request, site_id):
     else:
         status = "open"
         tasks = tasks.exclude(status=WorkTask.Status.DONE)
+    if query:
+        tasks = tasks.filter(
+            Q(title__icontains=query)
+            | Q(description__icontains=query)
+            | Q(event__title__icontains=query)
+            | Q(assignee__email__icontains=query)
+        )
     tasks = paginate(request, tasks)
     return render(
         request,
@@ -75,6 +86,7 @@ def task_list(request, site_id):
             "site": site,
             "tasks": tasks,
             "selected_status": status,
+            "query": query,
             "page_obj": tasks,
         },
     )
@@ -308,11 +320,32 @@ def activity_list(request, site_id):
 @site_staff_required
 def volunteer_list(request, site_id):
     site = request.authorized_site
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "all")
     volunteers = (
         VolunteerProfile.objects.for_site(site)
         .select_related("contact")
-        .prefetch_related("hour_entries")
+        .annotate(
+            total_hours_value=Coalesce(
+                models.Sum("hour_entries__hours"),
+                models.Value(Decimal("0")),
+                output_field=models.DecimalField(max_digits=10, decimal_places=2),
+            )
+        )
+        .order_by("contact__last_name", "contact__first_name", "id")
     )
+    if status in VolunteerProfile.Status.values:
+        volunteers = volunteers.filter(status=status)
+    else:
+        status = "all"
+    if query:
+        volunteers = volunteers.filter(
+            Q(contact__first_name__icontains=query)
+            | Q(contact__last_name__icontains=query)
+            | Q(contact__email__icontains=query)
+            | Q(skills__icontains=query)
+            | Q(availability__icontains=query)
+        )
     volunteers = paginate(request, volunteers)
     shifts = (
         VolunteerShift.objects.for_site(site)
@@ -326,6 +359,9 @@ def volunteer_list(request, site_id):
             "site": site,
             "volunteers": volunteers,
             "shifts": shifts,
+            "query": query,
+            "selected_status": status,
+            "status_choices": VolunteerProfile.Status.choices,
             "page_obj": volunteers,
         },
     )
@@ -476,13 +512,38 @@ def shift_assign(request, site_id, shift_id):
 @site_staff_required
 def sponsor_list(request, site_id):
     site = request.authorized_site
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "all")
+    sponsors_qs = (
+        Sponsor.objects.for_site(site)
+        .annotate(sponsorship_count=models.Count("sponsorships"))
+        .order_by("name", "id")
+    )
+    if status in Sponsor.Status.values:
+        sponsors_qs = sponsors_qs.filter(status=status)
+    else:
+        status = "all"
+    if query:
+        sponsors_qs = sponsors_qs.filter(
+            Q(name__icontains=query)
+            | Q(contact_name__icontains=query)
+            | Q(email__icontains=query)
+        )
     sponsors = paginate(
-        request, Sponsor.objects.for_site(site).prefetch_related("sponsorships")
+        request,
+        sponsors_qs,
     )
     return render(
         request,
         "workspace/sponsor_list.html",
-        {"site": site, "sponsors": sponsors, "page_obj": sponsors},
+        {
+            "site": site,
+            "sponsors": sponsors,
+            "query": query,
+            "selected_status": status,
+            "status_choices": Sponsor.Status.choices,
+            "page_obj": sponsors,
+        },
     )
 
 
@@ -553,16 +614,37 @@ def sponsorship_add(request, site_id, sponsor_id):
 @site_staff_required
 def intake_form_list(request, site_id):
     site = request.authorized_site
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "all")
     forms_qs = (
         IntakeForm.objects.for_site(site)
         .select_related("event")
         .annotate(response_count=models.Count("submissions"))
+        .order_by("title", "id")
     )
+    if status == "active":
+        forms_qs = forms_qs.filter(is_active=True)
+    elif status == "inactive":
+        forms_qs = forms_qs.filter(is_active=False)
+    else:
+        status = "all"
+    if query:
+        forms_qs = forms_qs.filter(
+            Q(title__icontains=query)
+            | Q(introduction__icontains=query)
+            | Q(event__title__icontains=query)
+        )
     forms_qs = paginate(request, forms_qs, per_page=24)
     return render(
         request,
         "workspace/intake_form_list.html",
-        {"site": site, "intake_forms": forms_qs, "page_obj": forms_qs},
+        {
+            "site": site,
+            "intake_forms": forms_qs,
+            "query": query,
+            "selected_status": status,
+            "page_obj": forms_qs,
+        },
     )
 
 
@@ -637,6 +719,7 @@ def intake_submission_detail(request, site_id, form_id, submission_id):
     )
 
 
+@public_write_rate_limit(lambda request, form_id, slug: f"public-intake:{form_id}")
 def intake_public(request, form_id, slug):
     intake_form = get_object_or_404(
         IntakeForm.objects.select_related("site", "event"), pk=form_id, slug=slug
@@ -737,8 +820,22 @@ def intake_public(request, form_id, slug):
 @site_staff_required
 def automation_list(request, site_id):
     site = request.authorized_site
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "all")
+    rules_qs = AutomationRule.objects.for_site(site)
+    if status == "active":
+        rules_qs = rules_qs.filter(is_active=True)
+    elif status == "paused":
+        rules_qs = rules_qs.filter(is_active=False)
+    else:
+        status = "all"
+    if query:
+        rules_qs = rules_qs.filter(
+            Q(name__icontains=query) | Q(description__icontains=query)
+        )
     rules = paginate(
-        request, AutomationRule.objects.for_site(site).prefetch_related("runs")
+        request,
+        rules_qs,
     )
     recent_runs = AutomationRun.objects.for_site(site).select_related("rule")[:25]
     return render(
@@ -748,6 +845,8 @@ def automation_list(request, site_id):
             "site": site,
             "rules": rules,
             "recent_runs": recent_runs,
+            "query": query,
+            "selected_status": status,
             "page_obj": rules,
         },
     )
@@ -861,13 +960,34 @@ def insights_export(request, site_id):
 @site_staff_required
 def ai_draft_list(request, site_id):
     site = request.authorized_site
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "all")
+    drafts_qs = AIContentDraft.objects.for_site(site).select_related("created_by")
+    if status in AIContentDraft.Status.values:
+        drafts_qs = drafts_qs.filter(status=status)
+    else:
+        status = "all"
+    if query:
+        drafts_qs = drafts_qs.filter(
+            Q(title__icontains=query)
+            | Q(instructions__icontains=query)
+            | Q(context__icontains=query)
+        )
     drafts = paginate(
-        request, AIContentDraft.objects.for_site(site).select_related("created_by")
+        request,
+        drafts_qs,
     )
     return render(
         request,
         "workspace/ai_draft_list.html",
-        {"site": site, "drafts": drafts, "page_obj": drafts},
+        {
+            "site": site,
+            "drafts": drafts,
+            "query": query,
+            "selected_status": status,
+            "status_choices": AIContentDraft.Status.choices,
+            "page_obj": drafts,
+        },
     )
 
 

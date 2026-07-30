@@ -14,6 +14,9 @@ All notable changes should be recorded here. Until the project adopts a formal r
 - `ROLE_MATRIX.md`
 - Regression and tenant-isolation coverage for notifications and the Phase 1–7 workspace.
 - Shared pagination for the principal tenant list views.
+- Search and status filtering for the core tenant and operational directories.
+- Composite indexes for common tenant/status/date workspace queries.
+- Tenant-specific abuse-rate limiting for public form submissions.
 
 ### Changed
 
@@ -22,6 +25,9 @@ All notable changes should be recorded here. Until the project adopts a formal r
 - Document uploads enforce configurable extension and size limits; administrator-only documents remain restricted to subscriber administrators.
 - Pytest discovery now includes the `notifications` and `workspace` apps.
 - CI now selects PostgreSQL test settings instead of silently falling back to in-memory SQLite.
+- Event and campaign list metrics now use bounded aggregate queries instead of per-record query loops.
+- Volunteer-hour and sponsor-count list summaries now use database aggregates.
+- Destructive event, contact, review, document, and team actions request explicit confirmation.
 
 ### Fixed
 
