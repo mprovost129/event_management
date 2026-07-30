@@ -31,6 +31,22 @@ services:
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
+      - key: LEGAL_BUSINESS_NAME
+        sync: false
+      - key: LEGAL_POSTAL_ADDRESS
+        sync: false
+      - key: LEGAL_EFFECTIVE_DATE
+        sync: false
+      - key: LEGAL_GOVERNING_LAW
+        sync: false
+      - key: LEGAL_VENUE
+        sync: false
+      - key: PRIVACY_EMAIL
+        sync: false
+      - key: SECURITY_EMAIL
+        sync: false
+      - key: LEGAL_DRAFT
+        sync: false
       - key: STRIPE_STANDARD_MONTHLY_PRICE_ID
         sync: false
       - key: STRIPE_STANDARD_YEARLY_PRICE_ID

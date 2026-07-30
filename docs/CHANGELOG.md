@@ -6,6 +6,7 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Added
 
+- A dedicated legal center with separate terms, privacy, cookie, payments/refunds, acceptable-use, retention, security, and review policies backed by deploy-time organization and contact settings.
 - `DEVELOPMENT_ROADMAP.md`
 - `PRODUCT_VISION.md`
 - `ARCHITECTURE.md`

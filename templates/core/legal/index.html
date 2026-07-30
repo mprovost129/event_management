@@ -1,0 +1,28 @@
+{% extends "core/legal/base.html" %}
+
+{% block legal_title %}Legal center{% endblock %}
+{% block legal_intro %}Plain-language policies for the platform, each subscriber group, and the people who register, attend, pay, communicate, or share content through Gather HQs.{% endblock %}
+
+{% block legal_content %}
+<section class="gh-legal-summary" aria-labelledby="legal-overview-heading">
+    <p class="gh-legal-kicker">Start here</p>
+    <h2 id="legal-overview-heading">One platform, two important relationships</h2>
+    <p>Gather HQs provides the software, platform subscription, infrastructure, and support. Each subscriber group independently creates and operates its events, memberships, communications, public content, and connected Stripe account. The policies below explain where those responsibilities meet—and where they remain separate.</p>
+</section>
+
+<div class="gh-legal-card-grid">
+    {% for item in legal_documents %}
+    <a class="gh-legal-card" href="{% url item.route %}">
+        <span>{{ forloop.counter|stringformat:"02d" }}</span>
+        <h2>{{ item.title }}</h2>
+        <p>{{ item.description }}</p>
+        <strong>Read policy &rarr;</strong>
+    </a>
+    {% endfor %}
+</div>
+
+<section class="gh-legal-callout">
+    <h2>Event-specific questions</h2>
+    <p>The subscriber group—not Gather HQs—sets the event description, admission rules, refund promises, membership benefits, age requirements, safety procedures, and other event-specific terms. Contact that group using the information on its site before contacting platform support.</p>
+</section>
+{% endblock %}

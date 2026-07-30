@@ -1,0 +1,125 @@
+{% extends "core/legal/base.html" %}
+
+{% block legal_intro %}How information is collected, used, shared, retained, and protected across the Gather HQs platform and the independent subscriber sites it powers.{% endblock %}
+
+{% block legal_content %}
+<nav class="gh-legal-toc" aria-label="Privacy Notice sections">
+    <p>On this page</p>
+    <ol>
+        <li><a href="#privacy-roles">Our privacy roles</a></li>
+        <li><a href="#privacy-collection">Information collected</a></li>
+        <li><a href="#privacy-use">How information is used</a></li>
+        <li><a href="#privacy-sharing">How information is shared</a></li>
+        <li><a href="#privacy-communications">Communications</a></li>
+        <li><a href="#privacy-children">Children and minors</a></li>
+        <li><a href="#privacy-rights">Choices and rights</a></li>
+        <li><a href="#privacy-retention">Retention and security</a></li>
+    </ol>
+</nav>
+
+<section id="privacy-roles">
+    <h2>1. Who this notice covers and our privacy roles</h2>
+    <p>This notice applies to Gather HQs accounts, the Gather HQs platform, and subscriber sites hosted on the Service.</p>
+    <h3>Gather HQs-controlled information</h3>
+    <p>Gather HQs decides how account, platform-subscription, security, support, operations, and platform-usage information is processed. Questions about that information may be sent to {% if privacy_email %}<a href="mailto:{{ privacy_email }}">{{ privacy_email }}</a>{% else %}the support contact below{% endif %}.</p>
+    <h3>Subscriber-controlled information</h3>
+    <p>Each subscriber group decides what event, contact, attendee, member, form, volunteer, sponsor, communication, and site-content information it collects and why. Gather HQs generally processes that information to provide the tools the subscriber selected. If your question concerns a particular event, RSVP, membership, guest, waiver, newsletter, or subscriber record, contact that group first using its site contact information.</p>
+    <p>Depending on the law and the activity, the subscriber may be an independent controller or business and Gather HQs may act as its processor or service provider. This notice does not replace a subscriber’s own privacy notice or legal duties.</p>
+</section>
+
+<section id="privacy-collection">
+    <h2>2. Information we process</h2>
+    <p>The information involved depends on which features are used.</p>
+    <h3>Account and subscriber-site information</h3>
+    <ul>
+        <li>name, email address, password hash, email-verification status, account roles, and authentication activity;</li>
+        <li>group name, subdomain, site settings, branding, pages, blog posts, images, and administrator or manager relationships;</li>
+        <li>platform plan, trial, billing interval, Stripe customer and subscription references, invoice status, and billing events; and</li>
+        <li>support requests, administrative actions, exports, moderation decisions, and audit history.</li>
+    </ul>
+    <h3>Contacts, events, and participation</h3>
+    <ul>
+        <li>contact names, email addresses, phone numbers, tags, notes, membership status, and communication-consent history;</li>
+        <li>event invitations, responses, named guests, participant contact details, attendance and check-in history, capacity, and related timestamps;</li>
+        <li>event reviews, ratings, subscriber responses, reports, and moderation history; and</li>
+        <li>if enabled, tasks, comments, documents, forms, waiver or agreement records, volunteer activity, sponsor information, workflow history, and AI drafting prompts and outputs.</li>
+    </ul>
+    <h3>Payments and commerce</h3>
+    <p>We process ticket and membership order details, purchaser identity, prices, currency, transaction status, limited Stripe identifiers, refunds, disputes, fees, and financial history. Full payment-card numbers are collected on Stripe-hosted pages and are not stored by Gather HQs.</p>
+    <h3>Communications</h3>
+    <p>We process campaign drafts, audience criteria, recipient and consent status, unsubscribe capabilities, delivery status, provider identifiers, and engagement events such as delivery, bounce, complaint, open, or click when the provider supplies them. Message bodies may exist while queued and are redacted after successful delivery or final failure under the platform’s operating rules.</p>
+    <h3>Technical and usage information</h3>
+    <p>We may collect IP address, browser and device information, requested pages, referring page, timestamps, request or correlation IDs, security events, error details, cookie or session identifiers, and service-health information. Public forms may record IP address and user agent for security, consent, and agreement evidence.</p>
+    <h3>Sources</h3>
+    <p>Information comes from account holders, subscriber administrators and managers, attendees and form submitters, people who register guests or minors, payment and communications providers, and automatic platform logs.</p>
+</section>
+
+<section id="privacy-use">
+    <h2>3. How information is used</h2>
+    <p>We use information to:</p>
+    <ul>
+        <li>create and secure accounts, subscriber sites, and role-based access;</li>
+        <li>publish sites and events; manage invitations, RSVPs, guests, attendance, memberships, forms, reviews, and reports;</li>
+        <li>process platform billing and support subscriber-connected ticket and membership payments;</li>
+        <li>deliver transactional messages and consent-based marketing communications;</li>
+        <li>provide support, investigate errors, recover failed work, prevent fraud and abuse, and maintain service reliability;</li>
+        <li>moderate reported content, enforce policies, preserve audit trails, and protect users and third parties;</li>
+        <li>analyze and improve the Service using aggregated or de-identified information where practical; and</li>
+        <li>comply with law, valid legal process, tax and accounting requirements, and enforceable agreements.</li>
+    </ul>
+    <p>Where a law requires a legal basis, processing may rely on performing a contract, taking requested pre-contract steps, consent, legitimate interests in operating and securing the Service, or compliance with legal obligations. A subscriber is responsible for identifying its own legal basis for subscriber-controlled processing.</p>
+</section>
+
+<section id="privacy-sharing">
+    <h2>4. How information is disclosed</h2>
+    <p>We may disclose information:</p>
+    <ul>
+        <li><strong>to the relevant subscriber group</strong>, including its authorized administrators and site managers, so it can operate its site, events, memberships, communications, and records;</li>
+        <li><strong>to service providers</strong> that supply hosting, storage, content delivery, security, email, optional AI drafting, customer support, analytics if later enabled, and other infrastructure under appropriate restrictions;</li>
+        <li><strong>to Stripe and payment participants</strong> for platform subscriptions, connected-account onboarding, checkout, recurring dues, refunds, disputes, reconciliation, fraud prevention, and legal compliance;</li>
+        <li><strong>to other people or the public</strong> when you or a subscriber intentionally publishes content, such as a public site, event, blog post, review, rating aggregate, or subscriber response;</li>
+        <li><strong>for legal and safety reasons</strong> when reasonably necessary to comply with law or valid process, enforce agreements, investigate fraud or abuse, or protect rights, safety, property, and service integrity; and</li>
+        <li><strong>in a business transaction</strong> involving financing, merger, acquisition, reorganization, or sale, subject to appropriate confidentiality and notice obligations.</li>
+    </ul>
+    <p><strong>Gather HQs does not sell personal information for money and does not share personal information for cross-context behavioral advertising.</strong> The Service currently does not use third-party advertising cookies. If those practices change, this notice and any required choices will be updated before the change applies.</p>
+</section>
+
+<section id="privacy-communications">
+    <h2>5. Email, text messages, and communication choices</h2>
+    <p>Account verification, password reset, security, billing, event confirmation, receipt, cancellation, reminder, and other operational messages may be sent when needed to provide the Service or a requested event or membership.</p>
+    <p>Marketing email and text campaigns are limited to contacts with the recorded permission required for that channel. Marketing emails include an unsubscribe method. Text recipients may withdraw consent through the method in the message or another reasonable method. Withdrawing marketing consent does not prevent essential transactional messages about an existing account, order, event response, or membership.</p>
+    <p>A subscriber is responsible for the contacts it imports or enters, its consent records, the accuracy and legality of its content, and honoring direct opt-out requests. Gather HQs also maintains suppression and unsubscribe controls to help enforce those choices.</p>
+</section>
+
+<section id="privacy-cookies">
+    <h2>6. Cookies and hosted third-party pages</h2>
+    <p>Gather HQs currently uses browser storage needed for sign-in, sessions, security, form protection, preferences, and reliable site operation. We do not currently use advertising cookies. Details are in the <a href="{% url 'core:cookies' %}">Cookie Notice</a>.</p>
+    <p>Stripe-hosted checkout, billing, and onboarding pages may use Stripe’s own cookies and collect information under Stripe’s privacy notice. Links to other independent sites are governed by those sites’ practices.</p>
+</section>
+
+<section id="privacy-children">
+    <h2>7. Children and information about minors</h2>
+    <p>The Service is designed for adult-led groups and is not directed to children under 13. Children under 13 may not create accounts or submit personal information directly. We do not knowingly collect personal information directly from a child under 13 without legally valid authorization.</p>
+    <p>An adult may register or list a minor as a participant or guest for a youth or family event only when the adult and subscriber have the authority and notices or consents required by law. Subscribers that offer youth programs are responsible for age-appropriate forms, parental or guardian authorization, limited collection, supervision, access controls, and any child-privacy obligations that apply to them.</p>
+    <p>If you believe a child submitted information without appropriate authorization, contact the subscriber group and {% if privacy_email %}<a href="mailto:{{ privacy_email }}">{{ privacy_email }}</a>{% else %}Gather HQs support{% endif %} so the record can be reviewed.</p>
+</section>
+
+<section id="privacy-rights">
+    <h2>8. Your choices and privacy rights</h2>
+    <p>Depending on your location and relationship to the Service, you may have rights to request access, correction, deletion, a portable copy, restriction, objection, withdrawal of consent, or information about processing and disclosures. You may also have a right to appeal a denied request or complain to a regulator.</p>
+    <p>For subscriber-controlled information, send the request to that subscriber first. For a Gather HQs account or platform-controlled information, contact {% if privacy_email %}<a href="mailto:{{ privacy_email }}">{{ privacy_email }}</a>{% else %}the support address below{% endif %}. We may verify identity and authority before acting. Legal exceptions may allow or require us or a subscriber to retain certain records, such as transaction, security, fraud-prevention, consent, dispute, or legal-compliance information.</p>
+    <p>You can update certain account or subscriber information in the Service, download a subscriber-site export where available, unsubscribe from marketing through the message link, and control necessary browser storage through browser settings subject to loss of functionality.</p>
+</section>
+
+<section id="privacy-retention">
+    <h2>9. Retention, security, and international processing</h2>
+    <p>Information is retained for as long as reasonably needed for the purposes above, including while an account or subscriber site is active. Deletion requests, protected records, and backups follow the <a href="{% url 'core:retention' %}">Data Retention &amp; Deletion Policy</a>. Different records have different periods based on operational, contractual, tax, accounting, safety, fraud-prevention, dispute, and legal needs.</p>
+    <p>We use administrative, technical, and organizational safeguards designed for the nature of the Service. No internet service can promise absolute security. Security practices and reporting instructions are described on the <a href="{% url 'core:security' %}">Security &amp; Responsible Disclosure</a> page.</p>
+    <p>Gather HQs is operated from the United States. Service providers may process information in the United States and other places where they operate. Those locations may have different privacy laws. Where required, we use recognized transfer and contractual safeguards.</p>
+</section>
+
+<section id="privacy-changes">
+    <h2>10. Changes to this notice</h2>
+    <p>We may update this notice as the Service, providers, or legal requirements change. Material changes will be communicated through the Service, email, or another appropriate method when required. The effective date above identifies the current version.</p>
+</section>
+{% endblock %}
