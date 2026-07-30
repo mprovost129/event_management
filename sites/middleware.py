@@ -34,6 +34,11 @@ class SiteResolutionMiddleware(MiddlewareMixin):
                 raise Http404("Site not found.")
             return None
 
+        if request.path_info.startswith(
+            ("/admin/", "/platform-admin/", "/platform-ops/")
+        ):
+            raise Http404("Page not found.")
+
         request.site = domain.site
         request._site_context_token = set_site_id(domain.site_id)
         return None

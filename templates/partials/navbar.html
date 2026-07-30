@@ -31,7 +31,7 @@
         {% else %}
         <div class="gh-navbar-actions ms-auto d-flex flex-wrap align-items-center gap-2">
             {% if user.is_authenticated %}
-                {% if user.is_superuser %}<a class="btn btn-outline-secondary" href="{% url 'ops:dashboard' %}">Platform operations</a>{% endif %}
+                {% if user.is_superuser %}<a class="btn btn-outline-secondary" href="{% url 'ops:dashboard' %}">Platform operations</a><a class="btn btn-outline-secondary" href="{% url 'admin:index' %}">Admin</a>{% endif %}
                 <a class="btn btn-outline-secondary position-relative" href="{% url 'notifications:list' %}">Notifications{% if unread_notification_count %}<span class="badge text-bg-danger ms-1">{{ unread_notification_count }}</span>{% endif %}</a>
                 <a class="btn btn-outline-primary" href="{% url 'sites:account_dashboard' %}">Dashboard</a>
                 <form method="post" action="{% url 'logout' %}" class="d-inline">

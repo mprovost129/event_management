@@ -267,6 +267,8 @@ Every response receives a bounded `X-Request-ID`. Application logs include that 
 
 Production authentication is shared across the control domain and tenant subdomains with `SESSION_COOKIE_DOMAIN` and `CSRF_COOKIE_DOMAIN` set to `.gatherhqs.com`. This lets an authenticated site administrator open the public site and use the staff-only **Back to dashboard** navigation control. After changing either cookie-domain setting, sign out and sign back in so the browser receives the replacement domain cookie.
 
+Django administration is available to superusers at `/platform-admin/`. The familiar `/admin/` path redirects there, and authenticated superusers also receive an **Admin** navigation control. Platform administration and operations paths return 404 on tenant subdomains and must be used on the control domain.
+
 Use `ops.services.record_audit_event` for privileged or sensitive domain actions such as role changes, refunds, moderation, exports, support access, and deletion requests. Summaries must contain identifiers and safe state descriptions, not credentials, payment payloads, message bodies, or unrestricted personal data.
 
 ## Deployment checks
