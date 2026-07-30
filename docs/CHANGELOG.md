@@ -44,6 +44,7 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Fixed
 
+- Public pricing now discloses the 3% paid-ticket application fee while clarifying that member dues remain fee-free and attendees do not receive a separate surcharge.
 - Updated pytest to 9.0.3 to resolve `PYSEC-2026-1845` in the development and CI dependency set.
 - PostgreSQL row locks now target only their primary records when related data is optional, preventing campaign, delivery, review, and site-deletion operations from failing on nullable outer joins.
 - `/admin/` now redirects to the canonical `/platform-admin/` interface; superusers receive an Admin navigation link, while platform routes remain unavailable on tenant subdomains.

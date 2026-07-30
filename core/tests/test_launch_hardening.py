@@ -122,7 +122,8 @@ def test_platform_home_explains_trial_pricing_and_social_preview(client):
     assert "Start your 14-day free trial" in content
     assert ">20<" in content
     assert ">220<" in content
-    assert "No Gather HQs fee on tickets or member dues" in content
+    assert "3% Gather HQs fee on paid tickets; no fee on member dues" in content
+    assert "deducted from your group's proceeds" in content
     assert 'property="og:image"' in content
     assert "/static/img/gather-hqs-social.png" in content
 
