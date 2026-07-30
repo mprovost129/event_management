@@ -80,6 +80,12 @@ DOCUMENT_UPLOAD_SCAN_BACKEND = env("DOCUMENT_UPLOAD_SCAN_BACKEND", "disabled").l
 CLAMAV_HOST = env("CLAMAV_HOST", "localhost")
 CLAMAV_PORT = env_int("CLAMAV_PORT", 3310)
 CLAMAV_TIMEOUT_SECONDS = env_int("CLAMAV_TIMEOUT_SECONDS", 10)
+CLOUDMERSIVE_API_KEY = env("CLOUDMERSIVE_API_KEY", "", allow_blank=True)
+CLOUDMERSIVE_API_URL = env(
+    "CLOUDMERSIVE_API_URL",
+    "https://api.cloudmersive.com/virus/scan/file/advanced",
+)
+CLOUDMERSIVE_TIMEOUT_SECONDS = env_int("CLOUDMERSIVE_TIMEOUT_SECONDS", 20)
 
 INSTALLED_APPS = [
     "django.contrib.admin",

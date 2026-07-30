@@ -137,7 +137,9 @@ Make the existing platform reliable, consistent, responsive, accessible, and rea
 - [ ] Accessibility review has no critical issues.
 - [x] Key list views support pagination and useful filtering.
 - [ ] Background services and email delivery are verified in Render.
-- [ ] File uploads use production-safe storage and access controls.
+- [~] File uploads have production-safe object storage, tenant/role access
+  controls, allow-list and size validation, and fail-closed Cloudmersive
+  scanning; production credential and clean/EICAR/outage validation remains.
 - [ ] Error monitoring and release logging are operational.
 - [ ] Documentation reflects the deployed application.
 
@@ -402,7 +404,7 @@ These should be validated through customer interviews before implementation:
 ## Security
 
 - Tenant isolation and object-level authorization
-- Secure upload validation and malware-scanning strategy
+- Cloudmersive quota monitoring, vendor review, and production upload validation
 - Rate limiting and abuse prevention
 - Secrets and key rotation
 - Dependency and container scanning

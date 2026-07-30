@@ -23,6 +23,7 @@
 - [ ] Provider outage/recovery drill succeeds without manually changing payment or delivery state.
 - [ ] Privacy notice, terms, acceptable-use policy, review guidelines, retention policy, support contact, and subscriber refund responsibilities receive legal/business approval.
 - [ ] DNS, TLS, object-storage CORS/access, sender DNS, monitoring destinations, and alert recipients are verified.
+- [ ] Cloudmersive key and advanced endpoint are configured; clean uploads succeed, EICAR is rejected, missing-key/outage/quota paths fail closed, the 3.5 MB free-tier cap is enforced, usage is monitored, and Cloudmersive vendor/privacy review is recorded using `CLOUDMERSIVE_SETUP.md`.
 - [ ] Root, `www`, and wildcard subscriber DNS resolve to Render without disturbing Resend's sending-domain records.
 - [ ] `SUPPORT_EMAIL` points to a staffed, tested mailbox on the production domain.
 - [ ] Pilot group completes `PILOT_RUNBOOK.md` without database intervention.

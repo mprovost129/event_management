@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from django.conf import settings
 from django.core.checks import Error, Tags, Warning, register
 from django.core.exceptions import ValidationError
@@ -90,10 +92,15 @@ def product_configuration_check(app_configs, **kwargs):
                 id="platform.E030",
             )
         )
-    if settings.DOCUMENT_UPLOAD_SCAN_BACKEND not in {"disabled", "clamav"}:
+    if settings.DOCUMENT_UPLOAD_SCAN_BACKEND not in {
+        "disabled",
+        "clamav",
+        "cloudmersive",
+    }:
         issues.append(
             Error(
-                "DOCUMENT_UPLOAD_SCAN_BACKEND must be 'disabled' or 'clamav'.",
+                "DOCUMENT_UPLOAD_SCAN_BACKEND must be 'disabled', 'clamav', or "
+                "'cloudmersive'.",
                 id="platform.E031",
             )
         )
@@ -104,6 +111,22 @@ def product_configuration_check(app_configs, **kwargs):
                 id="platform.E032",
             )
         )
+    if settings.CLOUDMERSIVE_TIMEOUT_SECONDS <= 0:
+        issues.append(
+            Error(
+                "CLOUDMERSIVE_TIMEOUT_SECONDS must be greater than zero.",
+                id="platform.E036",
+            )
+        )
+    if settings.DOCUMENT_UPLOAD_SCAN_BACKEND == "cloudmersive":
+        cloudmersive_url = urlparse(settings.CLOUDMERSIVE_API_URL)
+        if cloudmersive_url.scheme != "https" or not cloudmersive_url.netloc:
+            issues.append(
+                Error(
+                    "CLOUDMERSIVE_API_URL must be a valid HTTPS URL.",
+                    id="platform.E037",
+                )
+            )
     if settings.EMAIL_DELIVERY_BACKEND not in {"django", "resend"}:
         issues.append(
             Error(
@@ -227,10 +250,21 @@ def deployment_product_check(app_configs, **kwargs):
             Error(
                 "Production document uploads require malware scanning.",
                 hint=(
-                    "Set DOCUMENT_UPLOAD_SCAN_BACKEND=clamav and configure "
-                    "CLAMAV_HOST, CLAMAV_PORT, and CLAMAV_TIMEOUT_SECONDS."
+                    "Set DOCUMENT_UPLOAD_SCAN_BACKEND=cloudmersive and configure "
+                    "CLOUDMERSIVE_API_KEY, CLOUDMERSIVE_API_URL, and "
+                    "CLOUDMERSIVE_TIMEOUT_SECONDS, or configure ClamAV."
                 ),
                 id="platform.E033",
+            )
+        )
+    if (
+        settings.DOCUMENT_UPLOAD_SCAN_BACKEND == "cloudmersive"
+        and not settings.CLOUDMERSIVE_API_KEY
+    ):
+        issues.append(
+            Error(
+                "CLOUDMERSIVE_API_KEY is required for Cloudmersive scanning.",
+                id="platform.E038",
             )
         )
     if settings.SMS_DELIVERY_BACKEND == "console":

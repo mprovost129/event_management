@@ -316,6 +316,16 @@ envVarGroups:
         value: "100"
       - key: REVIEW_TOKEN_MAX_AGE_DAYS
         value: "365"
+      - key: DOCUMENT_UPLOAD_SCAN_BACKEND
+        value: cloudmersive
+      - key: DOCUMENT_UPLOAD_MAX_BYTES
+        value: "3500000"
+      - key: CLOUDMERSIVE_API_KEY
+        sync: false
+      - key: CLOUDMERSIVE_API_URL
+        value: https://api.cloudmersive.com/virus/scan/file/advanced
+      - key: CLOUDMERSIVE_TIMEOUT_SECONDS
+        value: "20"
       - key: MEDIA_STORAGE_BACKEND
         value: s3
       - key: AWS_QUERYSTRING_AUTH

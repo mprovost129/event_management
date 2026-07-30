@@ -151,11 +151,34 @@ def test_document_scanner_configuration_rejects_invalid_values():
     assert "platform.E032" in issue_ids
 
 
+@override_settings(
+    DOCUMENT_UPLOAD_SCAN_BACKEND="cloudmersive",
+    CLOUDMERSIVE_API_URL="http://api.cloudmersive.com/virus/scan/file/advanced",
+    CLOUDMERSIVE_TIMEOUT_SECONDS=0,
+)
+def test_cloudmersive_scanner_configuration_requires_https_and_positive_timeout():
+    issue_ids = {issue.id for issue in product_configuration_check(None)}
+
+    assert "platform.E036" in issue_ids
+    assert "platform.E037" in issue_ids
+
+
 @override_settings(DEBUG=False, DOCUMENT_UPLOAD_SCAN_BACKEND="disabled")
 def test_production_deployment_requires_document_malware_scanning():
     issue_ids = {issue.id for issue in deployment_product_check(None)}
 
     assert "platform.E033" in issue_ids
+
+
+@override_settings(
+    DEBUG=False,
+    DOCUMENT_UPLOAD_SCAN_BACKEND="cloudmersive",
+    CLOUDMERSIVE_API_KEY="",
+)
+def test_production_cloudmersive_scanning_requires_api_key():
+    issue_ids = {issue.id for issue in deployment_product_check(None)}
+
+    assert "platform.E038" in issue_ids
 
 
 @override_settings(

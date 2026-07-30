@@ -57,6 +57,8 @@ See [implementation status](docs/IMPLEMENTATION_STATUS.md) for verification resu
 - [V1 product and technical specification](docs/Event_Management_Platform_V1_Specification.md)
 - [Development and environment guide](docs/DEVELOPMENT.md)
 - [Render deployment guide](docs/RENDER_DEPLOYMENT.md)
+- [Cloudmersive production malware scanning](docs/CLOUDMERSIVE_SETUP.md)
+- [ClamAV self-hosted alternative](docs/CLAMAV_SETUP.md)
 - [Architecture decisions](docs/adr)
 
 ## Quick start

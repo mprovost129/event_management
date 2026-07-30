@@ -46,6 +46,9 @@ The text is tailored to the actual Gather HQs model:
 - Tax responsibility and the platform's application-fee treatment.
 - A current list of production subprocessors and required data-processing
   agreements.
+- Cloudmersive's terms, privacy notice, security materials, data-processing
+  terms, processing locations, retention claims, and incident commitments for
+  organization-document malware scanning.
 
 Production checks intentionally fail while `LEGAL_DRAFT=true` or
 `LEGAL_POSTAL_ADDRESS` is blank.

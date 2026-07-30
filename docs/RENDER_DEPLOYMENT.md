@@ -102,11 +102,13 @@ Before inviting any real user:
 1. Export and verify the database, then change `gather-hqs-db` from `free` to
    `basic-256mb`, add a 5 GB disk, and enable the reviewed backup policy.
 
-   Provision a private ClamAV-compatible scanning service reachable from the web
-   service. Set `DOCUMENT_UPLOAD_SCAN_BACKEND=clamav`, `CLAMAV_HOST`,
-   `CLAMAV_PORT` (normally `3310`), and `CLAMAV_TIMEOUT_SECONDS`. The deployment
-   check rejects disabled scanning, and document uploads fail closed if the
-   scanner cannot return a clean result.
+   Create the Cloudmersive account, sync the Blueprint, and enter
+   `CLOUDMERSIVE_API_KEY` when Render prompts for the secret. The Blueprint uses
+   the advanced HTTPS endpoint and caps documents at 3,500,000 bytes to match
+   the current free-tier maximum. The deployment check rejects disabled or
+   incomplete scanning, and uploads fail closed unless the provider returns an
+   explicit clean result. Follow `CLOUDMERSIVE_SETUP.md` for quota, rate,
+   clean/EICAR/outage, privacy, and troubleshooting procedures.
 2. Change `gather-hqs-key-value` from `free` to `starter` and set persistence to
    `journal-snapshot`. The upgrade clears the free instance, so perform it
    before live work is queued. Restart the worker and scheduler afterward.

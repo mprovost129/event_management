@@ -6,6 +6,14 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Added
 
+- A fail-closed Cloudmersive Advanced Virus Scan backend, Render configuration
+  for the free tier's 3.5 MB maximum, configuration checks, scanner tests,
+  operating guidance, and privacy/subprocessor disclosure. ClamAV remains an
+  optional self-hosted backend.
+- Roadmap status for production-safe document storage, access control, upload
+  validation, and malware scanning now reflects implementation pending live
+  Cloudmersive validation.
+- A ClamAV provisioning and operations guide covering Render private networking, deployment variables, signature maintenance, connectivity checks, clean/EICAR/outage validation, monitoring, and troubleshooting.
 - A dedicated legal center with separate terms, privacy, cookie, payments/refunds, acceptable-use, retention, security, and review policies backed by deploy-time organization and contact settings.
 - `DEVELOPMENT_ROADMAP.md`
 - `PRODUCT_VISION.md`
