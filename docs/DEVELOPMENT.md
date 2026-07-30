@@ -263,7 +263,7 @@ Subscriber-provided HTML, CSS, and JavaScript must not be written directly into 
 
 ## Request tracing and auditing
 
-Every response receives a bounded `X-Request-ID`. Application logs include that request ID and a site ID placeholder. Future host-resolution middleware will set the site context after it identifies the tenant.
+Every response receives a bounded `X-Request-ID`. Application logs include that request ID, a site ID placeholder, and the immutable release identifier from `RELEASE_VERSION` or Render's `RENDER_GIT_COMMIT`. Future host-resolution middleware will set the site context after it identifies the tenant.
 
 Use `ops.services.record_audit_event` for privileged or sensitive domain actions such as role changes, refunds, moderation, exports, support access, and deletion requests. Summaries must contain identifiers and safe state descriptions, not credentials, payment payloads, message bodies, or unrestricted personal data.
 

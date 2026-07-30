@@ -132,6 +132,17 @@ def deployment_product_check(app_configs, **kwargs):
                 id="platform.W001",
             )
         )
+    if settings.RELEASE_VERSION in {"", "development", "unknown"}:
+        issues.append(
+            Warning(
+                "Production logs need an immutable release identifier.",
+                hint=(
+                    "Set RELEASE_VERSION to the image or commit identifier; "
+                    "Render uses RENDER_GIT_COMMIT automatically."
+                ),
+                id="platform.W004",
+            )
+        )
     configured_prices = (
         settings.STRIPE_STANDARD_MONTHLY_PRICE_ID,
         settings.STRIPE_STANDARD_YEARLY_PRICE_ID,

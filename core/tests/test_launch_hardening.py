@@ -1,10 +1,58 @@
+import json
+import logging
+import re
+
 import pytest
+from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 
 from core.checks import deployment_product_check, product_configuration_check
+from core.logging import JsonFormatter, RequestContextFilter
 from ops.models import SystemHeartbeat
 from ops.tasks import record_background_heartbeat
+
+
+def test_data_tables_and_images_keep_baseline_accessibility_markup():
+    failures = []
+    for template in (settings.BASE_DIR / "templates").rglob("*.html"):
+        source = template.read_text(encoding="utf-8")
+        for header in re.findall(r"<th\b[^>]*>", source, flags=re.IGNORECASE):
+            if not re.search(r"\bscope=[\"'](?:col|row)[\"']", header):
+                failures.append(f"{template.relative_to(settings.BASE_DIR)}: {header}")
+        for image in re.findall(r"<img\b[^>]*>", source, flags=re.IGNORECASE):
+            if not re.search(r"\balt=[\"']", image):
+                failures.append(f"{template.relative_to(settings.BASE_DIR)}: {image}")
+        responsive_regions = re.findall(
+            r'<div\b[^>]*class="[^"]*\btable-responsive\b[^"]*"[^>]*>', source
+        )
+        for region in responsive_regions:
+            if (
+                'role="region"' not in region
+                or 'tabindex="0"' not in region
+                or not re.search(r'\baria-label(?:ledby)?="', region)
+            ):
+                failures.append(f"{template.relative_to(settings.BASE_DIR)}: {region}")
+
+    assert failures == []
+
+
+@override_settings(RELEASE_VERSION="release-abc123")
+def test_structured_logs_include_the_release_identifier():
+    record = logging.LogRecord(
+        name="release-test",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=1,
+        msg="Release logging works",
+        args=(),
+        exc_info=None,
+    )
+    RequestContextFilter().filter(record)
+
+    payload = json.loads(JsonFormatter().format(record))
+
+    assert payload["release"] == "release-abc123"
 
 
 @pytest.mark.django_db

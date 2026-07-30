@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core import signing
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
 from contacts.models import Contact, Member, MemberSubscription
@@ -997,22 +997,28 @@ def commerce_summary(site):
             Order.Status.DISPUTED,
         )
     )
-    gross = settled_orders.aggregate(total=Sum("total_cents"))["total"] or 0
-    refunds = settled_orders.aggregate(total=Sum("refunded_cents"))["total"] or 0
-    fees = settled_orders.aggregate(total=Sum("stripe_fee_cents"))["total"] or 0
-    application_fees = (
-        settled_orders.aggregate(total=Sum("application_fee_cents"))["total"] or 0
+    order_totals = settled_orders.aggregate(
+        gross=Sum("total_cents"),
+        refunds=Sum("refunded_cents"),
+        fees=Sum("stripe_fee_cents"),
+        application_fees=Sum("application_fee_cents"),
+        application_fee_refunds=Sum("application_fee_refunded_cents"),
     )
-    application_fee_refunds = (
-        settled_orders.aggregate(total=Sum("application_fee_refunded_cents"))["total"]
-        or 0
-    )
+    gross = order_totals["gross"] or 0
+    refunds = order_totals["refunds"] or 0
+    fees = order_totals["fees"] or 0
+    application_fees = order_totals["application_fees"] or 0
+    application_fee_refunds = order_totals["application_fee_refunds"] or 0
     application_fee_net = application_fees - application_fee_refunds
     member_dues = (
         MembershipPayment.objects.for_site(site)
         .filter(status=MembershipPayment.Status.PAID)
         .aggregate(total=Sum("amount_paid_cents"))["total"]
         or 0
+    )
+    subscription_totals = subscriptions.aggregate(
+        active=Count("id", filter=Q(status=MemberSubscription.Status.ACTIVE)),
+        past_due=Count("id", filter=Q(status=MemberSubscription.Status.PAST_DUE)),
     )
     return {
         "ticket_gross_cents": gross,
@@ -1023,12 +1029,8 @@ def commerce_summary(site):
         "refunds_cents": refunds,
         "ticket_net_cents": gross - refunds - fees - application_fee_net,
         "member_dues_cents": member_dues,
-        "active_members": subscriptions.filter(
-            status=MemberSubscription.Status.ACTIVE
-        ).count(),
-        "past_due_members": subscriptions.filter(
-            status=MemberSubscription.Status.PAST_DUE
-        ).count(),
+        "active_members": subscription_totals["active"],
+        "past_due_members": subscription_totals["past_due"],
     }
 
 

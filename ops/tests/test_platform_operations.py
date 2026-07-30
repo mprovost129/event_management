@@ -2,7 +2,9 @@ from datetime import timedelta
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.db import connection
 from django.test import Client, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -92,6 +94,17 @@ def test_summary_and_event_comparison_reconcile_to_fixture():
     assert comparison[0]["registrations"] == 1
     assert comparison[0]["checked_in"] == 1
     assert comparison[0]["rating_average"] == 4
+
+
+@pytest.mark.django_db
+def test_site_summary_uses_a_bounded_number_of_aggregate_queries():
+    _, site, _ = operations_fixture()
+
+    with CaptureQueriesContext(connection) as queries:
+        summary = site_summary(site)
+
+    assert summary["registrations"] == 1
+    assert len(queries) <= 12, [query["sql"] for query in queries]
 
 
 @pytest.mark.django_db
@@ -263,3 +276,22 @@ def test_platform_operations_reports_collected_and_returned_ticket_fees():
     assert "Net Gather HQs fees" in content
     assert "$0.45" in content
     assert "Across 1 paid order" in content
+
+
+@pytest.mark.django_db
+def test_platform_operations_controls_have_labels_and_confirmations(client):
+    _, site, _ = operations_fixture()
+    admin = User.objects.create_superuser(
+        email="admin@example.com", password="Strong-Test-Pass-2026!"
+    )
+    client.force_login(admin)
+
+    response = client.get(reverse("ops:dashboard"))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert 'for="operations-search"' in content
+    assert f'for="suspension-reason-{site.id}"' in content
+    assert f'for="deletion-reason-{site.id}"' in content
+    assert "return confirm(" in content
+    assert 'role="region"' in content

@@ -157,9 +157,13 @@ Make the existing platform reliable, consistent, responsive, accessible, and rea
 - Added tenant-specific rate limiting to public form submissions.
 - Removed per-record event and campaign metric queries, replaced memory-heavy relationship prefetches with aggregates, and added composite workspace indexes in migration `0007`.
 - Expanded cross-tenant detail-view coverage and added explicit confirmation to destructive event, contact, review, document, and team actions.
+- Added cross-tenant identifier-substitution coverage for contact, content, event, campaign, payment, review, and attendance object endpoints, including destructive POST routes.
+- Consolidated reporting and commerce status totals into bounded aggregate queries with a regression query ceiling.
+- Added scoped data-table headers, named keyboard-scroll regions, labeled platform-operation controls, and confirmations for destructive platform actions, backed by static template checks.
+- Added immutable release identifiers to plain and structured logs through `RELEASE_VERSION` or Render's `RENDER_GIT_COMMIT`.
 - Documented the implemented staff role matrix in `ROLE_MATRIX.md`.
 
-Phase 8 remains in progress. Production service validation, comprehensive tenant-model coverage outside the workspace, accessibility/mobile user acceptance testing, broader query profiling, monitoring, backup/restore testing, and malware-scanning strategy remain open.
+Phase 8 remains in progress. Production service validation, remaining tenant-owned service/background/export coverage, manual accessibility/mobile user acceptance testing, production monitoring, backup/restore testing, and malware-scanning strategy remain open.
 
 ---
 

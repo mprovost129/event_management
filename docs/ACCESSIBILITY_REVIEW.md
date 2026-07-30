@@ -1,6 +1,6 @@
 # Accessibility and Responsive Review
 
-Automated code protections include a skip link, semantic main target, labeled primary navigation, visible keyboard focus, 44-pixel minimum controls, reduced-motion behavior, responsive tables, and browser security policies. They do not replace manual review.
+Automated code protections include a skip link, semantic main target, labeled primary navigation, visible keyboard focus, 44-pixel minimum controls, reduced-motion behavior, responsive tables with scoped headers and named keyboard-scroll regions, alternative-text checks, and browser security policies. They do not replace manual review.
 
 Test the platform home, signup/login, subscriber dashboard, content editor, event form, invitation RSVP with guests, ticket checkout handoff, mobile roster/check-in, campaigns, reports, review form, and legal pages.
 

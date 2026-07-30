@@ -17,6 +17,9 @@ All notable changes should be recorded here. Until the project adopts a formal r
 - Search and status filtering for the core tenant and operational directories.
 - Composite indexes for common tenant/status/date workspace queries.
 - Tenant-specific abuse-rate limiting for public form submissions.
+- Cross-tenant object-ID regression coverage across the principal tenant applications.
+- Automated baseline checks for data-table, responsive-region, and image accessibility markup.
+- Immutable release identifiers in plain and JSON application logs.
 
 ### Changed
 
@@ -27,7 +30,10 @@ All notable changes should be recorded here. Until the project adopts a formal r
 - CI now selects PostgreSQL test settings instead of silently falling back to in-memory SQLite.
 - Event and campaign list metrics now use bounded aggregate queries instead of per-record query loops.
 - Volunteer-hour and sponsor-count list summaries now use database aggregates.
+- Reporting and commerce status summaries now use bounded filtered aggregates.
 - Destructive event, contact, review, document, and team actions request explicit confirmation.
+- Destructive platform suspension, deletion, approval, and moderation actions request explicit confirmation.
+- Responsive data tables expose scoped headers and named keyboard-scroll regions.
 
 ### Fixed
 

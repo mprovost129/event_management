@@ -19,6 +19,9 @@ PLATFORM_CONTROL_HOSTS = env_list(
     "PLATFORM_CONTROL_HOSTS", (PLATFORM_DOMAIN, f"www.{PLATFORM_DOMAIN}")
 )
 PLATFORM_DEFAULT_CURRENCY = env("PLATFORM_DEFAULT_CURRENCY", "usd").lower()
+RELEASE_VERSION = env(
+    "RELEASE_VERSION", env("RENDER_GIT_COMMIT", "development", allow_blank=True)
+)
 STRIPE_STANDARD_MONTHLY_PRICE_ID = env(
     "STRIPE_STANDARD_MONTHLY_PRICE_ID",
     "price_1TyGKX2dujKmWAFggUOrejZz",
@@ -281,7 +284,7 @@ LOGGING = {
     "formatters": {
         "plain": {
             "format": "{levelname} {asctime} {name} request_id={request_id} "
-            "site_id={site_id} {message}",
+            "site_id={site_id} release={release} {message}",
             "style": "{",
         },
         "json": {

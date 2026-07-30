@@ -132,3 +132,7 @@ The roadmap identifies production hardening and design-system refinement as the 
 - Added public-form abuse throttling, deterministic pagination, and composite workspace indexes.
 - Replaced event, campaign, volunteer, and sponsor list N+1 or memory-heavy queries with aggregates.
 - Added migration `workspace/0007_activity_ws_activity_site_kind_time_and_more.py`. Run `python manage.py migrate` during deployment.
+- Added a cross-tenant identifier-substitution matrix for contact, content, event, campaign, payment, review, and attendance endpoints.
+- Consolidated reporting and commerce summaries into filtered aggregate queries and enforced a query ceiling.
+- Added accessible data-table headers, named keyboard-scroll regions, labeled platform-operation fields, and destructive-action confirmations.
+- Added release identifiers to structured and plain logs using `RELEASE_VERSION` or Render's commit identifier.
