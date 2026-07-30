@@ -315,4 +315,21 @@ def deployment_product_check(app_configs, **kwargs):
                 id="platform.E019",
             )
         )
+    expected_cookie_domain = settings.PLATFORM_DOMAIN.lstrip(".")
+    if (settings.SESSION_COOKIE_DOMAIN or "").lstrip(".") != expected_cookie_domain:
+        issues.append(
+            Error(
+                "The production session cookie must be shared with tenant subdomains.",
+                hint=f"Set SESSION_COOKIE_DOMAIN=.{expected_cookie_domain}.",
+                id="platform.E034",
+            )
+        )
+    if (settings.CSRF_COOKIE_DOMAIN or "").lstrip(".") != expected_cookie_domain:
+        issues.append(
+            Error(
+                "The production CSRF cookie must be shared with tenant subdomains.",
+                hint=f"Set CSRF_COOKIE_DOMAIN=.{expected_cookie_domain}.",
+                id="platform.E035",
+            )
+        )
     return issues

@@ -14,7 +14,7 @@
             <a href="{% url 'content:newsletter' %}">{{ site_navigation.newsletter.navigation_label|default:"Newsletter" }}</a>
             {% if site_navigation.contact %}<a href="{% url 'content:contact' %}">{{ site_navigation.contact.navigation_label }}</a>{% endif %}
             {% if public_site_management_role %}
-                <a class="btn btn-sm btn-outline-primary" href="{% url 'sites:dashboard' navbar_site.id %}">Manage this site</a>
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'sites:dashboard' navbar_site.id %}">Back to dashboard</a>
             {% endif %}
         </div>
         {% else %}

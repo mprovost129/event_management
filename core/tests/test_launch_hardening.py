@@ -157,6 +157,32 @@ def test_production_deployment_requires_document_malware_scanning():
     assert "platform.E033" in issue_ids
 
 
+@override_settings(
+    DEBUG=False,
+    PLATFORM_DOMAIN="gatherhqs.com",
+    SESSION_COOKIE_DOMAIN=None,
+    CSRF_COOKIE_DOMAIN=None,
+)
+def test_production_deployment_requires_cross_subdomain_auth_cookies():
+    issue_ids = {issue.id for issue in deployment_product_check(None)}
+
+    assert "platform.E034" in issue_ids
+    assert "platform.E035" in issue_ids
+
+
+@override_settings(
+    DEBUG=False,
+    PLATFORM_DOMAIN="gatherhqs.com",
+    SESSION_COOKIE_DOMAIN=".gatherhqs.com",
+    CSRF_COOKIE_DOMAIN=".gatherhqs.com",
+)
+def test_production_deployment_accepts_cross_subdomain_auth_cookies():
+    issue_ids = {issue.id for issue in deployment_product_check(None)}
+
+    assert "platform.E034" not in issue_ids
+    assert "platform.E035" not in issue_ids
+
+
 @pytest.mark.django_db
 def test_production_error_pages_are_safe_branded_and_traceable(client):
     missing = client.get(

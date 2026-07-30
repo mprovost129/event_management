@@ -265,6 +265,8 @@ Subscriber-provided HTML, CSS, and JavaScript must not be written directly into 
 
 Every response receives a bounded `X-Request-ID`. Application logs include that request ID, a site ID placeholder, and the immutable release identifier from `RELEASE_VERSION` or Render's `RENDER_GIT_COMMIT`. Future host-resolution middleware will set the site context after it identifies the tenant.
 
+Production authentication is shared across the control domain and tenant subdomains with `SESSION_COOKIE_DOMAIN` and `CSRF_COOKIE_DOMAIN` set to `.gatherhqs.com`. This lets an authenticated site administrator open the public site and use the staff-only **Back to dashboard** navigation control. After changing either cookie-domain setting, sign out and sign back in so the browser receives the replacement domain cookie.
+
 Use `ops.services.record_audit_event` for privileged or sensitive domain actions such as role changes, refunds, moderation, exports, support access, and deletion requests. Summaries must contain identifiers and safe state descriptions, not credentials, payment payloads, message bodies, or unrestricted personal data.
 
 ## Deployment checks
