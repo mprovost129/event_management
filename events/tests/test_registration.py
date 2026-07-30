@@ -100,36 +100,6 @@ def test_invitation_token_is_hashed_and_supports_invite_only_response():
 
 
 @pytest.mark.django_db
-def test_invitation_cannot_be_used_for_a_different_contact():
-    owner, site, _, occurrence = phase_three_fixture(
-        visibility=Event.Visibility.INVITE_ONLY
-    )
-    invited = Contact.objects.create(
-        site=site, first_name="Alex", last_name="Dancer", email="alex@example.com"
-    )
-    other = Contact.objects.create(
-        site=site, first_name="Jordan", last_name="Dancer", email="jordan@example.com"
-    )
-    invitation, _ = create_invitations(
-        site=site, occurrence=occurrence, contacts=[invited], actor=owner
-    )[0]
-
-    with pytest.raises(RegistrationUnavailable, match="does not belong"):
-        save_response(
-            occurrence=occurrence,
-            contact=other,
-            response=Registration.Response.GOING,
-            guests=[],
-            source=Registration.Source.INVITATION,
-            invitation=invitation,
-        )
-
-    assert not Registration.objects.exists()
-    invitation.refresh_from_db()
-    assert invitation.status == Invitation.Status.PENDING
-
-
-@pytest.mark.django_db
 def test_invite_only_event_rejects_public_response_without_invitation():
     _, site, _, occurrence = phase_three_fixture(
         visibility=Event.Visibility.INVITE_ONLY

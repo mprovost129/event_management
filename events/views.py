@@ -8,7 +8,9 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
+from core.pagination import paginate
 from core.rate_limits import public_write_rate_limit
+from notifications.services import notify_registration_response
 from ops.services import record_audit_event
 from payments.services import registration_checkout_token, ticket_inventory
 from sites.permissions import site_staff_required
@@ -45,7 +47,11 @@ def _public_site(request):
 @site_staff_required
 def manage_events(request, site_id):
     site = request.authorized_site
-    events = Event.objects.for_site(site).prefetch_related("occurrences")
+    events = paginate(
+        request,
+        Event.objects.for_site(site).prefetch_related("occurrences"),
+        per_page=20,
+    )
     created_event_id = request.GET.get("created", "")
     for event in events:
         event.just_created = str(event.id) == created_event_id
@@ -59,6 +65,7 @@ def manage_events(request, site_id):
         {
             "site": site,
             "events": events,
+            "page_obj": events,
             "canonical_domain": site.domains.filter(is_canonical=True).first(),
         },
     )
@@ -434,6 +441,7 @@ def public_response(request, slug, occurrence_id):
             form.add_error(None, str(exc))
         else:
             queue_confirmation(registration, history)
+            notify_registration_response(registration, history)
             return render(
                 request,
                 "public/rsvp_complete.html",
@@ -481,6 +489,7 @@ def invitation_response(request, token):
             form.add_error(None, str(exc))
         else:
             queue_confirmation(registration, history)
+            notify_registration_response(registration, history)
             return render(
                 request,
                 "public/rsvp_complete.html",

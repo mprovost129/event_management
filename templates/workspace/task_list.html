@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Tasks | {{ site.display_name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"><div><p class="text-uppercase text-secondary small fw-semibold mb-1">Operations</p><h1 class="mb-0">Tasks</h1></div><a class="btn btn-primary" href="{% url 'workspace:task_create' site.id %}">Create task</a></div>
+<nav class="nav nav-pills mb-4"><a class="nav-link {% if selected_status == 'open' %}active{% endif %}" href="?status=open">Open</a><a class="nav-link {% if selected_status == 'done' %}active{% endif %}" href="?status=done">Completed</a><a class="nav-link {% if selected_status == 'all' %}active{% endif %}" href="?status=all">All</a></nav>
+<div class="list-group shadow-sm">
+{% for task in tasks %}<a class="list-group-item list-group-item-action py-3" href="{% url 'workspace:task_detail' site.id task.id %}"><div class="d-flex justify-content-between gap-3"><div><div class="d-flex flex-wrap gap-2 align-items-center"><strong>{{ task.title }}</strong><span class="badge text-bg-light">{{ task.get_priority_display }}</span>{% if task.is_overdue %}<span class="badge text-bg-danger">Overdue</span>{% endif %}</div><small class="text-secondary">{{ task.get_status_display }}{% if task.event %} · {{ task.event.title }}{% endif %}{% if task.assignee %} · {{ task.assignee.email }}{% endif %}</small></div>{% if task.due_at %}<time class="text-nowrap">{{ task.due_at|date:"M j, Y g:i A" }}</time>{% endif %}</div></a>{% empty %}<div class="list-group-item py-5 text-center text-secondary">No tasks match this view.</div>{% endfor %}
+</div>
+{% endblock %}

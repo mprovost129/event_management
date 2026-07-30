@@ -70,3 +70,31 @@ docker compose exec web python manage.py migrate
 ```
 
 Open `http://localhost:8000`. See the development guide for quality and deployment checks.
+
+### Organization workspace
+
+Gather HQs includes People/CRM profiles, organization and event tasks, documents, and an activity feed. After deploying this version, run:
+
+```bash
+python manage.py migrate
+```
+
+Uploaded organization documents use the configured Django default storage backend. Production deployments should confirm persistent object storage is configured before relying on uploads.
+
+### Phase 2 workspace modules
+The organization workspace now includes volunteer and sponsor management. Administrators and site managers can create volunteer profiles from existing CRM contacts, schedule and staff shifts, record service hours, maintain sponsor profiles, and track sponsorship commitments.
+
+### Phase 4 workflow automation
+Administrators and site managers can create workflow rules under **Automations**. The first production trigger is form submission; rules can create follow-up tasks, apply a CRM tag when supported by the contact model, or add an activity-feed entry. Each execution records a success, skip, or failure result for operational review.
+
+### Phase 7 guided onboarding
+Administrators and site managers can open **Quick start** from the organization dashboard. The guide separates required launch essentials from optional workspace tools and updates automatically as the site is configured. This phase does not require a database migration.
+
+## Project planning documents
+
+- `PRODUCT_VISION.md` — product positioning, customers, principles, boundaries, and success measures
+- `DEVELOPMENT_ROADMAP.md` — completed phases, production-hardening priority, and recommended future phases
+- `CHANGELOG.md` — phase and release history
+- `ARCHITECTURE.md` — application boundaries, tenant model, background processing, and deployment topology
+- `CONTRIBUTING.md` — coding, testing, migration, permission, and documentation standards
+- `TESTING_CHECKLIST.md` — release validation checklist for core platform workflows

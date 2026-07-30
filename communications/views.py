@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 
 from content.models import BlogPost
+from core.pagination import paginate
 from ops.services import record_audit_event
 from sites.permissions import site_staff_required
 
@@ -32,13 +33,16 @@ from .resend_webhooks import process_resend_webhook
 @site_staff_required
 def campaign_list(request, site_id):
     site = request.authorized_site
-    campaigns = Campaign.objects.for_site(site).select_related("created_by")
+    campaigns = paginate(
+        request,
+        Campaign.objects.for_site(site).select_related("created_by"),
+    )
     for campaign in campaigns:
         campaign.metrics = campaign_metrics(campaign)
     return render(
         request,
         "communications/campaign_list.html",
-        {"site": site, "campaigns": campaigns},
+        {"site": site, "campaigns": campaigns, "page_obj": campaigns},
     )
 
 

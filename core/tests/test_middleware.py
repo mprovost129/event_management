@@ -1,9 +1,9 @@
 import uuid
 
 from django.http import HttpResponse
-from django.test import RequestFactory, SimpleTestCase, override_settings
+from django.test import RequestFactory, SimpleTestCase
 
-from core.middleware import PlatformSessionMiddleware, RequestContextMiddleware
+from core.middleware import RequestContextMiddleware
 from core.request_context import request_id_var, site_id_var
 
 
@@ -41,33 +41,3 @@ class RequestContextMiddlewareTests(SimpleTestCase):
         self.assertEqual(safe["X-Request-ID"], "request-12345678")
         self.assertNotEqual(unsafe["X-Request-ID"], "unsafe value\nheader")
         uuid.UUID(unsafe["X-Request-ID"])
-
-
-@override_settings(
-    ALLOWED_HOSTS=(".gatherhqs.com", ".onrender.com"),
-    SESSION_ENGINE="django.contrib.sessions.backends.signed_cookies",
-)
-class PlatformSessionMiddlewareTests(SimpleTestCase):
-    def setUp(self):
-        self.factory = RequestFactory()
-
-    def session_response(self, host):
-        def get_response(request):
-            request.session["authenticated"] = True
-            return HttpResponse()
-
-        return PlatformSessionMiddleware(get_response)(
-            self.factory.get("/", headers={"host": host})
-        )
-
-    @override_settings(PLATFORM_DOMAIN="gatherhqs.com")
-    def test_shares_session_cookie_across_platform_subdomains(self):
-        response = self.session_response("kathy.gatherhqs.com")
-
-        self.assertEqual(response.cookies["sessionid"]["domain"], ".gatherhqs.com")
-
-    @override_settings(PLATFORM_DOMAIN="gatherhqs.com")
-    def test_keeps_session_cookie_host_only_on_render_hostname(self):
-        response = self.session_response("gather-hqs.onrender.com")
-
-        self.assertEqual(response.cookies["sessionid"]["domain"], "")

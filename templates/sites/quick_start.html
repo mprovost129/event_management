@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Quick start | {{ site.display_name }}{% endblock %}
+{% block content %}
+<div class="gh-dashboard">
+    <header class="gh-dashboard-head">
+        <div>
+            <p class="gh-step-label mb-1">Guided setup</p>
+            <h1>Launch {{ site.display_name }} with confidence.</h1>
+            <p class="text-secondary mb-0">Start with the essentials, then add the operating tools your organization needs. Nothing here blocks you from using the rest of Gather HQs.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-primary" href="{% url 'sites:dashboard' site.id %}">Back to dashboard</a>
+            {% if site.is_published and canonical_domain %}<a class="btn btn-primary" href="//{{ canonical_domain.hostname }}">View live site</a>{% endif %}
+        </div>
+    </header>
+
+    <section class="gh-admin-section" aria-labelledby="launch-essentials-title">
+        <div class="gh-section-row">
+            <div>
+                <p class="gh-step-label mb-1">Stage 1 · Launch essentials</p>
+                <h2 id="launch-essentials-title">{{ setup.completed }} of {{ setup.total }} essentials complete</h2>
+            </div>
+            <strong>{{ setup.percent }}%</strong>
+        </div>
+        <div class="progress gh-setup-progress mb-4" role="progressbar" aria-valuenow="{{ setup.percent }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar" style="width: {{ setup.percent }}%"></div>
+        </div>
+        <div class="row g-3">
+            {% for check in setup.checks %}
+            <div class="col-lg-6">
+                <article class="border rounded-3 p-3 h-100 d-flex gap-3 align-items-start">
+                    <span class="gh-setup-check {% if check.complete %}is-complete{% endif %}" aria-hidden="true">{% if check.complete %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+                    <div class="flex-grow-1">
+                        <h3 class="h5 mb-1">{{ check.label }}</h3>
+                        <p class="text-secondary mb-3">{{ check.description }}</p>
+                        {% if check.complete %}<span class="badge text-bg-success">Complete</span>{% else %}<a class="btn btn-sm btn-outline-primary" href="{{ check.action_url }}">Start this step</a>{% endif %}
+                    </div>
+                </article>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="gh-admin-section" aria-labelledby="growth-tools-title">
+        <div class="gh-section-row">
+            <div>
+                <p class="gh-step-label mb-1">Stage 2 · Build your workspace</p>
+                <h2 id="growth-tools-title">{{ growth_completed }} of {{ growth_total }} operating tools started</h2>
+                <p class="text-secondary mb-0">These are optional. Add them when they solve a real need for your organization.</p>
+            </div>
+            <strong>{{ growth_percent }}%</strong>
+        </div>
+        <div class="progress gh-setup-progress mb-4" role="progressbar" aria-valuenow="{{ growth_percent }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar" style="width: {{ growth_percent }}%"></div>
+        </div>
+        <div class="row g-3">
+            {% for step in growth_steps %}
+            <div class="col-lg-6">
+                <article class="border rounded-3 p-3 h-100">
+                    <div class="d-flex gap-3 align-items-start">
+                        <span class="gh-setup-check" aria-hidden="true">{% if step.complete %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+                        <div>
+                            <h3 class="h5 mb-1">{{ step.label }}</h3>
+                            <p class="text-secondary mb-3">{{ step.description }}</p>
+                            {% if step.complete %}<span class="badge text-bg-success">Started</span>{% else %}<a class="btn btn-sm btn-outline-primary" href="{{ step.action_url }}">Open tool</a>{% endif %}
+                        </div>
+                    </div>
+                </article>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="gh-admin-section" aria-labelledby="launch-path-title">
+        <p class="gh-step-label mb-1">Recommended first session</p>
+        <h2 id="launch-path-title">A practical 10-minute path</h2>
+        <ol class="mb-0">
+            <li class="mb-2">Choose your colors, headline, and public website status.</li>
+            <li class="mb-2">Create one event with its date, location, visibility, and RSVP settings.</li>
+            <li class="mb-2">Add one contact and send a test invitation to yourself.</li>
+            <li class="mb-2">Open the public site in a private browser window and complete the visitor flow.</li>
+            <li>Return to the dashboard and confirm the response, notification, and roster activity.</li>
+        </ol>
+    </section>
+</div>
+{% endblock %}

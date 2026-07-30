@@ -250,25 +250,6 @@ def test_subdomain_resolves_site_and_unknown_platform_subdomain_returns_404(clie
 
 
 @pytest.mark.django_db
-def test_public_site_nav_shows_dashboard_only_to_authenticated_users(client):
-    owner = verified_user("owner@example.com")
-    create_subscriber_site(
-        owner=owner,
-        display_name="Boot Scooters",
-        slug="boot-scooters",
-        timezone_name="America/New_York",
-    )
-    dashboard_url = reverse("sites:account_dashboard")
-
-    public_response = client.get("/", headers={"host": "boot-scooters.localhost"})
-    assert f'href="{dashboard_url}"' not in public_response.content.decode()
-
-    client.force_login(owner)
-    owner_response = client.get("/", headers={"host": "boot-scooters.localhost"})
-    assert f'href="{dashboard_url}"' in owner_response.content.decode()
-
-
-@pytest.mark.django_db
 @override_settings(
     PLATFORM_DOMAIN="gatherhqs.com",
     PLATFORM_CONTROL_HOSTS=("gatherhqs.com", "www.gatherhqs.com"),

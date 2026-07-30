@@ -21,6 +21,8 @@ urlpatterns = [
     path("", include("events.urls")),
     path("", include("attendance.urls")),
     path("", include("reviews.urls")),
+    path("", include("notifications.urls")),
+    path("", include("workspace.urls")),
     path("", include("sites.urls")),
     path("", include("core.urls")),
 ]

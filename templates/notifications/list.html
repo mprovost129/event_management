@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center gap-3 mb-4">
+    <div><h1 class="mb-1">Notifications</h1><p class="text-secondary mb-0">Important activity across the sites you manage.</p></div>
+    {% if unread_notification_count %}<form method="post" action="{% url 'notifications:mark_all_read' %}">{% csrf_token %}<button class="btn btn-outline-primary">Mark all read</button></form>{% endif %}
+</div>
+<div class="list-group">
+{% for item in notifications %}
+    <article class="list-group-item py-3{% if not item.is_read %} border-start border-4{% endif %}">
+        <div class="d-flex justify-content-between gap-3">
+            <div><strong>{{ item.title }}</strong><div class="small text-secondary">{{ item.site.display_name }} · {{ item.created_at|timesince }} ago</div><p class="mb-0 mt-2">{{ item.message }}</p></div>
+            {% if item.action_url %}<form method="post" action="{% url 'notifications:mark_read' item.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary">Open</button></form>{% endif %}
+        </div>
+    </article>
+{% empty %}<div class="card"><div class="card-body text-secondary">No notifications yet.</div></div>{% endfor %}
+</div>
+{% endblock %}

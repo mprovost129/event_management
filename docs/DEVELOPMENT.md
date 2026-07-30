@@ -257,6 +257,8 @@ That command permanently deletes the site and its retained tenant records. Gener
 
 Production uses an S3-compatible bucket through `django-storages`. Configure `MEDIA_STORAGE_BACKEND=s3`, the bucket, its region or endpoint, and credentials supplied by the hosting platform. Local filesystem media is intentionally rejected by the deployment system check.
 
+Organization-document uploads are restricted by `DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS` and `DOCUMENT_UPLOAD_MAX_BYTES` (10 MiB by default). Staff downloads pass through tenant and role authorization before storage is read. These controls do not replace a future malware-scanning pipeline; quarantine/scanning and retention policy remain production-hardening work.
+
 Subscriber-provided HTML, CSS, and JavaScript must not be written directly into static files. Public template customization will use validated theme tokens and media records.
 
 ## Request tracing and auditing

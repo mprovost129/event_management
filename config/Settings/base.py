@@ -65,6 +65,14 @@ PUBLIC_WRITE_RATE_LIMIT_WINDOW_SECONDS = env_int(
     "PUBLIC_WRITE_RATE_LIMIT_WINDOW_SECONDS", 900
 )
 RATE_LIMIT_TRUSTED_PROXY_COUNT = env_int("RATE_LIMIT_TRUSTED_PROXY_COUNT", 0)
+DOCUMENT_UPLOAD_MAX_BYTES = env_int("DOCUMENT_UPLOAD_MAX_BYTES", 10 * 1024 * 1024)
+DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS = tuple(
+    extension.lower().lstrip(".")
+    for extension in env_list(
+        "DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS",
+        ("csv", "doc", "docx", "jpeg", "jpg", "pdf", "png", "txt", "xls", "xlsx"),
+    )
+)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -88,6 +96,8 @@ INSTALLED_APPS = [
     "attendance.apps.AttendanceConfig",
     "payments.apps.PaymentsConfig",
     "reviews.apps.ReviewsConfig",
+    "notifications.apps.NotificationsConfig",
+    "workspace.apps.WorkspaceConfig",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -102,7 +112,7 @@ MIDDLEWARE = [
     "core.middleware.SecurityHeadersMiddleware",
     "core.middleware.RequestContextMiddleware",
     "sites.middleware.SiteResolutionMiddleware",
-    "core.middleware.PlatformSessionMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -129,6 +139,8 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.platform",
                 "content.context_processors.site_navigation",
+                "sites.context_processors.site_management",
+                "notifications.context_processors.notifications",
             ],
         },
     },
@@ -303,3 +315,7 @@ CSRF_COOKIE_SAMESITE = "Lax"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
+
+# Optional AI content assistant. Without a key, the workspace uses a clearly marked local draft template.
+OPENAI_API_KEY = env("OPENAI_API_KEY", "", allow_blank=True)
+OPENAI_MODEL = env("OPENAI_MODEL", "gpt-4.1-mini")

@@ -38,6 +38,7 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: config.Settings.test
+      TEST_DATABASE_ENGINE: postgres
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gatherhqs_test
       REDIS_URL: redis://127.0.0.1:6379/0
       SECRET_KEY: ci-only-secret-key

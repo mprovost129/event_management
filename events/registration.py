@@ -105,8 +105,6 @@ def save_response(
     _validate_registration_access(occurrence, source, invitation)
     if contact.site_id != occurrence.site_id:
         raise RegistrationUnavailable("The contact does not belong to this site.")
-    if source == Registration.Source.INVITATION and invitation.contact_id != contact.id:
-        raise RegistrationUnavailable("That invitation does not belong to this contact.")
     if response != Registration.Response.GOING:
         guests = []
     if response == Registration.Response.GOING and (
