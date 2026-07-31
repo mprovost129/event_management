@@ -48,7 +48,9 @@ All notable changes should be recorded here. Until the project adopts a formal r
 ### Changed
 
 - Invitation actions now use plain send-language while delivery remains safely
-  handled by the background worker.
+  handled by the background worker, with a clear 10-minute delivery expectation.
+- All rendered response, event-notice, test-message, and campaign actions now
+  use plain delivery language instead of exposing internal queue terminology.
 - Project documentation now identifies production hardening and design-system refinement as the next recommended phase.
 - Private organization documents now download through an authorized application endpoint.
 - Document uploads enforce configurable extension and size limits; administrator-only documents remain restricted to subscriber administrators.

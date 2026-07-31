@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 
@@ -188,6 +189,7 @@ def campaign_preview_view(request, site_id, campaign_id):
     if request.method == "POST" and request.POST.get("action") == "launch":
         launch_form = CampaignLaunchForm(request.POST, prefix="launch")
         if launch_form.is_valid():
+            requested_schedule = campaign.scheduled_for
             try:
                 launch_campaign(
                     campaign=campaign,
@@ -208,9 +210,11 @@ def campaign_preview_view(request, site_id, campaign_id):
                     },
                     request=request,
                 )
-                messages.success(
-                    request, "Campaign was queued for background delivery."
-                )
+                if requested_schedule and requested_schedule > timezone.now():
+                    success_message = "Campaign is scheduled for delivery."
+                else:
+                    success_message = "Campaign delivery is starting."
+                messages.success(request, success_message)
                 return redirect(
                     "communications:campaign_preview",
                     site_id=site.id,
@@ -231,7 +235,7 @@ def campaign_preview_view(request, site_id, campaign_id):
             except (CampaignUnavailable, SmsLimitExceeded) as exc:
                 test_form.add_error(None, exc)
             else:
-                messages.success(request, "Test message queued.")
+                messages.success(request, "Test message is being sent.")
                 return redirect(
                     "communications:campaign_preview",
                     site_id=site.id,

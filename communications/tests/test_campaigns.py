@@ -657,6 +657,36 @@ def test_campaign_composer_renders_guided_audience_controls():
 
 
 @pytest.mark.django_db
+def test_campaign_actions_use_plain_delivery_language(client):
+    owner, site = campaign_fixture()
+    contact_for(site, email_consent=True)
+    campaign = draft_campaign(site)
+    client.force_login(owner)
+    preview_url = reverse(
+        "communications:campaign_preview",
+        kwargs={"site_id": site.id, "campaign_id": campaign.id},
+    )
+
+    preview = client.get(preview_url)
+    test_response = client.post(
+        preview_url,
+        {"action": "test", "test-email": "owner@example.com"},
+        follow=True,
+    )
+    launch_response = client.post(
+        preview_url,
+        {"action": "launch"},
+        follow=True,
+    )
+
+    assert preview.status_code == 200
+    assert "Send campaign" in preview.content.decode()
+    assert "Queue campaign" not in preview.content.decode()
+    assert "Test message is being sent." in test_response.content.decode()
+    assert "Campaign delivery is starting." in launch_response.content.decode()
+
+
+@pytest.mark.django_db
 @override_settings(SMS_DELIVERY_BACKEND="disabled")
 def test_sms_fails_closed_when_no_provider_is_configured():
     owner, site = campaign_fixture()

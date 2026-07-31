@@ -229,6 +229,8 @@ def test_public_response_creates_contact_participants_and_confirmation(client):
         occurrence=occurrence, contact__normalized_email="alex@example.com"
     )
     assert response.status_code == 200
+    assert "A confirmation email is being sent" in response.content.decode()
+    assert "queued" not in response.content.decode().lower()
     assert (
         registration.participants.filter(status=Participant.Status.ACTIVE).count() == 2
     )
@@ -452,8 +454,10 @@ def test_manager_invitation_queues_secure_link_for_invite_only_event(client):
 
     assert form_page.status_code == 200
     assert "Send invitations" in form_page.content.decode()
+    assert "Allow up to 10 minutes" in form_page.content.decode()
     assert response.status_code == 200
     assert "Invitation is being sent to 1 person." in response.content.decode()
+    assert "allow up to 10 minutes" in response.content.decode()
     assert invitation.token_hash != token
     assert invite_page.status_code == 200
     assert "Friday dance" in invite_page.content.decode()
@@ -461,7 +465,7 @@ def test_manager_invitation_queues_secure_link_for_invite_only_event(client):
 
 
 @pytest.mark.django_db
-def test_event_cancellation_queues_notices_for_affected_responses(client):
+def test_event_cancellation_sends_notices_for_affected_responses(client):
     owner, site, event, occurrence = phase_three_fixture()
     going = Contact.objects.create(
         site=site, first_name="Alex", last_name="Going", email="going@example.com"
@@ -486,7 +490,8 @@ def test_event_cancellation_queues_notices_for_affected_responses(client):
     client.force_login(owner)
 
     response = client.post(
-        reverse("events:cancel", kwargs={"site_id": site.id, "event_id": event.id})
+        reverse("events:cancel", kwargs={"site_id": site.id, "event_id": event.id}),
+        follow=True,
     )
 
     event.refresh_from_db()
@@ -494,7 +499,11 @@ def test_event_cancellation_queues_notices_for_affected_responses(client):
     cancellation_messages = OutboundMessage.objects.filter(
         kind=OutboundMessage.Kind.CANCELLATION
     )
-    assert response.status_code == 302
+    assert response.status_code == 200
+    assert (
+        "Notices are being sent to affected attendees."
+        in response.content.decode()
+    )
     assert event.status == Event.Status.CANCELED
     assert occurrence.status == occurrence.Status.CANCELED
     assert list(cancellation_messages.values_list("recipient_email", flat=True)) == [

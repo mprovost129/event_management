@@ -312,6 +312,9 @@ def invite_contacts(request, site_id, occurrence_id):
             success_message = (
                 f"Invitations are being sent to {invitation_count} people."
             )
+        success_message += (
+            " Most emails arrive within a few minutes; allow up to 10 minutes."
+        )
         messages.success(request, success_message)
         return redirect("events:manage", site_id=site.id)
     return render(
@@ -391,7 +394,10 @@ def cancel_event(request, site_id, event_id):
         summary={"occurrences": len(occurrences)},
         request=request,
     )
-    messages.success(request, "The event was canceled and notices were queued.")
+    messages.success(
+        request,
+        "The event was canceled. Notices are being sent to affected attendees.",
+    )
     return redirect("events:manage", site_id=site.id)
 
 
