@@ -51,12 +51,29 @@ def queue_confirmation(registration, history):
     participants = (
         f"\nParticipants:\n{participant_lines}\n" if participant_lines else ""
     )
+    from django.urls import reverse
+
+    hostname = ""
+    manage_line = ""
+    if registration.source == Registration.Source.PUBLIC:
+        from events.registration import public_rsvp_manage_token
+
+        hostname = registration.site.domains.get(is_canonical=True).hostname
+        manage_path = reverse(
+            "events:public_response_manage",
+            kwargs={
+                "slug": registration.occurrence.event.slug,
+                "occurrence_id": registration.occurrence_id,
+                "token": public_rsvp_manage_token(registration),
+            },
+        )
+        manage_line = f"\n\nManage your response: https://{hostname}{manage_path}"
     if registration.payment_status == Registration.PaymentStatus.PENDING:
-        from django.urls import reverse
 
         from payments.services import registration_checkout_token
 
-        hostname = registration.site.domains.get(is_canonical=True).hostname
+        if not hostname:
+            hostname = registration.site.domains.get(is_canonical=True).hostname
         checkout_path = reverse(
             "payments:ticket_checkout",
             kwargs={"token": registration_checkout_token(registration)},
@@ -75,9 +92,43 @@ def queue_confirmation(registration, history):
         body=(
             f"Your response is {registration.get_response_display()} for "
             f"{registration.occurrence.event.title} on {_when(registration.occurrence)}."
-            f"{participants}\n{payment_line}"
+            f"{participants}\n{payment_line}{manage_line}"
         ),
         dedupe_key=f"confirmation:{history.id}",
+        occurrence=registration.occurrence,
+        registration=registration,
+    )
+
+
+def queue_rsvp_manage_link(registration, *, now=None):
+    from django.urls import reverse
+
+    from events.registration import public_rsvp_manage_token
+
+    now = now or timezone.now()
+    hostname = registration.site.domains.get(is_canonical=True).hostname
+    manage_path = reverse(
+        "events:public_response_manage",
+        kwargs={
+            "slug": registration.occurrence.event.slug,
+            "occurrence_id": registration.occurrence_id,
+            "token": public_rsvp_manage_token(registration),
+        },
+    )
+    return enqueue_message(
+        site=registration.site,
+        kind=OutboundMessage.Kind.CONFIRMATION,
+        recipient_email=registration.contact.email,
+        subject=f"Manage your RSVP: {registration.occurrence.event.title}",
+        body=(
+            "A request was made to manage your existing RSVP. No account is "
+            "required. Use this secure link:\n\n"
+            f"https://{hostname}{manage_path}\n\n"
+            "If you did not make this request, you can ignore this email."
+        ),
+        dedupe_key=(
+            f"rsvp-manage:{registration.id}:{now.strftime('%Y%m%d%H')}"
+        ),
         occurrence=registration.occurrence,
         registration=registration,
     )

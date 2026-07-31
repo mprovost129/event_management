@@ -285,7 +285,10 @@ class GuestFieldsMixin:
 
 
 class RSVPForm(GuestFieldsMixin, forms.Form):
-    response = forms.ChoiceField(choices=Registration.Response.choices)
+    response = forms.ChoiceField(
+        choices=Registration.Response.choices,
+        widget=forms.RadioSelect,
+    )
     first_name = forms.CharField(max_length=100)
     last_name = forms.CharField(max_length=100)
     email = forms.EmailField()

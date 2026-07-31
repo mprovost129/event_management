@@ -1,4 +1,4 @@
 {% extends 'public/site_base.html' %}
 {% load tz %}
 {% block title %}Invitation · {{ invitation.occurrence.event.title }}{% endblock %}
-{% block content %}{% timezone site.timezone %}<section class="site-theme"><p class="site-accent fw-semibold">You're invited</p><h1>{{ invitation.occurrence.event.title }}</h1><p>{{ invitation.occurrence.starts_at|date:"F j, Y · g:i A" }}</p><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary btn-lg" type="submit">Save response</button></form></section>{% endtimezone %}{% endblock %}
+{% block content %}{% timezone site.timezone %}<section class="site-theme"><p class="site-accent fw-semibold">You're invited</p><h1>{{ invitation.occurrence.event.title }}</h1><p>{{ invitation.occurrence.starts_at|date:"F j, Y · g:i A" }}</p><p><strong>No account required.</strong> Use this secure invitation to respond Going, Maybe, or Not going.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary btn-lg" type="submit">Save response</button></form></section>{% endtimezone %}{% endblock %}

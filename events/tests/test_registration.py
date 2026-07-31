@@ -16,6 +16,7 @@ from events.registration import (
     RegistrationUnavailable,
     create_invitations,
     invitation_for_token,
+    public_rsvp_manage_token,
     save_public_response,
     save_response,
 )
@@ -235,6 +236,157 @@ def test_public_response_creates_contact_participants_and_confirmation(client):
     assert message.registration == registration
     assert "Alex Dancer" in message.body
     assert "Sam Guest" in message.body
+    assert "Manage your response: https://boot-scooters.localhost" in message.body
+
+
+@pytest.mark.django_db
+def test_public_rsvp_needs_no_account_and_existing_response_uses_secure_link(client):
+    _, site, event, occurrence = phase_three_fixture(capacity=5, max_guests=1)
+    response_url = reverse(
+        "events:public_response",
+        kwargs={"slug": event.slug, "occurrence_id": occurrence.id},
+    )
+    public_page = client.get(
+        response_url,
+        headers={"host": "boot-scooters.localhost"},
+    )
+    initial = client.post(
+        response_url,
+        {
+            "response": "going",
+            "first_name": "Alex",
+            "last_name": "Dancer",
+            "email": "alex@example.com",
+            "guest_count": "0",
+        },
+        headers={"host": "boot-scooters.localhost"},
+    )
+    registration = Registration.objects.get(occurrence=occurrence)
+
+    unsigned_change = client.post(
+        response_url,
+        {
+            "response": "not_going",
+            "first_name": "Changed",
+            "last_name": "Name",
+            "email": "alex@example.com",
+            "guest_count": "0",
+        },
+        headers={"host": "boot-scooters.localhost"},
+    )
+    registration.refresh_from_db()
+    assert registration.response == Registration.Response.GOING
+    assert registration.contact.first_name == "Alex"
+
+    manage_token = public_rsvp_manage_token(registration)
+    manage_url = reverse(
+        "events:public_response_manage",
+        kwargs={
+            "slug": event.slug,
+            "occurrence_id": occurrence.id,
+            "token": manage_token,
+        },
+    )
+    manage_page = client.get(
+        manage_url,
+        headers={"host": "boot-scooters.localhost"},
+    )
+    secure_change = client.post(
+        manage_url,
+        {"response": "not_going", "guest_count": "0"},
+        headers={"host": "boot-scooters.localhost"},
+    )
+    registration.refresh_from_db()
+
+    assert public_page.status_code == 200
+    assert "No account required" in public_page.content.decode()
+    assert initial.status_code == 200
+    assert unsigned_change.status_code == 200
+    assert "Check your email" in unsigned_change.content.decode()
+    assert manage_page.status_code == 200
+    assert "Manage your response" in manage_page.content.decode()
+    assert secure_change.status_code == 200
+    assert registration.response == Registration.Response.NOT_GOING
+    assert registration.contact.first_name == "Alex"
+    assert OutboundMessage.objects.filter(
+        registration=registration,
+        subject=f"Manage your RSVP: {event.title}",
+        body__contains=manage_url,
+    ).exists()
+    tampered_token = (
+        ("x" if manage_token[0] != "x" else "y") + manage_token[1:]
+    )
+    assert (
+        client.get(
+            reverse(
+                "events:public_response_manage",
+                kwargs={
+                    "slug": event.slug,
+                    "occurrence_id": occurrence.id,
+                    "token": tampered_token,
+                },
+            ),
+            headers={"host": "boot-scooters.localhost"},
+        ).status_code
+        == 404
+    )
+
+
+@pytest.mark.django_db
+def test_public_manage_request_supports_manager_entered_response(client):
+    _, site, event, occurrence = phase_three_fixture(capacity=5, max_guests=0)
+    contact = Contact.objects.create(
+        site=site,
+        first_name="Alex",
+        last_name="Dancer",
+        email="alex@example.com",
+    )
+    registration, _ = save_response(
+        occurrence=occurrence,
+        contact=contact,
+        response=Registration.Response.GOING,
+        guests=[],
+        source=Registration.Source.MANAGER,
+    )
+    response = client.post(
+        reverse(
+            "events:public_response",
+            kwargs={"slug": event.slug, "occurrence_id": occurrence.id},
+        ),
+        {
+            "response": "maybe",
+            "first_name": "Alex",
+            "last_name": "Dancer",
+            "email": "alex@example.com",
+            "guest_count": "0",
+        },
+        headers={"host": "boot-scooters.localhost"},
+    )
+    manage_url = reverse(
+        "events:public_response_manage",
+        kwargs={
+            "slug": event.slug,
+            "occurrence_id": occurrence.id,
+            "token": public_rsvp_manage_token(registration),
+        },
+    )
+
+    registration.refresh_from_db()
+    assert response.status_code == 200
+    assert "Check your email" in response.content.decode()
+    assert registration.response == Registration.Response.GOING
+    assert OutboundMessage.objects.filter(
+        registration=registration,
+        subject=f"Manage your RSVP: {event.title}",
+        body__contains=manage_url,
+    ).exists()
+    assert (
+        client.get(
+            manage_url,
+            headers={"host": "boot-scooters.localhost"},
+        ).status_code
+        == 200
+    )
 
 
 @pytest.mark.django_db
@@ -259,6 +411,7 @@ def test_confirmation_dedupes_by_registration_history():
         OutboundMessage.objects.filter(kind=OutboundMessage.Kind.CONFIRMATION).count()
         == 1
     )
+    assert "Manage your response:" not in first.body
 
 
 @pytest.mark.django_db

@@ -1,6 +1,7 @@
 import hashlib
 import secrets
 
+from django.core import signing
 from django.db import transaction
 from django.utils import timezone
 
@@ -22,6 +23,51 @@ class CapacityExceeded(Exception):
 
 class RegistrationUnavailable(Exception):
     pass
+
+
+class PublicResponseAlreadyExists(Exception):
+    def __init__(self, registration_id):
+        self.registration_id = registration_id
+        super().__init__("A response already exists for that email address.")
+
+
+PUBLIC_RSVP_TOKEN_SALT = "gather-hqs.public-rsvp-capability.v1"
+
+
+def public_rsvp_manage_token(registration):
+    return signing.dumps(
+        {
+            "registration_id": str(registration.id),
+            "site_id": str(registration.site_id),
+        },
+        salt=PUBLIC_RSVP_TOKEN_SALT,
+        compress=True,
+    )
+
+
+def public_registration_for_token(*, site, token):
+    try:
+        payload = signing.loads(token, salt=PUBLIC_RSVP_TOKEN_SALT)
+    except signing.BadSignature:
+        return None
+    if payload.get("site_id") != str(site.id):
+        return None
+    return (
+        Registration.objects.for_site(site)
+        .select_related("contact", "occurrence__event")
+        .prefetch_related("participants")
+        .filter(
+            pk=payload.get("registration_id"),
+            occurrence__status=EventOccurrence.Status.SCHEDULED,
+            occurrence__ends_at__gte=timezone.now(),
+            occurrence__event__status=Event.Status.PUBLISHED,
+            occurrence__event__visibility__in=(
+                Event.Visibility.PUBLIC,
+                Event.Visibility.UNLISTED,
+            ),
+        )
+        .first()
+    )
 
 
 def invitation_token_hash(token):
@@ -261,6 +307,12 @@ def save_public_response(
             email=normalized_email,
         )
     else:
+        existing_registration = Registration.objects.filter(
+            occurrence=occurrence,
+            contact=contact,
+        ).first()
+        if existing_registration is not None:
+            raise PublicResponseAlreadyExists(existing_registration.id)
         contact.first_name = first_name.strip()
         contact.last_name = last_name.strip()
         if contact.archived_at is not None:

@@ -72,6 +72,13 @@ The first subscriber-owned organization is self-service. A subscriber may start
 one trial at a time and must have an active paid organization before starting an
 additional organization. Site-manager roles on other organizations do not count
 against this policy. Every organization retains its own platform subscription.
+
+Public, unlisted, and personally invited event responses do not require a
+Gather HQs account. Public responders provide their name and email, and their
+confirmations contain a signed management link that remains usable until the
+event ends. Submitting the public form again for an existing email sends that
+link rather than changing the response based on email knowledge alone. An
+invited responder can continue to use the secure link from the invitation.
 - Stripe platform webhook: `/billing/stripe/`
 - Platform administration: `/platform-admin/`
 

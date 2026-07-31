@@ -23,13 +23,20 @@ from .forms import (
     OccurrenceEditForm,
     RSVPForm,
 )
-from .messaging import queue_confirmation, queue_invitation, queue_occurrence_notice
+from .messaging import (
+    queue_confirmation,
+    queue_invitation,
+    queue_occurrence_notice,
+    queue_rsvp_manage_link,
+)
 from .models import Event, EventOccurrence, Registration
 from .registration import (
     CapacityExceeded,
+    PublicResponseAlreadyExists,
     RegistrationUnavailable,
     create_invitations,
     invitation_for_token,
+    public_registration_for_token,
     save_public_response,
     save_response,
 )
@@ -463,6 +470,64 @@ def occurrence_detail(request, slug, occurrence_id):
 
 
 @require_http_methods(["GET", "POST"])
+@public_write_rate_limit("public-rsvp-manage")
+def public_response_manage(request, slug, occurrence_id, token):
+    site = _public_site(request)
+    registration = public_registration_for_token(site=site, token=token)
+    if (
+        registration is None
+        or registration.occurrence_id != occurrence_id
+        or registration.occurrence.event.slug != slug
+    ):
+        raise Http404("RSVP management link not found.")
+
+    occurrence = registration.occurrence
+    form = RSVPForm(
+        request.POST or None,
+        occurrence=occurrence,
+        contact=registration.contact,
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            registration, history = save_response(
+                occurrence=occurrence,
+                contact=registration.contact,
+                response=form.cleaned_data["response"],
+                guests=form.guest_data(),
+                source=Registration.Source.PUBLIC,
+            )
+        except (CapacityExceeded, RegistrationUnavailable) as exc:
+            form.add_error(None, str(exc))
+        else:
+            queue_confirmation(registration, history)
+            notify_registration_response(registration, history)
+            return render(
+                request,
+                "public/rsvp_complete.html",
+                {
+                    "site": site,
+                    "registration": registration,
+                    "checkout_token": (
+                        registration_checkout_token(registration)
+                        if registration.payment_status
+                        == Registration.PaymentStatus.PENDING
+                        else ""
+                    ),
+                },
+            )
+    return render(
+        request,
+        "public/rsvp_form.html",
+        {
+            "site": site,
+            "occurrence": occurrence,
+            "form": form,
+            "manage_response": True,
+        },
+    )
+
+
+@require_http_methods(["GET", "POST"])
 @public_write_rate_limit("public-rsvp")
 def public_response(request, slug, occurrence_id):
     site = _public_site(request)
@@ -486,6 +551,20 @@ def public_response(request, slug, occurrence_id):
                 last_name=form.cleaned_data["last_name"],
                 email=form.cleaned_data["email"],
                 guests=form.guest_data(),
+            )
+        except PublicResponseAlreadyExists as exc:
+            existing_registration = get_object_or_404(
+                Registration.objects.for_site(site).select_related(
+                    "contact", "occurrence__event"
+                ),
+                pk=exc.registration_id,
+                occurrence=occurrence,
+            )
+            queue_rsvp_manage_link(existing_registration)
+            return render(
+                request,
+                "public/rsvp_access_sent.html",
+                {"site": site, "occurrence": occurrence},
             )
         except (CapacityExceeded, RegistrationUnavailable) as exc:
             form.add_error(None, str(exc))

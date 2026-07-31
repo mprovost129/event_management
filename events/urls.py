@@ -41,6 +41,11 @@ urlpatterns = [
         name="public_response",
     ),
     path(
+        "events/<slug:slug>/<uuid:occurrence_id>/respond/manage/<str:token>/",
+        views.public_response_manage,
+        name="public_response_manage",
+    ),
+    path(
         "invitations/<str:token>/",
         views.invitation_response,
         name="invitation_response",

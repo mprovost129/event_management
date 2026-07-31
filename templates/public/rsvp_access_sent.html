@@ -1,0 +1,13 @@
+{% extends 'public/site_base.html' %}
+{% load tz %}
+{% block title %}Check your email · {{ occurrence.event.title }}{% endblock %}
+{% block content %}
+{% timezone site.timezone %}
+<section class="site-theme">
+    <p class="site-accent fw-semibold">Existing response</p>
+    <h1>Check your email.</h1>
+    <p>A response already exists for that address. We sent its secure management link so the response can be changed without creating an account or signing in.</p>
+    <p>The link is valid until {{ occurrence.event.title }} ends on {{ occurrence.ends_at|date:"F j, Y \a\t g:i A" }}.</p>
+</section>
+{% endtimezone %}
+{% endblock %}

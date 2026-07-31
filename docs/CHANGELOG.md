@@ -7,6 +7,8 @@ All notable changes should be recorded here. Until the project adopts a formal r
 ### Added
 
 - Quick-start regression coverage for every guided growth-step route.
+- Account-free public and invitation RSVP guidance plus signed, emailed links
+  for securely changing an existing public response.
 - S3 media URL hardening that forces Signature Version 4, normalizes accidental
   AWS object URLs used as endpoints, preserves legacy object prefixes, and
   validates AWS endpoint configuration.
