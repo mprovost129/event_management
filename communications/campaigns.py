@@ -168,17 +168,9 @@ def launch_campaign(*, campaign, actor, usage_confirmed=False):
         raise CampaignUnavailable(
             f"{campaign.get_channel_display()} delivery is not configured."
         )
-    if (
-        campaign.channel == Campaign.Channel.EMAIL
-        and not campaign.site.postal_address.strip()
-    ):
-        # Fail closed. Sending commercial email without a postal address is a
-        # legal exposure for the subscriber, not a cosmetic omission.
-        raise CampaignUnavailable(
-            "Add your organization's mailing address in website settings before "
-            "sending a newsletter. The law requires it at the bottom of every "
-            "commercial email."
-        )
+    sender_problem = missing_sender_requirement(campaign)
+    if sender_problem:
+        raise CampaignUnavailable(sender_problem)
     if campaign.channel == Campaign.Channel.SMS:
         if not usage_confirmed:
             raise CampaignUnavailable("Confirm the estimated SMS usage before sending.")
@@ -234,6 +226,24 @@ def _new_unsubscribe_link(*, campaign, contact):
     return f"https://{hostname}{path}"
 
 
+def missing_sender_requirement(campaign):
+    """Return why this campaign cannot legally send, or an empty string.
+
+    CAN-SPAM requires the sender's own physical postal address in every
+    commercial email. The sender is the subscriber, so this cannot fall back to
+    a platform-level address. SMS is out of scope for the rule.
+    """
+    if campaign.channel != Campaign.Channel.EMAIL:
+        return ""
+    if campaign.site.postal_address.strip():
+        return ""
+    return (
+        "Add your organization's mailing address in website settings before "
+        "sending a newsletter. The law requires it at the bottom of every "
+        "commercial email."
+    )
+
+
 def _marketing_body(campaign, unsubscribe_url):
     if campaign.channel == Campaign.Channel.EMAIL:
         # CAN-SPAM requires the sender's own postal address in every commercial
@@ -258,6 +268,14 @@ def expand_campaign(campaign_id):
     if campaign.status != Campaign.Status.SCHEDULED:
         return campaign
     if campaign.scheduled_for and campaign.scheduled_for > timezone.now():
+        return campaign
+    # A campaign scheduled before this requirement existed would otherwise run
+    # in background tasks and fail silently from the subscriber's perspective.
+    sender_problem = missing_sender_requirement(campaign)
+    if sender_problem:
+        campaign.status = Campaign.Status.FAILED
+        campaign.last_error = sender_problem
+        campaign.save(update_fields=("status", "last_error", "updated_at"))
         return campaign
     campaign.status = Campaign.Status.EXPANDING
     campaign.started_at = campaign.started_at or timezone.now()

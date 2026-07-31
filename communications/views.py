@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
@@ -24,6 +25,7 @@ from .campaigns import (
     campaign_preview,
     duplicate_campaign,
     launch_campaign,
+    missing_sender_requirement,
     queue_campaign_test,
     unsubscribe,
 )
@@ -248,6 +250,10 @@ def campaign_preview_view(request, site_id, campaign_id):
         {
             "site": site,
             "campaign": campaign,
+            "sender_problem": missing_sender_requirement(campaign),
+            "sender_settings_url": reverse(
+                "content:presentation", kwargs={"site_id": site.id}
+            ),
             "preview": preview,
             "metrics": campaign_metrics(campaign),
             "launch_form": launch_form,

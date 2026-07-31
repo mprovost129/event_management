@@ -13,6 +13,13 @@
         </div>
     </div>
 
+    {% if sender_problem %}
+    <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-3" role="alert">
+        <span>{{ sender_problem }}</span>
+        <a class="btn btn-sm btn-primary text-nowrap" href="{{ sender_settings_url }}">Add mailing address</a>
+    </div>
+    {% endif %}
+
     <section class="gh-audience-review" aria-labelledby="audience-review-title">
         <div><p class="gh-step-label">Audience check</p><h2 id="audience-review-title">Who can receive this now</h2><p>Eligibility is calculated again at launch and immediately before each delivery.</p></div>
         <dl>
