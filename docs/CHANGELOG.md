@@ -6,6 +6,10 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Added
 
+- Branded multipart event emails for invitations, RSVP confirmations,
+  management links, reminders, updates, and cancellations, including event
+  descriptions, organization colors, public logo/hero imagery, useful details,
+  prominent calls to action, and accessible plain-text fallbacks.
 - Quick-start regression coverage for every guided growth-step route.
 - Account-free public and invitation RSVP guidance plus signed, emailed links
   for securely changing an existing public response.

@@ -242,13 +242,21 @@ DEFAULT_FROM_EMAIL=Gather HQs <events@gatherhqs.com>
 
 Verify the sending domain in Resend, then add `https://gatherhqs.com/communications/callbacks/resend/` as a webhook for `email.sent`, `email.delivered`, `email.bounced`, `email.complained`, `email.failed`, `email.opened`, `email.clicked`, and `email.suppressed`. The endpoint verifies the raw body with the Resend/Svix signing headers. API sends return a provider message ID, preserve one-click unsubscribe headers, and use the local message UUID as an idempotency key.
 
+Event invitations, confirmations, RSVP management messages, reminders, updates,
+and cancellations are sent as multipart email. The HTML version uses the
+organization's validated theme colors, logo, hero image, event description,
+date, location, host, and appropriate action links; the plain-text version
+remains available for accessibility and restrictive email clients. Public
+branding image endpoints redirect to a fresh storage URL when the email is
+opened, avoiding expired S3 signatures without making private uploads public.
+
 After completing the real transactional, marketing, unsubscribe, and suppression paths for the pilot site, run `python manage.py email_sandbox_journey SITE_SLUG --json`. See `EMAIL_SANDBOX_JOURNEY.md` for the required evidence.
 
 SMS fails closed by default. A deployment must provide a production SMS adapter, set `SMS_DELIVERY_BACKEND`, and assign a nonzero `SMS_MONTHLY_SEGMENT_LIMIT` or purchased segment credit before SMS campaigns can launch. Every SMS launch and test send requires explicit usage confirmation; segments are reserved before audience expansion and moved to immutable accepted/released usage records.
 
 Provider callbacks are accepted at `/communications/callbacks/{provider}/`. Resend has a native signed adapter. The vendor-neutral fallback expects a JSON body containing `event_id`, `message_id`, `event_type`, and optional `occurred_at`, with a lowercase hexadecimal HMAC-SHA256 signature in `X-Communications-Signature` using `COMMUNICATIONS_WEBHOOK_SECRET`. Supported normalized states include sent, delivered, bounced, complained, suppressed, failed, opened, clicked, and unsubscribed.
 
-Marketing unsubscribe links are random capabilities stored only as SHA-256 hashes. Unsubscribing updates consent and suppresses already queued marketing immediately. Successful and terminal deliveries erase message bodies and raw unsubscribe URLs from the outbox.
+Marketing unsubscribe links are random capabilities stored only as SHA-256 hashes. Unsubscribing updates consent and suppresses already queued marketing immediately. Successful and terminal deliveries erase plain-text and HTML message bodies plus raw unsubscribe URLs from the outbox.
 
 ## Phase 6 reviews, reports, and platform operations
 

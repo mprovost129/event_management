@@ -65,6 +65,7 @@ class OutboundMessage(SiteOwnedModel):
     recipient_phone = models.CharField(max_length=30, blank=True)
     subject = models.CharField(max_length=255)
     body = models.TextField()
+    html_body = models.TextField(blank=True)
     is_marketing = models.BooleanField(default=False)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.QUEUED, db_index=True

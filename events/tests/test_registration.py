@@ -239,6 +239,9 @@ def test_public_response_creates_contact_participants_and_confirmation(client):
     assert "Alex Dancer" in message.body
     assert "Sam Guest" in message.body
     assert "Manage your response: https://boot-scooters.localhost" in message.body
+    assert "An evening of country line dancing." in message.html_body
+    assert "going!" in message.html_body
+    assert "Manage your response" in message.html_body
 
 
 @pytest.mark.django_db
@@ -424,6 +427,9 @@ def test_manager_invitation_queues_secure_link_for_invite_only_event(client):
     contact = Contact.objects.create(
         site=site, first_name="Alex", last_name="Dancer", email="alex@example.com"
     )
+    site.theme.logo.name = "site-logos/brand.png"
+    site.theme.hero_image.name = "site-heroes/dance.jpg"
+    site.theme.save(update_fields=("logo", "hero_image", "updated_at"))
     client.force_login(owner)
     invitation_url = reverse(
         "events:invite",
@@ -458,6 +464,11 @@ def test_manager_invitation_queues_secure_link_for_invite_only_event(client):
     assert response.status_code == 200
     assert "Invitation is being sent to 1 person." in response.content.decode()
     assert "allow up to 10 minutes" in response.content.decode()
+    assert "An evening of country line dancing." in message.body
+    assert "An evening of country line dancing." in message.html_body
+    assert "View invitation and RSVP" in message.html_body
+    assert "https://boot-scooters.localhost/branding/hero/?v=" in message.html_body
+    assert "https://boot-scooters.localhost/branding/logo/?v=" in message.html_body
     assert invitation.token_hash != token
     assert invite_page.status_code == 200
     assert "Friday dance" in invite_page.content.decode()

@@ -24,7 +24,7 @@ class OutboundMessageAdmin(admin.ModelAdmin):
     )
     list_filter = ("kind", "status")
     search_fields = ("recipient_email", "subject", "site__display_name")
-    readonly_fields = ("body", "last_error", "attempts", "sent_at")
+    readonly_fields = ("body", "html_body", "last_error", "attempts", "sent_at")
 
 
 @admin.register(Campaign)

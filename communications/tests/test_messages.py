@@ -71,6 +71,7 @@ def test_outbound_delivery_is_idempotent():
         recipient_email="alex@example.com",
         subject="Updated event",
         body="The time changed.",
+        html_body="<p><strong>The time changed.</strong></p>",
     )
 
     deliver_message(message.id)
@@ -79,7 +80,10 @@ def test_outbound_delivery_is_idempotent():
     message.refresh_from_db()
     assert message.status == OutboundMessage.Status.SENT
     assert message.body == ""
+    assert message.html_body == ""
     assert len(mail.outbox) == 1
+    assert mail.outbox[0].alternatives[0].mimetype == "text/html"
+    assert "<strong>The time changed.</strong>" in mail.outbox[0].alternatives[0].content
 
 
 @pytest.mark.django_db
@@ -128,3 +132,5 @@ def test_due_reminders_are_queued_once():
     message = OutboundMessage.objects.get(kind=OutboundMessage.Kind.REMINDER)
     assert message.registration == registration
     assert "Alex Dancer" in message.body
+    assert "almost time!" in message.html_body
+    assert "Friday dance" in message.html_body

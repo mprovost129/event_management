@@ -41,6 +41,8 @@ class DjangoEmailProvider:
             to=[message.recipient_email],
             headers=headers,
         )
+        if message.html_body:
+            email.attach_alternative(message.html_body, "text/html")
         accepted = email.send(fail_silently=False)
         if accepted != 1:
             raise DeliveryProviderError("The email backend did not accept the message.")
@@ -72,6 +74,8 @@ class ResendEmailProvider:
                 {"name": "message_kind", "value": message.kind},
             ],
         }
+        if message.html_body:
+            params["html"] = message.html_body
         try:
             resend.api_key = settings.RESEND_API_KEY
             response = resend.Emails.send(

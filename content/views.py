@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods
 
 from contacts.services import subscribe_to_newsletter
 from core.rate_limits import public_write_rate_limit
@@ -24,6 +24,20 @@ def _public_site(request):
     if site is None or not site.accepts_public_traffic or not site.is_published:
         raise Http404("Site not found.")
     return site
+
+
+@require_GET
+def public_brand_asset(request, asset):
+    site = _public_site(request)
+    brand_file = {
+        "logo": site.theme.logo,
+        "hero": site.theme.hero_image,
+    }.get(asset)
+    if not brand_file:
+        raise Http404("Brand image not found.")
+    response = redirect(brand_file.url)
+    response["Cache-Control"] = "public, max-age=300"
+    return response
 
 
 @site_staff_required

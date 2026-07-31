@@ -46,6 +46,7 @@ def enqueue_message(
     recipient_email="",
     subject,
     body,
+    html_body="",
     dedupe_key="",
     occurrence=None,
     registration=None,
@@ -78,6 +79,7 @@ def enqueue_message(
         "recipient_phone": recipient_phone,
         "subject": subject,
         "body": body,
+        "html_body": html_body,
         "occurrence": occurrence,
         "registration": registration,
         "invitation": invitation,
@@ -171,11 +173,13 @@ def deliver_message(message_id):
         if not _marketing_is_still_allowed(message):
             message.status = OutboundMessage.Status.SUPPRESSED
             message.body = ""
+            message.html_body = ""
             message.unsubscribe_url = ""
             message.save(
                 update_fields=(
                     "status",
                     "body",
+                    "html_body",
                     "unsubscribe_url",
                     "updated_at",
                 )
@@ -205,8 +209,16 @@ def deliver_message(message_id):
             )
             _release_sms(message)
             message.body = ""
+            message.html_body = ""
             message.unsubscribe_url = ""
-            message.save(update_fields=("body", "unsubscribe_url", "updated_at"))
+            message.save(
+                update_fields=(
+                    "body",
+                    "html_body",
+                    "unsubscribe_url",
+                    "updated_at",
+                )
+            )
             _finish_campaign(message)
         else:
             _recipient_update(
@@ -220,6 +232,7 @@ def deliver_message(message_id):
     message.provider = result.provider
     message.provider_message_id = result.message_id
     message.body = ""
+    message.html_body = ""
     message.unsubscribe_url = ""
     message.save(
         update_fields=(
@@ -229,6 +242,7 @@ def deliver_message(message_id):
             "provider",
             "provider_message_id",
             "body",
+            "html_body",
             "unsubscribe_url",
             "updated_at",
         )

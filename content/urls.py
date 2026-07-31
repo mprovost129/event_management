@@ -6,6 +6,11 @@ from .models import SitePage
 app_name = "content"
 
 urlpatterns = [
+    path(
+        "branding/<slug:asset>/",
+        views.public_brand_asset,
+        name="public_brand_asset",
+    ),
     path("sites/<uuid:site_id>/content/", views.manage_content, name="manage"),
     path(
         "sites/<uuid:site_id>/content/presentation/",

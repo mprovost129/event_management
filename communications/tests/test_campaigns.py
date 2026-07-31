@@ -420,6 +420,7 @@ def test_resend_provider_returns_provider_id_and_preserves_unsubscribe_headers(s
         recipient_email=contact.email,
         subject="Friday dance",
         body="Join us this Friday.",
+        html_body="<h1>Join us this Friday.</h1>",
         is_marketing=True,
         unsubscribe_url="https://boot-scooters.gatherhqs.com/unsubscribe/example/",
     )
@@ -436,6 +437,7 @@ def test_resend_provider_returns_provider_id_and_preserves_unsubscribe_headers(s
         "<https://boot-scooters.gatherhqs.com/unsubscribe/example/>"
     )
     assert params["headers"]["X-Gather-HQs-Message-ID"] == str(message.id)
+    assert params["html"] == "<h1>Join us this Friday.</h1>"
     assert options == {"idempotency_key": f"gather-hqs-message-{message.id}"}
 
 

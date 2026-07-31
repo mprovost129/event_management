@@ -66,6 +66,29 @@ def test_published_blog_is_visible_only_on_its_site(client):
 
 
 @pytest.mark.django_db
+def test_public_brand_asset_provides_stable_email_image_url(client):
+    _, site = create_site()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    site.theme.hero_image.name = "site-heroes/dance.jpg"
+    site.theme.save(update_fields=("hero_image", "updated_at"))
+
+    response = client.get(
+        reverse("content:public_brand_asset", kwargs={"asset": "hero"}),
+        headers={"host": "boot-scooters.localhost"},
+    )
+    missing = client.get(
+        reverse("content:public_brand_asset", kwargs={"asset": "logo"}),
+        headers={"host": "boot-scooters.localhost"},
+    )
+
+    assert response.status_code == 302
+    assert response.url.endswith("/media/site-heroes/dance.jpg")
+    assert response.headers["Cache-Control"] == "public, max-age=300"
+    assert missing.status_code == 404
+
+
+@pytest.mark.django_db
 def test_newsletter_signup_creates_contact_and_consent_history(client):
     _, site = create_site()
     site.is_published = True
