@@ -153,6 +153,7 @@ TEMPLATES = [
                 "content.context_processors.site_navigation",
                 "sites.context_processors.site_management",
                 "notifications.context_processors.notifications",
+                "users.context_processors.account_navigation",
             ],
         },
     },

@@ -236,6 +236,88 @@ header, main, footer {
     text-decoration: none;
 }
 
+.gh-site-header .navbar-nav .nav-link {
+    font-weight: 600;
+    color: var(--gh-brand-sage-dark);
+}
+
+.gh-site-header .navbar-nav .nav-link:hover,
+.gh-site-header .navbar-nav .nav-link:focus-visible {
+    color: var(--gh-brand-orange-dark);
+}
+
+.gh-site-header .dropdown-menu {
+    border-color: #d8ccb9;
+    box-shadow: 0 1rem 2rem rgba(11, 29, 57, .12);
+}
+
+.gh-site-header .navbar-toggler {
+    border-color: #cfbfa8;
+}
+
+.gh-notification-dropdown .dropdown-item {
+    white-space: normal;
+}
+
+.gh-notification-dropdown .dropdown-item:hover {
+    background: #fff6e8;
+}
+
+.gh-account-shell {
+    max-width: 76rem;
+    margin: 0 auto;
+}
+
+.gh-account-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #e5dfd4;
+}
+
+.gh-account-header h1 {
+    margin-bottom: .25rem;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 750;
+    letter-spacing: -.04em;
+}
+
+.gh-org-card {
+    border-color: #dfd5c7;
+    background: linear-gradient(180deg, #fffefb 0%, #fff9f1 100%);
+}
+
+.gh-org-card .btn-link {
+    text-decoration: none;
+    font-weight: 700;
+}
+
+@media (max-width: 991.98px) {
+    .gh-site-header .navbar-nav {
+        gap: .25rem;
+        padding-top: .75rem;
+    }
+
+    .gh-site-header .navbar-nav .nav-link,
+    .gh-site-header .navbar-nav .btn {
+        width: 100%;
+        text-align: left;
+        justify-content: flex-start;
+    }
+
+    .gh-site-header .dropdown-menu {
+        position: static !important;
+        transform: none !important;
+        float: none;
+        width: 100%;
+        margin-top: .25rem;
+    }
+}
+
 .gh-site-footer {
     padding: 0 2rem;
     border-top: .25rem solid var(--gh-brand-orange);

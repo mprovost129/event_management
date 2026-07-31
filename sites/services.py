@@ -107,7 +107,11 @@ def create_subscriber_site(
 def user_site_roles(user):
     if not getattr(user, "is_authenticated", False):
         return SiteRole.objects.none()
-    return SiteRole.objects.filter(user=user, is_active=True).select_related("site")
+    return (
+        SiteRole.objects.filter(user=user, is_active=True)
+        .select_related("site")
+        .prefetch_related("site__domains")
+    )
 
 
 def site_setup_progress(site):

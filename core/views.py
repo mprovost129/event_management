@@ -176,3 +176,7 @@ class LegalPageView(LegalContextMixin, TemplateView):
         if document is None:
             return ["core/legal/index.html"]
         return [document["template"]]
+
+
+class HelpView(TemplateView):
+    template_name = "core/help.html"

@@ -161,6 +161,28 @@ def test_active_subscriber_can_start_one_additional_trial_but_not_a_third(client
 
 
 @pytest.mark.django_db
+def test_account_dashboard_shows_visit_site_for_published_public_organization(client):
+    owner = verified_user("owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Published Organization",
+        slug="published-organization",
+        timezone_name="America/New_York",
+    )
+    site.is_published = True
+    site.status = Site.Status.ACTIVE
+    site.save(update_fields=("is_published", "status", "updated_at"))
+    client.force_login(owner)
+
+    response = client.get(reverse("sites:account_dashboard"))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Visit site" in content
+    assert "//published-organization.localhost" in content
+
+
+@pytest.mark.django_db
 def test_manager_roles_do_not_prevent_a_first_owned_site(client):
     subscriber = verified_user("subscriber@example.com")
     manager = verified_user("manager@example.com")
