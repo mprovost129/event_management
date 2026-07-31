@@ -1,1 +1,12 @@
-{% extends 'base.html' %}{% block title %}Form response | {{ platform_name }}{% endblock %}{% block content %}<div class="d-flex justify-content-between mb-4"><div><p class="text-uppercase text-secondary small mb-1">{{ intake_form.title }}</p><h1>{{ submission.submitter_name|default:submission.submitter_email|default:'Form response' }}</h1></div><a href="{% url 'workspace:intake_form_detail' site.id intake_form.id %}">Back to responses</a></div><div class="card card-body shadow-sm"><dl class="row mb-0">{% for key, value in submission.response_data.items %}<dt class="col-sm-4 py-2 border-bottom">{{ key|title }}</dt><dd class="col-sm-8 py-2 border-bottom">{{ value|default:'—' }}</dd>{% endfor %}{% if submission.signature_name %}<dt class="col-sm-4 py-2 border-bottom">Electronic signature</dt><dd class="col-sm-8 py-2 border-bottom"><strong>{{ submission.signature_name }}</strong><small class="d-block text-secondary">Accepted {{ submission.agreed_at|date:'M j, Y g:i A' }}</small></dd>{% endif %}<dt class="col-sm-4 py-2">Submitted</dt><dd class="col-sm-8 py-2">{{ submission.created_at|date:'M j, Y g:i A' }}{% if submission.contact %} · Linked to CRM contact{% endif %}</dd></dl></div>{% endblock %}
+{% extends 'base.html' %}{% block title %}Form response | {{ platform_name }}{% endblock %}{% block content %}<div class="d-flex justify-content-between mb-4">
+<div>
+    <p class="text-uppercase text-secondary small mb-1">{{ intake_form.title }}</p>
+    <h1>{{ submission.submitter_name|default:submission.submitter_email|default:'Form response' }}</h1>
+</div><a href="{% url 'workspace:intake_form_detail' site.id intake_form.id %}">Back to responses</a></div>
+<div class="card card-body shadow-sm">
+    <dl class="row mb-0">{% for key, value in submission.response_data.items %}<dt class="col-sm-4 py-2 border-bottom">{{ key|title }}</dt>
+        <dd class="col-sm-8 py-2 border-bottom">{{ value|default:'—' }}</dd>{% endfor %}{% if submission.signature_name %}<dt class="col-sm-4 py-2 border-bottom">Electronic signature</dt>
+        <dd class="col-sm-8 py-2 border-bottom"><strong>{{ submission.signature_name }}</strong><small class="d-block text-secondary">Accepted {{ submission.agreed_at|date:'M j, Y g:i A' }}</small></dd>{% endif %}<dt class="col-sm-4 py-2">Submitted</dt>
+        <dd class="col-sm-8 py-2">{{ submission.created_at|date:'M j, Y g:i A' }}{% if submission.contact %} · Linked to CRM contact{% endif %}</dd>
+    </dl>
+</div>{% endblock %}

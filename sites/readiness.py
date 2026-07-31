@@ -116,6 +116,19 @@ def pilot_readiness(site, *, now=None):
             "conditional": True,
         },
         {
+            "key": "refund_policy",
+            "label": (
+                "Refund policy published" if ticketed else "No refund policy needed yet"
+            ),
+            "description": (
+                "Buyers are told the refund terms before they pay."
+                if ticketed
+                else "Set one before you start selling tickets."
+            ),
+            "complete": not ticketed or bool(site.default_refund_policy.strip()),
+            "conditional": True,
+        },
+        {
             "key": "invitation_path",
             "label": "First invitation sent"
             if invite_only
@@ -177,6 +190,15 @@ def pilot_readiness(site, *, now=None):
                 role=SiteRole.Role.SITE_MANAGER,
                 is_active=True,
             ).exists(),
+        },
+        {
+            "key": "mailing_address",
+            "label": "Mailing address on file",
+            "description": (
+                "Required by law at the bottom of every newsletter. "
+                "Newsletters cannot be sent until this is set."
+            ),
+            "complete": bool(site.postal_address.strip()),
         },
         {
             "key": "data_exported",

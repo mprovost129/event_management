@@ -86,7 +86,7 @@ Then run the production deployment check with the complete production
 environment configured:
 
 ```text
-python manage.py check --deploy --settings=config.Settings.prod
+python manage.py check --deploy --settings=config.settings.prod
 ```
 
 ## Functional validation

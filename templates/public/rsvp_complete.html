@@ -2,9 +2,19 @@
 {% block title %}Response saved | {{ registration.occurrence.event.title }}{% endblock %}
 {% block content %}
 <section class="site-theme gh-rsvp-complete">
-    <span class="gh-rsvp-complete-mark" aria-hidden="true">&#10003;</span><p class="gh-step-label">Response saved</p><h1>You're marked as {{ registration.get_response_display|lower }}.</h1><p class="lead">{{ registration.occurrence.event.title }}</p>
-    {% if registration.response == 'going' %}<div class="gh-rsvp-party"><h2>Your party</h2><ul>{% for participant in registration.participants.all %}{% if participant.status == 'active' %}<li>{{ participant.display_name }}</li>{% endif %}{% endfor %}</ul></div>{% endif %}
-    {% if checkout_token %}<div class="gh-payment-required"><div><p class="gh-step-label">One step left</p><h2>Complete payment to confirm your spots.</h2><p>Your RSVP is waiting for payment. Tickets are not confirmed until Stripe reports a successful checkout.</p></div><a class="btn btn-primary btn-lg" href="{% url 'payments:ticket_checkout' checkout_token %}">Choose tickets and pay</a></div>{% else %}<div class="gh-confirmation-note"><strong>You're all set.</strong> A confirmation email is being sent to {{ registration.contact.email }}.</div>{% endif %}
+    <span class="gh-rsvp-complete-mark" aria-hidden="true">&#10003;</span><p class="gh-step-label">Response saved</p>
+    <h1>You're marked as {{ registration.get_response_display|lower }}.</h1>
+    <p class="lead">{{ registration.occurrence.event.title }}</p>
+    {% if registration.response == 'going' %}<div class="gh-rsvp-party">
+    <h2>Your party</h2>
+    <ul>{% for participant in registration.participants.all %}{% if participant.status == 'active' %}<li>{{ participant.display_name }}</li>{% endif %}{% endfor %}</ul>
+    </div>{% endif %}
+    {% if checkout_token %}<div class="gh-payment-required">
+    <div>
+        <p class="gh-step-label">One step left</p>
+        <h2>Complete payment to confirm your spots.</h2>
+        <p>Your RSVP is waiting for payment. Tickets are not confirmed until Stripe reports a successful checkout.</p>
+    </div><a class="btn btn-primary btn-lg" href="{% url 'payments:ticket_checkout' checkout_token %}">Choose tickets and pay</a></div>{% else %}<div class="gh-confirmation-note"><strong>You're all set.</strong> A confirmation email is being sent to {{ registration.contact.email }}.</div>{% endif %}
     <a class="gh-back-link" href="{% url 'events:occurrence_detail' registration.occurrence.event.slug registration.occurrence.id %}">&larr; Back to event details</a>
 </section>
 {% endblock %}

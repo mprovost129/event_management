@@ -48,7 +48,8 @@
         <article class="gh-roster-person{% if participant.attendance_status.checked_in_at %} is-checked-in{% endif %}">
             <div class="gh-person-initials" aria-hidden="true">{{ participant.first_name|first }}{{ participant.last_name|first }}</div>
             <div class="gh-roster-person-details">
-                <div class="gh-roster-name-line"><h2>{{ participant.display_name }}</h2>{% if participant.is_primary %}<span class="gh-roster-badge">Attendee</span>{% else %}<span class="gh-roster-badge gh-roster-guest">Guest</span>{% endif %}</div>
+                <div class="gh-roster-name-line">
+                    <h2>{{ participant.display_name }}</h2>{% if participant.is_primary %}<span class="gh-roster-badge">Attendee</span>{% else %}<span class="gh-roster-badge gh-roster-guest">Guest</span>{% endif %}</div>
                 {% if not participant.is_primary %}<p>Guest of {{ participant.registration.contact.display_name }}</p>{% elif participant.email or participant.registration.contact.email %}<p>{{ participant.email|default:participant.registration.contact.email }}</p>{% endif %}
                 <div class="gh-roster-tags">
                     {% if participant.is_primary and participant.registration.contact.membership.administrative_status == 'active' %}<span>Active member</span>{% endif %}

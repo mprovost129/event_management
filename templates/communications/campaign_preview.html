@@ -9,7 +9,8 @@
             <h1>{{ campaign.name }}</h1>
             <p>{{ campaign.get_channel_display }} &middot; {{ campaign.get_audience_display }}{% if campaign.scheduled_for %} &middot; planned for {{ campaign.scheduled_for }}{% endif %}</p>
         </div>
-        <div class="d-flex flex-wrap gap-2 align-items-center"><span class="gh-content-status gh-content-status-{{ campaign.status }}">{{ campaign.get_status_display }}</span>{% if campaign.status == 'draft' %}<a class="btn btn-outline-primary" href="{% url 'communications:campaign_edit' site.id campaign.id %}">Edit draft</a>{% endif %}<form method="post" action="{% url 'communications:campaign_duplicate' site.id campaign.id %}">{% csrf_token %}<button class="btn btn-outline-secondary" type="submit">Duplicate</button></form></div>
+        <div class="d-flex flex-wrap gap-2 align-items-center"><span class="gh-content-status gh-content-status-{{ campaign.status }}">{{ campaign.get_status_display }}</span>{% if campaign.status == 'draft' %}<a class="btn btn-outline-primary" href="{% url 'communications:campaign_edit' site.id campaign.id %}">Edit draft</a>{% endif %}<form method="post" action="{% url 'communications:campaign_duplicate' site.id campaign.id %}">{% csrf_token %}<button class="btn btn-outline-secondary" type="submit">Duplicate</button></form>
+        </div>
     </div>
 
     <section class="gh-audience-review" aria-labelledby="audience-review-title">
@@ -22,7 +23,10 @@
         </dl>
     </section>
 
-    {% if preview.excluded_reasons %}<details class="gh-exclusion-details"><summary>Why {{ preview.excluded_count }} contact{{ preview.excluded_count|pluralize }} are excluded</summary><ul>{% for reason, count in preview.excluded_reasons.items %}<li><span>{{ reason }}</span><strong>{{ count }}</strong></li>{% endfor %}</ul></details>{% endif %}
+    {% if preview.excluded_reasons %}<details class="gh-exclusion-details">
+    <summary>Why {{ preview.excluded_count }} contact{{ preview.excluded_count|pluralize }} are excluded</summary>
+    <ul>{% for reason, count in preview.excluded_reasons.items %}<li><span>{{ reason }}</span><strong>{{ count }}</strong></li>{% endfor %}</ul>
+    </details>{% endif %}
 
     <div class="gh-review-layout">
         <section class="gh-message-preview" aria-labelledby="message-preview-title">
@@ -46,7 +50,39 @@
                 <form method="post">{% csrf_token %}<input type="hidden" name="action" value="launch">{% if launch_form.non_field_errors %}<div class="alert alert-danger">{{ launch_form.non_field_errors }}</div>{% endif %}{% if campaign.channel == 'sms' %}{% for field in launch_form %}<div class="gh-publish-toggle">{{ field }}{{ field.label_tag }}{% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>{% endfor %}{% endif %}<button class="btn btn-light w-100 mt-3" type="submit">{% if campaign.scheduled_for %}Confirm schedule{% else %}Send campaign{% endif %}</button></form>
             </section>
             {% else %}
-            <section class="gh-editor-card"><p class="gh-step-label">Delivery report</p><h2>Campaign results</h2><dl class="gh-delivery-results"><div><dt>Sent</dt><dd>{{ metrics.sent }}</dd></div><div><dt>Delivered</dt><dd>{{ metrics.delivered }}</dd></div><div><dt>Opened</dt><dd>{{ metrics.opened }}</dd></div><div><dt>Clicked</dt><dd>{{ metrics.clicked }}</dd></div><div><dt>Bounced</dt><dd>{{ metrics.bounced }}</dd></div><div><dt>Failed</dt><dd>{{ metrics.failed }}</dd></div><div><dt>Unsubscribed</dt><dd>{{ metrics.unsubscribed }}</dd></div></dl>{% if campaign.last_error %}<div class="alert alert-danger mt-3">{{ campaign.last_error }}</div>{% endif %}</section>
+            <section class="gh-editor-card">
+                <p class="gh-step-label">Delivery report</p>
+                <h2>Campaign results</h2>
+                <dl class="gh-delivery-results">
+                    <div>
+                        <dt>Sent</dt>
+                        <dd>{{ metrics.sent }}</dd>
+                    </div>
+                    <div>
+                        <dt>Delivered</dt>
+                        <dd>{{ metrics.delivered }}</dd>
+                    </div>
+                    <div>
+                        <dt>Opened</dt>
+                        <dd>{{ metrics.opened }}</dd>
+                    </div>
+                    <div>
+                        <dt>Clicked</dt>
+                        <dd>{{ metrics.clicked }}</dd>
+                    </div>
+                    <div>
+                        <dt>Bounced</dt>
+                        <dd>{{ metrics.bounced }}</dd>
+                    </div>
+                    <div>
+                        <dt>Failed</dt>
+                        <dd>{{ metrics.failed }}</dd>
+                    </div>
+                    <div>
+                        <dt>Unsubscribed</dt>
+                        <dd>{{ metrics.unsubscribed }}</dd>
+                    </div>
+                </dl>{% if campaign.last_error %}<div class="alert alert-danger mt-3">{{ campaign.last_error }}</div>{% endif %}</section>
             {% endif %}
         </aside>
     </div>

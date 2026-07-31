@@ -1,3 +1,5 @@
+# ruff: noqa: F401, F403
+from config.settings.dev import *
 # ruff: noqa: F403, F405
 from .base import *
 

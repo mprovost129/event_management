@@ -28,9 +28,7 @@ def subscriber_site_creation_decision(user):
     )
     if not owned_subscriptions.exists():
         return SiteCreationDecision(True)
-    if owned_subscriptions.filter(
-        status=PlatformSubscription.Status.TRIALING
-    ).exists():
+    if owned_subscriptions.filter(status=PlatformSubscription.Status.TRIALING).exists():
         return SiteCreationDecision(
             False,
             "You already have an organization in its trial. Upgrade it before "
@@ -41,8 +39,7 @@ def subscriber_site_creation_decision(user):
     ).exists():
         return SiteCreationDecision(
             False,
-            "Additional organizations require an active paid Gather HQs "
-            "subscription.",
+            "Additional organizations require an active paid Gather HQs subscription.",
         )
     return SiteCreationDecision(True)
 
@@ -58,9 +55,7 @@ def create_subscriber_site(
     template_key="classic",
     request=None,
 ):
-    locked_owner = (
-        owner.__class__._default_manager.select_for_update().get(pk=owner.pk)
-    )
+    locked_owner = owner.__class__._default_manager.select_for_update().get(pk=owner.pk)
     decision = subscriber_site_creation_decision(locked_owner)
     if not decision.allowed:
         raise SiteCreationNotAllowed(decision.reason)

@@ -1,4 +1,13 @@
 {% extends 'public/site_base.html' %}
 {% load tz %}
 {% block title %}Events · {{ site.display_name }}{% endblock %}
-{% block content %}<section class="site-theme"><h1>Upcoming events</h1>{% timezone site.timezone %}<div class="row g-3 mt-2">{% for occurrence in occurrences %}<div class="col-md-6"><article class="card h-100"><div class="card-body"><p class="site-accent fw-semibold">{{ occurrence.starts_at|date:"l, F j · g:i A" }}</p><h2 class="h4"><a href="{% url 'events:occurrence_detail' occurrence.event.slug occurrence.id %}">{{ occurrence.event.title }}</a></h2><p>{{ occurrence.venue_name|default:"Venue to be announced" }}</p></div></article></div>{% empty %}<p>No upcoming public events.</p>{% endfor %}</div>{% endtimezone %}</section>{% endblock %}
+{% block content %}<section class="site-theme">
+<h1>Upcoming events</h1>{% timezone site.timezone %}<div class="row g-3 mt-2">{% for occurrence in occurrences %}<div class="col-md-6">
+<article class="card h-100">
+    <div class="card-body">
+        <p class="site-accent fw-semibold">{{ occurrence.starts_at|date:"l, F j · g:i A" }}</p>
+        <h2 class="h4"><a href="{% url 'events:occurrence_detail' occurrence.event.slug occurrence.id %}">{{ occurrence.event.title }}</a></h2>
+        <p>{{ occurrence.venue_name|default:"Venue to be announced" }}</p>
+    </div>
+</article>
+</div>{% empty %}<p>No upcoming public events.</p>{% endfor %}</div>{% endtimezone %}</section>{% endblock %}

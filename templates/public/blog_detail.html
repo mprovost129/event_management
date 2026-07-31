@@ -1,4 +1,7 @@
 {% extends 'public/site_base.html' %}
 {% block title %}{{ post.title }} · {{ site.display_name }}{% endblock %}
 {% block meta_description %}{{ post.meta_description|default:post.excerpt }}{% endblock %}
-{% block content %}<article class="site-theme py-4"><h1>{{ post.title }}</h1><p class="text-secondary">{{ post.author_display_name|default:site.display_name }} · {{ post.publish_at|default:post.created_at|date:"F j, Y" }}</p>{% if post.featured_image %}<img class="img-fluid rounded mb-4" src="{{ post.featured_image.url }}" alt="">{% endif %}<div>{{ post.body|linebreaks }}</div></article>{% endblock %}
+{% block content %}<article class="site-theme py-4">
+<h1>{{ post.title }}</h1>
+<p class="text-secondary">{{ post.author_display_name|default:site.display_name }} · {{ post.publish_at|default:post.created_at|date:"F j, Y" }}</p>{% if post.featured_image %}<img class="img-fluid rounded mb-4" src="{{ post.featured_image.url }}" alt="">{% endif %}<div>{{ post.body|linebreaks }}</div>
+</article>{% endblock %}

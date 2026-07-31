@@ -1,1 +1,9 @@
-{% extends "base.html" %}{% block title %}Activity | {{ site.display_name }}{% endblock %}{% block content %}<div class="d-flex justify-content-between align-items-center mb-4"><div><p class="text-uppercase text-secondary small fw-semibold mb-1">Organization</p><h1>Activity</h1></div><a href="{% url 'sites:dashboard' site.id %}">Back to dashboard</a></div><div class="list-group shadow-sm">{% for activity in activities %}<div class="list-group-item py-3"><div class="d-flex justify-content-between gap-3"><div><strong>{{ activity.verb }}</strong>{% if activity.detail %}<p class="mb-0 text-secondary">{{ activity.detail }}</p>{% endif %}<small>{{ activity.actor.email|default:"System" }}</small></div><time class="text-secondary text-nowrap">{{ activity.created_at|date:"M j, Y g:i A" }}</time></div></div>{% empty %}<div class="list-group-item text-center py-5 text-secondary">Activity will appear here as your team works.</div>{% endfor %}</div>{% endblock %}
+{% extends "base.html" %}{% block title %}Activity | {{ site.display_name }}{% endblock %}{% block content %}<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+    <p class="text-uppercase text-secondary small fw-semibold mb-1">Organization</p>
+    <h1>Activity</h1>
+</div><a href="{% url 'sites:dashboard' site.id %}">Back to dashboard</a></div>
+<div class="list-group shadow-sm">{% for activity in activities %}<div class="list-group-item py-3">
+    <div class="d-flex justify-content-between gap-3">
+        <div><strong>{{ activity.verb }}</strong>{% if activity.detail %}<p class="mb-0 text-secondary">{{ activity.detail }}</p>{% endif %}<small>{{ activity.actor.email|default:"System" }}</small></div><time class="text-secondary text-nowrap">{{ activity.created_at|date:"M j, Y g:i A" }}</time></div>
+    </div>{% empty %}<div class="list-group-item text-center py-5 text-secondary">Activity will appear here as your team works.</div>{% endfor %}</div>{% endblock %}

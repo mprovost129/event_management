@@ -2,5 +2,9 @@
 {% block title %}Blog · {{ site.display_name }}{% endblock %}
 {% block content %}
 <section class="site-theme"><h1>Blog</h1>
-{% for post in posts %}<article class="py-3 border-bottom"><h2 class="h3"><a href="{% url 'content:blog_detail' post.slug %}">{{ post.title }}</a></h2><p class="text-secondary">{{ post.publish_at|default:post.created_at|date:"F j, Y" }}</p><p>{{ post.excerpt }}</p></article>{% empty %}<p>No posts have been published yet.</p>{% endfor %}
+{% for post in posts %}<article class="py-3 border-bottom">
+<h2 class="h3"><a href="{% url 'content:blog_detail' post.slug %}">{{ post.title }}</a></h2>
+<p class="text-secondary">{{ post.publish_at|default:post.created_at|date:"F j, Y" }}</p>
+<p>{{ post.excerpt }}</p>
+</article>{% empty %}<p>No posts have been published yet.</p>{% endfor %}
 </section>{% endblock %}

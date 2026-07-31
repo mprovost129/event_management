@@ -61,6 +61,10 @@ def campaign_fixture():
         slug="boot-scooters",
         timezone_name="America/New_York",
     )
+    # Email campaigns fail closed without a postal address, so every fixture
+    # that actually sends one needs it set.
+    site.postal_address = "PO Box 44, Attleboro, MA 02703"
+    site.save(update_fields=("postal_address", "updated_at"))
     return owner, site
 
 
@@ -699,3 +703,55 @@ def test_sms_fails_closed_when_no_provider_is_configured():
 
     with pytest.raises(ValidationError, match="not configured"):
         launch_campaign(campaign=campaign, actor=owner, usage_confirmed=True)
+
+
+@pytest.mark.django_db
+def test_email_campaign_is_blocked_until_a_postal_address_is_set():
+    owner, site = campaign_fixture()
+    contact_for(site, 1, email_consent=True)
+    campaign = draft_campaign(site)
+    site.postal_address = ""
+    site.save(update_fields=("postal_address", "updated_at"))
+
+    with pytest.raises(CampaignUnavailable) as blocked:
+        launch_campaign(campaign=campaign, actor=owner)
+
+    campaign.refresh_from_db()
+    assert "mailing address" in str(blocked.value)
+    assert campaign.status == Campaign.Status.DRAFT
+
+
+@pytest.mark.django_db
+def test_marketing_email_carries_the_sender_name_and_postal_address():
+    owner, site = campaign_fixture()
+    recipient = contact_for(site, 1, email_consent=True)
+    campaign = draft_campaign(site)
+
+    launch_campaign(campaign=campaign, actor=owner)
+    expand_campaign(campaign.id)
+
+    body = OutboundMessage.objects.get(contact=recipient).body
+    assert "Boot Scooters" in body
+    assert "PO Box 44, Attleboro, MA 02703" in body
+    assert "Unsubscribe:" in body
+
+
+@pytest.mark.django_db
+@override_settings(SMS_DELIVERY_BACKEND="console", SMS_MONTHLY_SEGMENT_LIMIT=10)
+def test_sms_campaign_does_not_require_a_postal_address():
+    owner, site = campaign_fixture()
+    site.postal_address = ""
+    site.save(update_fields=("postal_address", "updated_at"))
+    contact_for(site, 1, email_consent=False, sms_consent=True)
+    campaign = draft_campaign(
+        site,
+        channel=Campaign.Channel.SMS,
+        subject="",
+        body="Dance moved to 7 PM.",
+    )
+
+    # The requirement is specific to commercial email, not SMS.
+    launch_campaign(campaign=campaign, actor=owner, usage_confirmed=True)
+
+    campaign.refresh_from_db()
+    assert campaign.status == Campaign.Status.SCHEDULED

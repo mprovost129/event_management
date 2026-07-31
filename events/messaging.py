@@ -188,9 +188,7 @@ def queue_confirmation(registration, history):
     hostname = _canonical_hostname(registration.site)
     participant_names = _participant_names(registration)
     participant_lines = _participant_lines(participant_names)
-    participants = (
-        f"\nYour party:\n{participant_lines}\n" if participant_lines else ""
-    )
+    participants = f"\nYour party:\n{participant_lines}\n" if participant_lines else ""
     manage_url = ""
     if registration.source == Registration.Source.PUBLIC:
         from events.registration import public_rsvp_manage_token
@@ -313,9 +311,7 @@ def queue_rsvp_manage_link(registration, *, now=None):
         subject=subject,
         body=body,
         html_body=html_body,
-        dedupe_key=(
-            f"rsvp-manage:{registration.id}:{now.strftime('%Y%m%d%H')}"
-        ),
+        dedupe_key=(f"rsvp-manage:{registration.id}:{now.strftime('%Y%m%d%H')}"),
         occurrence=occurrence,
         registration=registration,
     )
@@ -435,8 +431,7 @@ def queue_due_reminders(*, now=None):
         _, created = OutboundMessage.objects.get_or_create(
             site=registration.site,
             dedupe_key=(
-                f"reminder:{registration.id}:"
-                f"{occurrence.starts_at.isoformat()}"
+                f"reminder:{registration.id}:{occurrence.starts_at.isoformat()}"
             ),
             defaults={
                 "kind": OutboundMessage.Kind.REMINDER,

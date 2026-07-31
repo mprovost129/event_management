@@ -4,7 +4,7 @@
 
 1. Confirm a current database backup exists and record its identifier.
 2. Build an immutable application image and run CI, including the dependency audit.
-3. Run `python manage.py check --deploy --settings=config.Settings.prod` against the release configuration.
+3. Run `python manage.py check --deploy --settings=config.settings.prod` against the release configuration.
 4. Apply migrations once with `python manage.py migrate --noinput`.
 5. Start or replace web, Celery worker, and Celery beat processes from the same image.
 6. Wait for `/health/live/` and `/health/ready/` to return HTTP 200.

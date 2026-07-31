@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from io import BytesIO
+from unittest import mock
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -340,18 +341,15 @@ def test_owner_builds_and_publishes_album_for_completed_event(client):
     upload_response = client.post(
         reverse("events:album_photo_upload", args=(site.id, album.id)),
         {
-            "image": image_upload("dance-floor.jpg"),
-            "caption": "Everyone on the dance floor",
+            "images": image_upload("dance-floor.jpg"),
             "alt_text": "A group of dancers smiling under blue lights",
-            "make_cover": "on",
         },
     )
     photo = EventPhoto.objects.get(album=album)
     client.post(
         reverse("events:album_photo_upload", args=(site.id, album.id)),
         {
-            "image": image_upload("group-photo.jpg"),
-            "caption": "Friends posing after the last song",
+            "images": image_upload("group-photo.jpg"),
             "alt_text": "Six friends posing together near the stage",
         },
     )
@@ -471,3 +469,210 @@ def test_invitation_picker_shows_contact_email_and_search_controls(client):
     assert "Pat Dancer - pat@example.com" in content
     assert "Search by name or email" in content
     assert "Personal invitation links" in content
+
+
+def create_past_album(owner, site, *, title="Summer social"):
+    past_start = timezone.now() - timedelta(days=2)
+    event = create_event_series(
+        site=site,
+        creator=owner,
+        event_values={
+            "title": title,
+            "slug": "summer-social",
+            "description": "A joyful night with friends.",
+            "host_name": "Pat",
+            "visibility": Event.Visibility.PUBLIC,
+            "status": Event.Status.PUBLISHED,
+            "recurrence": Event.Recurrence.NONE,
+            "recurrence_interval": 1,
+            "recurrence_until": None,
+            "max_guests": 2,
+        },
+        first_start=past_start,
+        first_end=past_start + timedelta(hours=2),
+        venue_name="Town Hall",
+    )
+    occurrence = event.occurrences.get()
+    return EventAlbum.objects.create(
+        site=site,
+        occurrence=occurrence,
+        title="Summer Social Highlights",
+        slug="summer-social-highlights",
+        created_by=owner,
+    )
+
+
+@pytest.mark.django_db
+def test_bulk_photo_upload_stores_thumbnails_and_default_alt_text(client):
+    owner, site = create_site()
+    album = create_past_album(owner, site)
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("events:album_photo_upload", args=(site.id, album.id)),
+        {
+            "images": [
+                image_upload("one.jpg"),
+                image_upload("two.jpg"),
+                image_upload("three.jpg"),
+            ]
+        },
+    )
+
+    photos = list(EventPhoto.objects.filter(album=album).order_by("position"))
+    album.refresh_from_db()
+
+    assert response.status_code == 302
+    assert len(photos) == 3
+    # Every photo gets a smaller derivative for grid rendering.
+    assert all(photo.thumbnail for photo in photos)
+    assert all(photo.thumbnail.name != photo.image.name for photo in photos)
+    assert all(photo.preview.name == photo.thumbnail.name for photo in photos)
+    # Dimensions are stored so templates can reserve space before load.
+    assert all(photo.image_width and photo.image_height for photo in photos)
+    # Alt text nobody typed still describes the photo usefully.
+    assert photos[0].alt_text.startswith("Photo from Summer social on ")
+    assert [photo.position for photo in photos] == [1, 2, 3]
+    assert album.cover_photo_id == photos[0].id
+
+
+@pytest.mark.django_db
+def test_bulk_upload_applies_supplied_alt_text_to_every_photo(client):
+    owner, site = create_site()
+    album = create_past_album(owner, site)
+    client.force_login(owner)
+
+    client.post(
+        reverse("events:album_photo_upload", args=(site.id, album.id)),
+        {
+            "images": [image_upload("one.jpg"), image_upload("two.jpg")],
+            "alt_text": "Dancers in a line under string lights",
+        },
+    )
+
+    alt_texts = {photo.alt_text for photo in EventPhoto.objects.filter(album=album)}
+    assert alt_texts == {"Dancers in a line under string lights"}
+
+
+@pytest.mark.django_db
+def test_oversized_pixel_count_is_rejected_before_encoding(client):
+    owner, site = create_site()
+    album = create_past_album(owner, site)
+    client.force_login(owner)
+
+    with mock.patch("content.images.MAX_IMAGE_PIXELS", 1000):
+        response = client.post(
+            reverse("events:album_photo_upload", args=(site.id, album.id)),
+            {"images": image_upload("huge.jpg")},
+        )
+
+    assert response.status_code == 400
+    assert "under 50 megapixels" in response.content.decode()
+    assert not EventPhoto.objects.filter(album=album).exists()
+
+
+@pytest.mark.django_db
+def test_photo_reorder_persists_new_positions_and_rejects_foreign_ids(client):
+    owner, site = create_site()
+    album = create_past_album(owner, site)
+    client.force_login(owner)
+    client.post(
+        reverse("events:album_photo_upload", args=(site.id, album.id)),
+        {
+            "images": [
+                image_upload("a.jpg"),
+                image_upload("b.jpg"),
+                image_upload("c.jpg"),
+            ]
+        },
+    )
+    original = list(EventPhoto.objects.filter(album=album).order_by("position"))
+    reversed_ids = [str(photo.id) for photo in reversed(original)]
+
+    ok = client.post(
+        reverse("events:album_photo_reorder", args=(site.id, album.id)),
+        {"photo_ids": reversed_ids},
+    )
+    reordered = list(EventPhoto.objects.filter(album=album).order_by("position"))
+
+    partial = client.post(
+        reverse("events:album_photo_reorder", args=(site.id, album.id)),
+        {"photo_ids": reversed_ids[:2]},
+    )
+    empty = client.post(
+        reverse("events:album_photo_reorder", args=(site.id, album.id)),
+        {},
+    )
+
+    assert ok.status_code == 200
+    assert [photo.id for photo in reordered] == [
+        photo.id for photo in reversed(original)
+    ]
+    # A partial or empty order is refused rather than silently applied.
+    assert partial.status_code == 400
+    assert empty.status_code == 400
+
+
+@pytest.mark.django_db
+def test_public_album_list_does_not_query_per_album(client):
+    owner, site = create_site()
+    client.force_login(owner)
+    for index in range(3):
+        album = create_past_album(owner, site, title=f"Social {index}")
+        album.slug = f"social-{index}"
+        album.save(update_fields=("slug",))
+        album.occurrence.event.slug = f"social-event-{index}"
+        album.occurrence.event.save(update_fields=("slug",))
+        client.post(
+            reverse("events:album_photo_upload", args=(site.id, album.id)),
+            {"images": image_upload(f"{index}.jpg")},
+        )
+        client.post(
+            reverse("events:album_edit", args=(site.id, album.id)),
+            {
+                "title": album.title,
+                "slug": album.slug,
+                "description": "",
+                "status": EventAlbum.Status.PUBLISHED,
+            },
+        )
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    client.logout()
+
+    with CaptureQueriesContext(connection) as captured:
+        response = client.get(
+            reverse("events:photo_album_list"),
+            headers={"host": "boot-scooters.localhost"},
+        )
+
+    assert response.status_code == 200
+    # Cover lookups must come from the prefetch cache, not one query per album.
+    assert len(captured) < 15
+
+
+@pytest.mark.django_db
+def test_photo_delete_removes_both_stored_derivatives(
+    client, django_capture_on_commit_callbacks
+):
+    owner, site = create_site()
+    album = create_past_album(owner, site)
+    client.force_login(owner)
+    client.post(
+        reverse("events:album_photo_upload", args=(site.id, album.id)),
+        {"images": image_upload("only.jpg")},
+    )
+    photo = EventPhoto.objects.get(album=album)
+    storage = photo.image.storage
+    image_name = photo.image.name
+    thumbnail_name = photo.thumbnail.name
+
+    with django_capture_on_commit_callbacks(execute=True):
+        client.post(
+            reverse("events:album_photo_delete", args=(site.id, album.id, photo.id))
+        )
+
+    # Both derivatives are cleaned up so deleted photos do not bill storage
+    # forever.
+    assert not storage.exists(image_name)
+    assert not storage.exists(thumbnail_name)

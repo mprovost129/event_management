@@ -11,7 +11,9 @@
 {% for album in albums %}
     <article class="gh-album-card">
         {% if album.cover_photo %}<img src="{{ album.cover_photo.image.url }}" alt="{{ album.cover_photo.alt_text }}">{% endif %}
-        <div><span class="gh-content-status gh-content-status-{{ album.status }}">{{ album.get_status_display }}</span><h2>{{ album.title }}</h2><p>{{ album.occurrence.event.title }} &middot; {{ album.occurrence.starts_at|date:"F j, Y" }}</p><p>{{ album.photo_count }} photo{{ album.photo_count|pluralize }}</p><a href="{% url 'events:album_edit' site.id album.id %}">Manage album</a></div>
+        <div><span class="gh-content-status gh-content-status-{{ album.status }}">{{ album.get_status_display }}</span><h2>{{ album.title }}</h2>
+            <p>{{ album.occurrence.event.title }} &middot; {{ album.occurrence.starts_at|date:"F j, Y" }}</p>
+            <p>{{ album.photo_count }} photo{{ album.photo_count|pluralize }}</p><a href="{% url 'events:album_edit' site.id album.id %}">Manage album</a></div>
     </article>
 {% empty %}
     <div class="gh-empty-note"><h2>No photo albums yet</h2><p>After an event ends, create an album and add your favorite photos.</p><a class="btn btn-primary" href="{% url 'events:album_create' site.id %}">Create your first album</a></div>

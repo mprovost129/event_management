@@ -6,6 +6,56 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Added
 
+- Per-event refund policy: an organization-wide default plus an optional
+  per-ticket-type override, resolved through `TicketType.effective_refund_policy`
+  and shown on public event pages and at checkout (spec EVT-08). A ticket type
+  cannot be created without a policy from one source or the other, and a paid
+  event is not launch-ready until one exists.
+- Subscriber mailing address, included in the footer of every marketing email
+  alongside the unsubscribe link as CAN-SPAM requires. Email campaigns fail
+  closed at launch when it is unset; SMS is unaffected.
+- Both fields are editable under website settings and included in the subscriber
+  data export.
+
+### Also added
+
+- Bulk photo upload: managers select a whole batch at once, alt text defaults to
+  the event name and date, and per-file errors name the offending photo.
+- Stored 600px thumbnails alongside full-size images so gallery grids no longer
+  serve 2400px originals. Both derivatives come from a single decode.
+- Drag-and-drop photo reordering with arrow-button and screen-reader
+  equivalents, persisted through a validated reorder endpoint.
+- A dashboard prompt offering to start a photo album for any event that finished
+  in the last 30 days without one.
+- Bootstrap 5.3.3 vendored under `static/vendor/` so a CDN outage cannot strip
+  styling from subscriber sites. The Content-Security-Policy no longer trusts
+  any third-party script, style, or font origin.
+
+### Changed
+
+- Renamed the settings package from `config/Settings/` to `config/settings/` to
+  match Python convention and avoid case-sensitivity surprises on Linux.
+- Public photo grids load thumbnails, declare intrinsic dimensions, lazy-load,
+  and link to the full-size file.
+- Reformatted 60 minified single-line templates into readable, indented markup.
+  Rendered output is unchanged.
+
+### Fixed
+
+- Removed hardcoded Stripe price ID fallbacks from settings. Unset price IDs now
+  stay blank and surface as `platform.W002` rather than silently billing against
+  a stale identifier. A blank price ID can no longer match a webhook payload.
+- Bounded decoded image pixel count, not just upload size, so a small but highly
+  compressed file cannot exhaust memory.
+- Deleting a photo now removes both the full-size file and the thumbnail from
+  storage instead of orphaning one.
+- Removed a duplicated `EventPhotoEditForm` definition in `events/forms.py`.
+- Public album list no longer issues one extra query per album for its cover.
+- Removed two stray uploaded images committed under `media/` despite the
+  directory being git-ignored.
+
+### Previously added
+
 - Subscriber-managed event promotional images and past-event photo albums with
   draft/published visibility, validated image resizing, captions, required alt
   text, cover selection, public galleries, tenant isolation, audit history, and

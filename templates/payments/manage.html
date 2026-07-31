@@ -2,18 +2,117 @@
 {% block title %}Payments and memberships | {{ site.display_name }}{% endblock %}
 {% block content %}
 <div class="gh-commerce-hub">
-    <div class="gh-builder-head"><div><a class="gh-back-link" href="{% url 'sites:dashboard' site.id %}">&larr; Dashboard</a><p class="gh-step-label mt-3">Payments &amp; memberships</p><h1>Know what sold and what your group earned.</h1><p>Collect payments in your own connected Stripe account. Gather HQs deducts {{ ticket_application_fee_percent|floatformat:2 }}% from paid event ticket orders; member dues remain platform-fee free.</p></div>{% if connected.commerce_ready %}<span class="gh-status-pill gh-status-ready">Payments ready</span>{% else %}<span class="gh-status-pill gh-status-restricted">Setup needed</span>{% endif %}</div>
+    <div class="gh-builder-head">
+        <div><a class="gh-back-link" href="{% url 'sites:dashboard' site.id %}">&larr; Dashboard</a><p class="gh-step-label mt-3">Payments &amp; memberships</p>
+            <h1>Know what sold and what your group earned.</h1>
+            <p>Collect payments in your own connected Stripe account. Gather HQs deducts {{ ticket_application_fee_percent|floatformat:2 }}% from paid event ticket orders; member dues remain platform-fee free.</p>
+        </div>{% if connected.commerce_ready %}<span class="gh-status-pill gh-status-ready">Payments ready</span>{% else %}<span class="gh-status-pill gh-status-restricted">Setup needed</span>{% endif %}</div>
 
-    <section class="gh-stripe-readiness {% if connected.commerce_ready %}is-ready{% endif %}" aria-labelledby="stripe-readiness-heading"><div class="gh-stripe-readiness-mark" aria-hidden="true">{% if connected.commerce_ready %}&#10003;{% else %}!{% endif %}</div><div><p class="gh-step-label">Stripe Connect</p><h2 id="stripe-readiness-heading">{% if connected.commerce_ready %}Your account is ready to collect payments.{% elif connected %}Finish Stripe setup before selling.{% else %}Connect the account where your group gets paid.{% endif %}</h2>{% if connected %}<p>Status: <strong>{{ connected.get_status_display }}</strong> &middot; Charges {{ connected.charges_enabled|yesno:"enabled,disabled" }} &middot; Payouts {{ connected.payouts_enabled|yesno:"enabled,disabled" }}{% if connected.requirements_due %} &middot; {{ connected.requirements_due|length }} requirement{{ connected.requirements_due|length|pluralize }} due{% endif %}</p>{% else %}<p>Stripe handles identity verification, card details, processing, and payouts directly.</p>{% endif %}{% if failed_webhooks %}<p class="text-danger mb-0">{{ failed_webhooks }} connected-account update{{ failed_webhooks|pluralize }} need operational review.</p>{% endif %}</div>{% if site_role.role == 'subscriber_admin' %}<div class="gh-stripe-actions">{% if connected %}<form method="post" action="{% url 'payments:connect_sync' site.id %}">{% csrf_token %}<button class="btn btn-outline-primary" type="submit">Refresh status</button></form>{% if not connected.commerce_ready %}<a class="btn btn-primary" href="{% url 'payments:connect_refresh' site.id %}">Continue Stripe setup</a>{% endif %}{% else %}<form method="post" action="{% url 'payments:connect_start' site.id %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Connect Stripe</button></form>{% endif %}</div>{% endif %}</section>
+    <section class="gh-stripe-readiness {% if connected.commerce_ready %}is-ready{% endif %}" aria-labelledby="stripe-readiness-heading">
+        <div class="gh-stripe-readiness-mark" aria-hidden="true">{% if connected.commerce_ready %}&#10003;{% else %}!{% endif %}</div>
+        <div>
+            <p class="gh-step-label">Stripe Connect</p>
+            <h2 id="stripe-readiness-heading">{% if connected.commerce_ready %}Your account is ready to collect payments.{% elif connected %}Finish Stripe setup before selling.{% else %}Connect the account where your group gets paid.{% endif %}</h2>{% if connected %}<p>Status: <strong>{{ connected.get_status_display }}</strong> &middot; Charges {{ connected.charges_enabled|yesno:"enabled,disabled" }} &middot; Payouts {{ connected.payouts_enabled|yesno:"enabled,disabled" }}{% if connected.requirements_due %} &middot; {{ connected.requirements_due|length }} requirement{{ connected.requirements_due|length|pluralize }} due{% endif %}</p>{% else %}<p>Stripe handles identity verification, card details, processing, and payouts directly.</p>{% endif %}{% if failed_webhooks %}<p class="text-danger mb-0">{{ failed_webhooks }} connected-account update{{ failed_webhooks|pluralize }} need operational review.</p>{% endif %}</div>{% if site_role.role == 'subscriber_admin' %}<div class="gh-stripe-actions">{% if connected %}<form method="post" action="{% url 'payments:connect_sync' site.id %}">{% csrf_token %}<button class="btn btn-outline-primary" type="submit">Refresh status</button></form>{% if not connected.commerce_ready %}<a class="btn btn-primary" href="{% url 'payments:connect_refresh' site.id %}">Continue Stripe setup</a>{% endif %}{% else %}<form method="post" action="{% url 'payments:connect_start' site.id %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Connect Stripe</button></form>{% endif %}</div>{% endif %}</section>
 
-    <section class="gh-commerce-summary" aria-label="Commerce summary"><div><span>Ticket gross</span><strong>${{ summary.ticket_gross|floatformat:2 }}</strong></div><div><span>Gather HQs fees</span><strong>${{ summary.platform_fee_net|floatformat:2 }}</strong></div><div><span>Stripe fees recorded</span><strong>${{ summary.stripe_fees|floatformat:2 }}</strong></div><div><span>Ticket net</span><strong>${{ summary.ticket_net|floatformat:2 }}</strong></div><div><span>Member dues</span><strong>${{ summary.member_dues|floatformat:2 }}</strong></div><div><span>Active members</span><strong>{{ summary.active_members }}</strong></div></section>
+    <section class="gh-commerce-summary" aria-label="Commerce summary">
+        <div><span>Ticket gross</span><strong>${{ summary.ticket_gross|floatformat:2 }}</strong></div>
+        <div><span>Gather HQs fees</span><strong>${{ summary.platform_fee_net|floatformat:2 }}</strong></div>
+        <div><span>Stripe fees recorded</span><strong>${{ summary.stripe_fees|floatformat:2 }}</strong></div>
+        <div><span>Ticket net</span><strong>${{ summary.ticket_net|floatformat:2 }}</strong></div>
+        <div><span>Member dues</span><strong>${{ summary.member_dues|floatformat:2 }}</strong></div>
+        <div><span>Active members</span><strong>{{ summary.active_members }}</strong></div>
+    </section>
 
-    <section class="gh-commerce-section" aria-labelledby="ticket-types-heading"><div class="gh-section-row"><div><p class="gh-step-label mb-1">Paid events</p><h2 id="ticket-types-heading">Ticket options</h2></div><a class="btn btn-outline-primary" href="{% url 'events:manage' site.id %}">Choose an event date</a></div>{% if ticket_types %}<div class="gh-ticket-type-list">{% for ticket in ticket_types %}<article><div class="gh-ticket-type-main"><span class="gh-content-status {% if ticket.is_active %}gh-content-status-published{% else %}gh-content-status-archived{% endif %}">{{ ticket.is_active|yesno:"Active,Inactive" }}</span><h3><a href="{% url 'payments:ticket_type_edit' site.id ticket.id %}">{{ ticket.name }}</a></h3><p>{{ ticket.occurrence.event.title }} &middot; {{ ticket.occurrence.starts_at }}</p></div><div class="gh-ticket-price"><strong>${{ ticket.price_display|floatformat:2 }}</strong><span>{{ ticket.currency|upper }} per person</span></div><dl><div><dt>Sold</dt><dd>{{ ticket.inventory.sold }}</dd></div><div><dt>Held</dt><dd>{{ ticket.inventory.held }}</dd></div><div><dt>Remaining</dt><dd>{{ ticket.inventory.remaining }}</dd></div></dl><a class="gh-row-arrow" href="{% url 'payments:ticket_type_edit' site.id ticket.id %}" aria-label="Edit {{ ticket.name }}">&rarr;</a></article>{% endfor %}</div>{% else %}<div class="gh-empty-note"><h3>No paid ticket options yet</h3><p>Open Events, choose a date, and select Tickets. Free events do not need any ticket setup.</p><a href="{% url 'events:manage' site.id %}">Choose an event &rarr;</a></div>{% endif %}</section>
+    <section class="gh-commerce-section" aria-labelledby="ticket-types-heading">
+        <div class="gh-section-row">
+            <div>
+                <p class="gh-step-label mb-1">Paid events</p>
+                <h2 id="ticket-types-heading">Ticket options</h2>
+            </div><a class="btn btn-outline-primary" href="{% url 'events:manage' site.id %}">Choose an event date</a></div>{% if ticket_types %}<div class="gh-ticket-type-list">{% for ticket in ticket_types %}<article>
+            <div class="gh-ticket-type-main"><span class="gh-content-status {% if ticket.is_active %}gh-content-status-published{% else %}gh-content-status-archived{% endif %}">{{ ticket.is_active|yesno:"Active,Inactive" }}</span><h3><a href="{% url 'payments:ticket_type_edit' site.id ticket.id %}">{{ ticket.name }}</a></h3>
+                <p>{{ ticket.occurrence.event.title }} &middot; {{ ticket.occurrence.starts_at }}</p>
+            </div>
+            <div class="gh-ticket-price"><strong>${{ ticket.price_display|floatformat:2 }}</strong><span>{{ ticket.currency|upper }} per person</span></div>
+            <dl>
+                <div>
+                    <dt>Sold</dt>
+                    <dd>{{ ticket.inventory.sold }}</dd>
+                </div>
+                <div>
+                    <dt>Held</dt>
+                    <dd>{{ ticket.inventory.held }}</dd>
+                </div>
+                <div>
+                    <dt>Remaining</dt>
+                    <dd>{{ ticket.inventory.remaining }}</dd>
+                </div>
+            </dl><a class="gh-row-arrow" href="{% url 'payments:ticket_type_edit' site.id ticket.id %}" aria-label="Edit {{ ticket.name }}">&rarr;</a></article>{% endfor %}</div>{% else %}<div class="gh-empty-note">
+            <h3>No paid ticket options yet</h3>
+            <p>Open Events, choose a date, and select Tickets. Free events do not need any ticket setup.</p><a href="{% url 'events:manage' site.id %}">Choose an event &rarr;</a></div>{% endif %}</section>
 
-    <section class="gh-commerce-section" aria-labelledby="orders-heading"><div class="gh-section-row"><div><p class="gh-step-label mb-1">Ticket activity</p><h2 id="orders-heading">Recent orders</h2></div></div>{% if orders %}<div class="table-responsive" role="region" aria-labelledby="orders-heading" tabindex="0"><table class="table align-middle gh-commerce-table"><thead><tr><th scope="col">Purchaser</th><th scope="col">Event</th><th scope="col">Total</th><th scope="col">Gather fee</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Action</span></th></tr></thead><tbody>{% for order in orders %}<tr><td>{{ order.purchaser }}</td><td>{{ order.occurrence.event.title }}</td><td><strong>${{ order.total_display|floatformat:2 }}</strong> {{ order.currency|upper }}</td><td>${{ order.application_fee_display|floatformat:2 }}</td><td><span class="gh-content-status gh-content-status-{{ order.status }}">{{ order.get_status_display }}</span>{% if order.refunded_cents %}<br><small>${{ order.refunded_display|floatformat:2 }} refunded</small>{% endif %}</td><td>{% if site_role.role == 'subscriber_admin' and order.status == 'paid' or site_role.role == 'subscriber_admin' and order.status == 'partially_refunded' %}<a href="{% url 'payments:refund_order' site.id order.id %}">Refund</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-secondary">Orders will appear here after attendees begin checkout.</p>{% endif %}</section>
+    <section class="gh-commerce-section" aria-labelledby="orders-heading">
+        <div class="gh-section-row">
+            <div>
+                <p class="gh-step-label mb-1">Ticket activity</p>
+                <h2 id="orders-heading">Recent orders</h2>
+            </div>
+        </div>{% if orders %}<div class="table-responsive" role="region" aria-labelledby="orders-heading" tabindex="0">
+        <table class="table align-middle gh-commerce-table">
+            <thead>
+                <tr>
+                    <th scope="col">Purchaser</th>
+                    <th scope="col">Event</th>
+                    <th scope="col">Total</th>
+                    <th scope="col">Gather fee</th>
+                    <th scope="col">Status</th>
+                    <th scope="col"><span class="visually-hidden">Action</span></th>
+                </tr>
+            </thead>
+            <tbody>{% for order in orders %}<tr>
+                <td>{{ order.purchaser }}</td>
+                <td>{{ order.occurrence.event.title }}</td>
+                <td><strong>${{ order.total_display|floatformat:2 }}</strong> {{ order.currency|upper }}</td>
+                <td>${{ order.application_fee_display|floatformat:2 }}</td>
+                <td><span class="gh-content-status gh-content-status-{{ order.status }}">{{ order.get_status_display }}</span>{% if order.refunded_cents %}<br><small>${{ order.refunded_display|floatformat:2 }} refunded</small>{% endif %}</td>
+                <td>{% if site_role.role == 'subscriber_admin' and order.status == 'paid' or site_role.role == 'subscriber_admin' and order.status == 'partially_refunded' %}<a href="{% url 'payments:refund_order' site.id order.id %}">Refund</a>{% endif %}</td>
+            </tr>{% endfor %}</tbody>
+        </table>
+    </div>{% else %}<p class="text-secondary">Orders will appear here after attendees begin checkout.</p>{% endif %}</section>
 
-    {% if disputes %}<section class="gh-commerce-section gh-dispute-section" aria-labelledby="disputes-heading"><div class="gh-section-row"><div><p class="gh-step-label mb-1">Needs attention</p><h2 id="disputes-heading">Disputes</h2></div></div><div class="table-responsive" role="region" aria-labelledby="disputes-heading" tabindex="0"><table class="table"><thead><tr><th scope="col">Event</th><th scope="col">Purchaser</th><th scope="col">Reason</th><th scope="col">Status</th></tr></thead><tbody>{% for dispute in disputes %}<tr><td>{{ dispute.order.occurrence.event.title }}</td><td>{{ dispute.order.purchaser }}</td><td>{{ dispute.reason|default:"Not supplied" }}</td><td>{{ dispute.status }}</td></tr>{% endfor %}</tbody></table></div></section>{% endif %}
+    {% if disputes %}<section class="gh-commerce-section gh-dispute-section" aria-labelledby="disputes-heading">
+    <div class="gh-section-row">
+        <div>
+            <p class="gh-step-label mb-1">Needs attention</p>
+            <h2 id="disputes-heading">Disputes</h2>
+        </div>
+    </div>
+    <div class="table-responsive" role="region" aria-labelledby="disputes-heading" tabindex="0">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Event</th>
+                    <th scope="col">Purchaser</th>
+                    <th scope="col">Reason</th>
+                    <th scope="col">Status</th>
+                </tr>
+            </thead>
+            <tbody>{% for dispute in disputes %}<tr>
+                <td>{{ dispute.order.occurrence.event.title }}</td>
+                <td>{{ dispute.order.purchaser }}</td>
+                <td>{{ dispute.reason|default:"Not supplied" }}</td>
+                <td>{{ dispute.status }}</td>
+            </tr>{% endfor %}</tbody>
+        </table>
+    </div>
+    </section>{% endif %}
 
-    <section class="gh-commerce-section" aria-labelledby="membership-heading"><div class="gh-section-row"><div><p class="gh-step-label mb-1">Recurring support</p><h2 id="membership-heading">Membership dues</h2><p class="mb-0 text-secondary">Membership and event attendance stay separate. Members still RSVP to each event.</p></div>{% if site_role.role == 'subscriber_admin' %}<a class="btn btn-outline-primary" href="{% url 'payments:membership_plan_create' site.id %}">Create plan</a>{% endif %}</div>{% if plans %}<div class="gh-membership-plan-list">{% for plan in plans %}<a href="{% url 'payments:membership_plan_edit' site.id plan.id %}"><div><span class="gh-content-status {% if plan.is_active %}gh-content-status-published{% else %}gh-content-status-archived{% endif %}">{{ plan.is_active|yesno:"Active,Inactive" }}</span><h3>{{ plan.name }}</h3></div><strong>${{ plan.price_display|floatformat:2 }} <small>{{ plan.currency|upper }} / {{ plan.get_interval_display|lower }}</small></strong></a>{% endfor %}</div>{% else %}<p class="text-secondary">No membership plans yet.</p>{% endif %}<h3 class="h5 mt-4">Recent member subscriptions</h3>{% if member_subscriptions %}<ul class="list-group">{% for subscription in member_subscriptions %}<li class="list-group-item d-flex justify-content-between"><span>{{ subscription.member.contact }} &middot; {{ subscription.plan.name }}</span><span>{{ subscription.get_status_display }}</span></li>{% endfor %}</ul>{% else %}<p class="text-secondary">No member subscriptions yet.</p>{% endif %}</section>
+    <section class="gh-commerce-section" aria-labelledby="membership-heading">
+        <div class="gh-section-row">
+            <div>
+                <p class="gh-step-label mb-1">Recurring support</p>
+                <h2 id="membership-heading">Membership dues</h2>
+                <p class="mb-0 text-secondary">Membership and event attendance stay separate. Members still RSVP to each event.</p>
+            </div>{% if site_role.role == 'subscriber_admin' %}<a class="btn btn-outline-primary" href="{% url 'payments:membership_plan_create' site.id %}">Create plan</a>{% endif %}</div>{% if plans %}<div class="gh-membership-plan-list">{% for plan in plans %}<a href="{% url 'payments:membership_plan_edit' site.id plan.id %}"><div><span class="gh-content-status {% if plan.is_active %}gh-content-status-published{% else %}gh-content-status-archived{% endif %}">{{ plan.is_active|yesno:"Active,Inactive" }}</span><h3>{{ plan.name }}</h3>
+        </div><strong>${{ plan.price_display|floatformat:2 }} <small>{{ plan.currency|upper }} / {{ plan.get_interval_display|lower }}</small></strong></a>{% endfor %}</div>{% else %}<p class="text-secondary">No membership plans yet.</p>{% endif %}<h3 class="h5 mt-4">Recent member subscriptions</h3>{% if member_subscriptions %}<ul class="list-group">{% for subscription in member_subscriptions %}<li class="list-group-item d-flex justify-content-between"><span>{{ subscription.member.contact }} &middot; {{ subscription.plan.name }}</span><span>{{ subscription.get_status_display }}</span></li>{% endfor %}</ul>{% else %}<p class="text-secondary">No member subscriptions yet.</p>{% endif %}</section>
 </div>
 {% endblock %}

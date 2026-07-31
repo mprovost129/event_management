@@ -319,12 +319,9 @@ def test_public_rsvp_needs_no_account_and_existing_response_uses_secure_link(cli
         subject=f"Manage your RSVP: {event.title}",
     )
     assert (
-        f"/events/{event.slug}/{occurrence.id}/respond/manage/"
-        in manage_message.body
+        f"/events/{event.slug}/{occurrence.id}/respond/manage/" in manage_message.body
     )
-    tampered_token = (
-        ("x" if manage_token[0] != "x" else "y") + manage_token[1:]
-    )
+    tampered_token = ("x" if manage_token[0] != "x" else "y") + manage_token[1:]
     assert (
         client.get(
             reverse(
@@ -514,10 +511,7 @@ def test_event_cancellation_sends_notices_for_affected_responses(client):
         kind=OutboundMessage.Kind.CANCELLATION
     )
     assert response.status_code == 200
-    assert (
-        "Notices are being sent to affected attendees."
-        in response.content.decode()
-    )
+    assert "Notices are being sent to affected attendees." in response.content.decode()
     assert event.status == Event.Status.CANCELED
     assert occurrence.status == occurrence.Status.CANCELED
     assert list(cancellation_messages.values_list("recipient_email", flat=True)) == [

@@ -161,7 +161,7 @@ web services do not include shell access, and the worker uses the same release,
 database, application settings, and provider configuration:
 
 ```text
-python manage.py check --deploy --settings=config.Settings.prod
+python manage.py check --deploy --settings=config.settings.prod
 python manage.py launch_gate --json --fail-on-warning
 python manage.py alert_summary --hours 1 --json --fail-on-alert
 python manage.py pilot_readiness PILOT_SITE_SLUG --json

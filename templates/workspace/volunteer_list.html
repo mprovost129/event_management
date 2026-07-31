@@ -11,7 +11,17 @@
     <div class="col-md-auto"><button class="btn btn-outline-primary" type="submit">Filter</button></div>
 </form>
 <div class="row g-4">
-    <div class="col-lg-7"><div class="card shadow-sm"><div class="card-body"><h2 class="h4">Volunteer directory</h2>{% for volunteer in volunteers %}<a class="d-flex justify-content-between py-3 border-bottom text-decoration-none" href="{% url 'workspace:volunteer_detail' site.id volunteer.id %}"><span><strong>{{ volunteer.contact.display_name }}</strong><small class="d-block text-secondary">{{ volunteer.get_status_display }}{% if volunteer.skills %} · {{ volunteer.skills|truncatechars:70 }}{% endif %}</small></span><span>{{ volunteer.total_hours }} hrs</span></a>{% empty %}<p class="text-secondary">No volunteers match these filters.</p>{% endfor %}</div></div></div>
-    <div class="col-lg-5"><div class="card shadow-sm"><div class="card-body"><h2 class="h4">Upcoming shifts</h2>{% for shift in shifts %}<a class="d-block py-3 border-bottom text-decoration-none" href="{% url 'workspace:shift_detail' site.id shift.id %}"><strong>{{ shift.title }}</strong><small class="d-block text-secondary">{{ shift.starts_at|date:'M j, Y g:i A' }} · {{ shift.open_spots }} open</small></a>{% empty %}<p class="text-secondary">No shifts scheduled.</p>{% endfor %}</div></div></div>
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h4">Volunteer directory</h2>{% for volunteer in volunteers %}<a class="d-flex justify-content-between py-3 border-bottom text-decoration-none" href="{% url 'workspace:volunteer_detail' site.id volunteer.id %}"><span><strong>{{ volunteer.contact.display_name }}</strong><small class="d-block text-secondary">{{ volunteer.get_status_display }}{% if volunteer.skills %} · {{ volunteer.skills|truncatechars:70 }}{% endif %}</small></span><span>{{ volunteer.total_hours }} hrs</span></a>{% empty %}<p class="text-secondary">No volunteers match these filters.</p>{% endfor %}</div>
+            </div>
+        </div>
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h4">Upcoming shifts</h2>{% for shift in shifts %}<a class="d-block py-3 border-bottom text-decoration-none" href="{% url 'workspace:shift_detail' site.id shift.id %}"><strong>{{ shift.title }}</strong><small class="d-block text-secondary">{{ shift.starts_at|date:'M j, Y g:i A' }} · {{ shift.open_spots }} open</small></a>{% empty %}<p class="text-secondary">No shifts scheduled.</p>{% endfor %}</div>
+            </div>
+        </div>
 </div>
 {% endblock %}

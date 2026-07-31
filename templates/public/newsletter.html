@@ -1,3 +1,5 @@
 {% extends 'public/site_base.html' %}
 {% block title %}Newsletter · {{ site.display_name }}{% endblock %}
-{% block content %}<section class="site-theme py-4"><h1>{{ page.title|default:"Newsletter" }}</h1>{% if page %}<div>{{ page.body|linebreaks }}</div>{% endif %}<form method="post" class="mt-4">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">Subscribe</button></form></section>{% endblock %}
+{% block content %}<section class="site-theme py-4">
+<h1>{{ page.title|default:"Newsletter" }}</h1>{% if page %}<div>{{ page.body|linebreaks }}</div>{% endif %}<form method="post" class="mt-4">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">Subscribe</button></form>
+</section>{% endblock %}

@@ -58,6 +58,23 @@
         </section>
         {% endif %}
 
+        {% if album_prompt %}
+        <section class="gh-album-prompt mb-4" aria-labelledby="album-prompt-title">
+            <div>
+                <p class="gh-step-label mb-1">That is a wrap</p>
+                <h2 class="h4 mb-1" id="album-prompt-title">Add photos from {{ album_prompt.event.title }}</h2>
+                <p class="mb-0 text-secondary">
+                    {% timezone site.timezone %}{{ album_prompt.starts_at|date:"l, F j" }}{% endtimezone %}
+                    has finished and does not have a photo album yet.
+                </p>
+            </div>
+            <a class="btn btn-primary text-nowrap"
+               href="{% url 'events:album_create' site.id %}?occurrence={{ album_prompt.id }}">
+                Start an album
+            </a>
+        </section>
+        {% endif %}
+
         <div class="row g-4 mb-5">
             <div class="col-lg-5">
                 <section class="gh-next-event h-100" aria-labelledby="next-event-title">
@@ -95,27 +112,100 @@
             </div>
         </div>
 
-        <div class="row g-4 mb-5"><div class="col-lg-6"><section class="card card-body h-100 shadow-sm"><div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">Open tasks</h2><a href="{% url 'workspace:task_list' site.id %}">View all</a></div>{% for task in open_tasks %}<a class="d-flex justify-content-between gap-3 py-2 border-bottom text-decoration-none" href="{% url 'workspace:task_detail' site.id task.id %}"><span><strong>{{ task.title }}</strong><small class="d-block text-secondary">{{ task.get_status_display }}{% if task.assignee %} · {{ task.assignee.email }}{% endif %}</small></span>{% if task.due_at %}<small class="text-nowrap">{{ task.due_at|date:"M j" }}</small>{% endif %}</a>{% empty %}<p class="text-secondary">No open tasks.</p>{% endfor %}</section></div><div class="col-lg-6"><section class="card card-body h-100 shadow-sm"><div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">Recent activity</h2><a href="{% url 'workspace:activity_list' site.id %}">View all</a></div>{% for activity in workspace_activities %}<div class="py-2 border-bottom"><strong>{{ activity.verb }}</strong><small class="d-block text-secondary">{{ activity.created_at|date:"M j, g:i A" }} · {{ activity.actor.email|default:"System" }}</small></div>{% empty %}<p class="text-secondary">Activity will appear as your team works.</p>{% endfor %}</section></div></div>
+        <div class="row g-4 mb-5">
+            <div class="col-lg-6">
+                <section class="card card-body h-100 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="h4 mb-0">Open tasks</h2><a href="{% url 'workspace:task_list' site.id %}">View all</a></div>{% for task in open_tasks %}<a class="d-flex justify-content-between gap-3 py-2 border-bottom text-decoration-none" href="{% url 'workspace:task_detail' site.id task.id %}"><span><strong>{{ task.title }}</strong><small class="d-block text-secondary">{{ task.get_status_display }}{% if task.assignee %} · {{ task.assignee.email }}{% endif %}</small></span>{% if task.due_at %}<small class="text-nowrap">{{ task.due_at|date:"M j" }}</small>{% endif %}</a>{% empty %}<p class="text-secondary">No open tasks.</p>{% endfor %}</section>
+                    </div>
+                    <div class="col-lg-6">
+                        <section class="card card-body h-100 shadow-sm">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h2 class="h4 mb-0">Recent activity</h2><a href="{% url 'workspace:activity_list' site.id %}">View all</a></div>{% for activity in workspace_activities %}<div class="py-2 border-bottom"><strong>{{ activity.verb }}</strong><small class="d-block text-secondary">{{ activity.created_at|date:"M j, g:i A" }} · {{ activity.actor.email|default:"System" }}</small></div>{% empty %}<p class="text-secondary">Activity will appear as your team works.</p>{% endfor %}</section>
+                            </div>
+                        </div>
 
         <section class="mb-5" aria-labelledby="workspace-title">
-            <div class="gh-section-row"><div><p class="gh-step-label mb-1">Your workspace</p><h2 id="workspace-title">Everything for your group</h2></div></div>
-            <div class="gh-workspace-grid">
-                <a href="{% url 'content:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">WE</span><div><h3>Website &amp; blog</h3><p>Pages, branding, publishing, and posts</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'events:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">EV</span><div><h3>Events &amp; calendar</h3><p>Dates, recurrences, invitations, and rosters</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'contacts:list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">PE</span><div><h3>People &amp; CRM</h3><p>Profiles, history, tags, notes, and consent</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'workspace:task_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">TA</span><div><h3>Tasks</h3><p>Assignments, deadlines, checklists, and comments</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'workspace:document_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">DO</span><div><h3>Documents</h3><p>Contracts, waivers, policies, and files</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'workspace:intake_form_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">FO</span><div><h3>Forms &amp; waivers</h3><p>Applications, registrations, signatures, and responses</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'workspace:volunteer_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">VO</span><div><h3>Volunteers</h3><p>Profiles, shifts, assignments, and service hours</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'workspace:sponsor_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">SP</span><div><h3>Sponsors</h3><p>Relationships, sponsorship levels, benefits, and status</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'workspace:automation_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">AU</span><div><h3>Automations</h3><p>Triggers, repeatable actions, and workflow run history</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'workspace:ai_draft_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">AI</span><div><h3>AI content assistant</h3><p>Event copy, emails, social posts, outreach, and planning drafts</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'workspace:insights' site.id %}"><span class="gh-tool-mark" aria-hidden="true">RI</span><div><h3>Organization insights</h3><p>People, tasks, forms, volunteers, sponsors, and workflow analytics</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'payments:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">PA</span><div><h3>Payments &amp; memberships</h3><p>Stripe, tickets, orders, refunds, and dues</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'communications:campaign_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">NE</span><div><h3>Newsletters &amp; SMS</h3><p>Campaigns, audiences, schedules, and results</p></div><span aria-hidden="true">→</span></a>
-                <a href="{% url 'reviews:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">RE</span><div><h3>Reviews</h3><p>Participant feedback and responses</p></div><span aria-hidden="true">→</span></a>
-                {% if site_role.role == 'subscriber_admin' %}<a href="{% url 'sites:launch_center' site.id %}"><span class="gh-tool-mark" aria-hidden="true">LA</span><div><h3>Pilot launch center</h3><p>Readiness, rehearsal, and event-day safeguards</p></div><span aria-hidden="true">→</span></a>{% endif %}
+            <div class="gh-section-row">
+                <div>
+                    <p class="gh-step-label mb-1">Your workspace</p>
+                    <h2 id="workspace-title">Everything for your group</h2>
+                </div>
             </div>
+            <div class="gh-workspace-grid">
+                <a href="{% url 'content:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">WE</span><div>
+                <h3>Website &amp; blog</h3>
+                <p>Pages, branding, publishing, and posts</p>
+                </div><span aria-hidden="true">&rarr;</span></a>
+                <a href="{% url 'events:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">EV</span><div>
+                <h3>Events &amp; calendar</h3>
+                <p>Dates, recurrences, invitations, and rosters</p>
+                </div><span aria-hidden="true">&rarr;</span></a>
+                <a href="{% url 'events:album_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">PH</span><div>
+                <h3>Photo albums</h3>
+                <p>Photos from past events, captions, and public galleries</p>
+                </div><span aria-hidden="true">&rarr;</span></a>
+                <a href="{% url 'contacts:list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">PE</span><div>
+                <h3>People &amp; CRM</h3>
+                <p>Profiles, history, tags, notes, and consent</p>
+                </div><span aria-hidden="true">&rarr;</span></a>
+                <a href="{% url 'payments:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">PA</span><div>
+                <h3>Payments &amp; memberships</h3>
+                <p>Stripe, tickets, orders, refunds, and dues</p>
+                </div><span aria-hidden="true">&rarr;</span></a>
+                <a href="{% url 'communications:campaign_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">NE</span><div>
+                <h3>Newsletters &amp; SMS</h3>
+                <p>Campaigns, audiences, schedules, and results</p>
+                </div><span aria-hidden="true">&rarr;</span></a>
+                {% if site_role.role == 'subscriber_admin' %}<a href="{% url 'sites:launch_center' site.id %}"><span class="gh-tool-mark" aria-hidden="true">LA</span><div>
+                <h3>Pilot launch center</h3>
+                <p>Readiness, rehearsal, and event-day safeguards</p>
+                </div><span aria-hidden="true">&rarr;</span></a>{% endif %}
+            </div>
+
+            {# Kept out of the way until a group asks for it. Most groups run on
+               the tools above and never need these. #}
+            <details class="gh-more-tools mt-4">
+                <summary>
+                    <span>More tools</span>
+                    <small>Tasks, documents, forms, volunteers, sponsors, automations, insights, and reviews</small>
+                </summary>
+                <div class="gh-workspace-grid mt-3">
+                    <a href="{% url 'workspace:task_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">TA</span><div>
+                    <h3>Tasks</h3>
+                    <p>Assignments, deadlines, checklists, and comments</p>
+                    </div><span aria-hidden="true">&rarr;</span></a>
+                    <a href="{% url 'workspace:document_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">DO</span><div>
+                    <h3>Documents</h3>
+                    <p>Contracts, waivers, policies, and files</p>
+                    </div><span aria-hidden="true">&rarr;</span></a>
+                    <a href="{% url 'workspace:intake_form_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">FO</span><div>
+                    <h3>Forms &amp; waivers</h3>
+                    <p>Applications, registrations, signatures, and responses</p>
+                    </div><span aria-hidden="true">&rarr;</span></a>
+                    <a href="{% url 'workspace:volunteer_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">VO</span><div>
+                    <h3>Volunteers</h3>
+                    <p>Profiles, shifts, assignments, and service hours</p>
+                    </div><span aria-hidden="true">&rarr;</span></a>
+                    <a href="{% url 'workspace:sponsor_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">SP</span><div>
+                    <h3>Sponsors</h3>
+                    <p>Relationships, sponsorship levels, benefits, and status</p>
+                    </div><span aria-hidden="true">&rarr;</span></a>
+                    <a href="{% url 'workspace:automation_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">AU</span><div>
+                    <h3>Automations</h3>
+                    <p>Triggers, repeatable actions, and workflow run history</p>
+                    </div><span aria-hidden="true">&rarr;</span></a>
+                    <a href="{% url 'workspace:ai_draft_list' site.id %}"><span class="gh-tool-mark" aria-hidden="true">AI</span><div>
+                    <h3>AI content assistant</h3>
+                    <p>Event copy, emails, social posts, outreach, and planning drafts</p>
+                    </div><span aria-hidden="true">&rarr;</span></a>
+                    <a href="{% url 'workspace:insights' site.id %}"><span class="gh-tool-mark" aria-hidden="true">RI</span><div>
+                    <h3>Organization insights</h3>
+                    <p>People, tasks, forms, volunteers, sponsors, and workflow analytics</p>
+                    </div><span aria-hidden="true">&rarr;</span></a>
+                    <a href="{% url 'reviews:manage' site.id %}"><span class="gh-tool-mark" aria-hidden="true">RE</span><div><h3>Reviews</h3><p>Participant feedback and responses</p></div><span aria-hidden="true">&rarr;</span></a>
+                </div>
+            </details>
         </section>
     {% endif %}
 
@@ -130,7 +220,9 @@
         <div class="row g-3">
             {% for option in billing_options %}
             <div class="col-md-6"><article class="gh-billing-option h-100">
-                <div><h3>{{ option.label }}</h3><p><strong>${{ option.amount|floatformat:2 }}</strong> per {% if option.interval == 'monthly' %}month{% else %}year{% endif %}</p>{% if option.annual_savings %}<span>Save ${{ option.annual_savings|floatformat:2 }} per year</span>{% endif %}</div>
+                <div>
+                    <h3>{{ option.label }}</h3>
+                    <p><strong>${{ option.amount|floatformat:2 }}</strong> per {% if option.interval == 'monthly' %}month{% else %}year{% endif %}</p>{% if option.annual_savings %}<span>Save ${{ option.annual_savings|floatformat:2 }} per year</span>{% endif %}</div>
                 <form method="post" action="{% url 'subscriptions:checkout' site.id %}">{% csrf_token %}<input type="hidden" name="billing_interval" value="{{ option.interval }}"><button class="btn btn-primary" type="submit">Choose {{ option.label|lower }}</button></form>
             </article></div>
             {% endfor %}
@@ -152,7 +244,8 @@
                 <div class="col-auto"><button class="btn btn-outline-primary" type="submit">Add manager</button></div>
             </form>
             {% if managers %}
-            <ul class="list-group">{% for manager in managers %}<li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2"><span>{{ manager.user.email }}</span><form method="post" action="{% url 'sites:remove_manager' site.id manager.id %}" onsubmit="return confirm('Remove this manager’s access to the organization?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form></li>{% endfor %}</ul>
+            <ul class="list-group">{% for manager in managers %}<li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2"><span>{{ manager.user.email }}</span><form method="post" action="{% url 'sites:remove_manager' site.id manager.id %}" onsubmit="return confirm('Remove this manager’s access to the organization?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>
+                </li>{% endfor %}</ul>
             {% else %}<p class="text-secondary mb-0">No site managers have been added.</p>{% endif %}
         </section>
         {% endif %}

@@ -1,6 +1,18 @@
 {% extends 'base.html' %}
 {% block title %}Reviews · {{ site.display_name }}{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-start mb-4"><div><h1>Reviews</h1><p class="text-secondary">Respond publicly or report content for platform moderation.</p></div><a class="btn btn-outline-primary" href="{% url 'sites:dashboard' site.id %}">Dashboard</a></div>
-{% for review in reviews %}<article class="card mb-3"><div class="card-body"><div class="d-flex justify-content-between"><div><strong>{{ review.rating }}/5</strong> · {{ review.display_name }}<br><small class="text-secondary">{{ review.occurrence.event.title }} · {{ review.submitted_at }}</small></div><span class="badge text-bg-{% if review.moderation_status == 'hidden' %}danger{% elif review.moderation_status == 'reported' %}warning{% else %}secondary{% endif %}">{{ review.get_moderation_status_display }}</span></div><p class="mt-3">{{ review.comment|linebreaksbr }}</p>{% if review.response %}<div class="border-start border-3 ps-3"><strong>{{ site.display_name }} replied</strong><p>{{ review.response|linebreaksbr }}</p></div>{% endif %}<a class="btn btn-sm btn-outline-primary" href="{% url 'reviews:respond' site.id review.id %}">Respond</a><form method="post" action="{% url 'reviews:report' site.id review.id %}" class="mt-3">{% csrf_token %}<label class="form-label" for="reason-{{ review.id }}">Report reason</label><div class="input-group"><input class="form-control" id="reason-{{ review.id }}" name="reason" maxlength="500" required><button class="btn btn-outline-danger">Report to platform</button></div></form></div></article>{% empty %}<p>No reviews yet.</p>{% endfor %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h1>Reviews</h1>
+        <p class="text-secondary">Respond publicly or report content for platform moderation.</p>
+    </div><a class="btn btn-outline-primary" href="{% url 'sites:dashboard' site.id %}">Dashboard</a></div>
+{% for review in reviews %}<article class="card mb-3">
+<div class="card-body">
+    <div class="d-flex justify-content-between">
+        <div><strong>{{ review.rating }}/5</strong> · {{ review.display_name }}<br><small class="text-secondary">{{ review.occurrence.event.title }} · {{ review.submitted_at }}</small></div><span class="badge text-bg-{% if review.moderation_status == 'hidden' %}danger{% elif review.moderation_status == 'reported' %}warning{% else %}secondary{% endif %}">{{ review.get_moderation_status_display }}</span></div>
+        <p class="mt-3">{{ review.comment|linebreaksbr }}</p>{% if review.response %}<div class="border-start border-3 ps-3"><strong>{{ site.display_name }} replied</strong><p>{{ review.response|linebreaksbr }}</p>
+    </div>{% endif %}<a class="btn btn-sm btn-outline-primary" href="{% url 'reviews:respond' site.id review.id %}">Respond</a><form method="post" action="{% url 'reviews:report' site.id review.id %}" class="mt-3">{% csrf_token %}<label class="form-label" for="reason-{{ review.id }}">Report reason</label><div class="input-group"><input class="form-control" id="reason-{{ review.id }}" name="reason" maxlength="500" required><button class="btn btn-outline-danger">Report to platform</button></div>
+</form>
+</div>
+</article>{% empty %}<p>No reviews yet.</p>{% endfor %}
 {% endblock %}

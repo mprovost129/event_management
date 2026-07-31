@@ -1,3 +1,9 @@
-{% extends 'base.html' %}{% block title %}{{ heading }} | {{ platform_name }}{% endblock %}{% block content %}<div class="row justify-content-center"><div class="col-xl-8"><div class="mb-4"><p class="text-uppercase text-secondary small mb-1">Operations</p><h1>{{ heading }}</h1></div><form method="post" class="card card-body shadow-sm">{% csrf_token %}{{ form.as_p }}<div class="alert alert-light border"><strong>Action settings examples</strong><pre class="mb-0 mt-2">Create task: {"title":"Follow up with {{ submitter_name }}","priority":"normal"}
+{% extends 'base.html' %}{% block title %}{{ heading }} | {{ platform_name }}{% endblock %}{% block content %}<div class="row justify-content-center">
+<div class="col-xl-8">
+    <div class="mb-4">
+        <p class="text-uppercase text-secondary small mb-1">Operations</p>
+        <h1>{{ heading }}</h1>
+    </div>
+    <form method="post" class="card card-body shadow-sm">{% csrf_token %}{{ form.as_p }}<div class="alert alert-light border"><strong>Action settings examples</strong><pre class="mb-0 mt-2">Create task: {"title":"Follow up with {{ submitter_name }}","priority":"normal"}
 Add tag: {"tag":"Form respondent"}
 Record activity: {"message":"A response was received from {{ submitter_name }}"}</pre></div><button class="btn btn-primary align-self-start">Save automation</button></form></div></div>{% endblock %}

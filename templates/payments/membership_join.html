@@ -1,5 +1,13 @@
 {% extends 'public/site_base.html' %}
 {% block title %}Join {{ plan.name }} | {{ site.display_name }}{% endblock %}
 {% block content %}
-<div class="site-theme gh-membership-join"><div><a class="gh-back-link" href="{% url 'payments:membership_plans' %}">&larr; Memberships</a><p class="gh-step-label mt-4">{{ plan.get_interval_display }} membership</p><h1>Join {{ plan.name }}</h1>{% if plan.description %}<div class="gh-membership-description">{{ plan.description|linebreaks }}</div>{% endif %}<div class="gh-membership-price"><span>$</span><strong>{{ price|floatformat:2 }}</strong><small>{{ plan.currency|upper }} charged {{ plan.get_interval_display|lower }}</small></div><p>Membership does not automatically reserve event spots. Continue using the event calendar to RSVP.</p></div><form method="post" class="gh-membership-join-form">{% csrf_token %}<p class="gh-step-label">Your details</p><h2>Where should we send confirmation?</h2>{% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}{% for field in form %}<div class="gh-form-field">{{ field.label_tag }}{{ field }}{% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>{% endfor %}<button class="btn btn-primary btn-lg w-100" type="submit">Continue to secure Stripe Checkout</button><div class="gh-stripe-note"><strong>Payment handled by Stripe</strong><span>Gather HQs does not store card details.</span></div></form></div>
+<div class="site-theme gh-membership-join">
+    <div><a class="gh-back-link" href="{% url 'payments:membership_plans' %}">&larr; Memberships</a><p class="gh-step-label mt-4">{{ plan.get_interval_display }} membership</p>
+        <h1>Join {{ plan.name }}</h1>{% if plan.description %}<div class="gh-membership-description">{{ plan.description|linebreaks }}</div>{% endif %}<div class="gh-membership-price"><span>$</span><strong>{{ price|floatformat:2 }}</strong><small>{{ plan.currency|upper }} charged {{ plan.get_interval_display|lower }}</small></div>
+        <p>Membership does not automatically reserve event spots. Continue using the event calendar to RSVP.</p>
+    </div>
+    <form method="post" class="gh-membership-join-form">{% csrf_token %}<p class="gh-step-label">Your details</p>
+        <h2>Where should we send confirmation?</h2>{% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}{% for field in form %}<div class="gh-form-field">{{ field.label_tag }}{{ field }}{% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>{% endfor %}<button class="btn btn-primary btn-lg w-100" type="submit">Continue to secure Stripe Checkout</button><div class="gh-stripe-note"><strong>Payment handled by Stripe</strong><span>Gather HQs does not store card details.</span></div>
+    </form>
+</div>
 {% endblock %}

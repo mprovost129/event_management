@@ -1,3 +1,5 @@
+# ruff: noqa: F401, F403
+from config.settings.prod import *
 # ruff: noqa: F403, F405
 from django.core.exceptions import ImproperlyConfigured
 

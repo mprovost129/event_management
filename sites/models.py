@@ -48,6 +48,24 @@ class Site(models.Model):
         max_length=50, choices=Template.choices, default=Template.CLASSIC
     )
     is_published = models.BooleanField(default=False)
+    # CAN-SPAM requires the sender's own valid physical postal address in every
+    # commercial email. The sender is the subscriber, not the platform, so this
+    # cannot come from a platform-level setting.
+    postal_address = models.CharField(
+        max_length=300,
+        blank=True,
+        help_text=(
+            "A valid physical mailing address, required by law at the bottom of "
+            "every newsletter you send. A PO box registered to your group works."
+        ),
+    )
+    default_refund_policy = models.TextField(
+        blank=True,
+        help_text=(
+            "Shown to buyers before they pay and on public event pages. "
+            "Individual ticket types can override it."
+        ),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -20,7 +20,8 @@
                 <p class="gh-step-label">Your story</p>
                 <h2 id="story-heading">Write the post</h2>
                 <div class="gh-form-field">{{ form.title.label_tag }}{{ form.title }}{% for error in form.title.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
-                <div class="gh-form-field">{{ form.slug.label_tag }}<div class="gh-url-field"><span>/blog/</span>{{ form.slug }}</div><div class="gh-field-help">{{ form.slug.help_text }}</div>{% for error in form.slug.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.slug.label_tag }}<div class="gh-url-field"><span>/blog/</span>{{ form.slug }}</div>
+                <div class="gh-field-help">{{ form.slug.help_text }}</div>{% for error in form.slug.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
                 <div class="gh-form-field">{{ form.excerpt.label_tag }}{{ form.excerpt }}<div class="gh-field-row"><span class="gh-field-help">{{ form.excerpt.help_text }}</span><output data-count-for="{{ form.excerpt.id_for_label }}">0 / 400</output></div>{% for error in form.excerpt.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
                 <div class="gh-form-field">{{ form.body.label_tag }}{{ form.body }}<div class="gh-field-row"><span class="gh-field-help">Plain text keeps posts readable on every device and in newsletters.</span><output data-count-for="{{ form.body.id_for_label }}">0 characters</output></div>{% for error in form.body.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
             </section>

@@ -19,7 +19,8 @@
             <section class="gh-editor-card" aria-labelledby="event-details-heading">
                 <p class="gh-step-label">Step 1</p><h2 id="event-details-heading">Describe the event</h2>
                 <div class="gh-form-field">{{ form.title.label_tag }}{{ form.title }}{% for error in form.title.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
-                <div class="gh-form-field">{{ form.slug.label_tag }}<div class="gh-url-field"><span>/events/</span>{{ form.slug }}</div><div class="gh-field-help">{{ form.slug.help_text }}</div>{% for error in form.slug.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                <div class="gh-form-field">{{ form.slug.label_tag }}<div class="gh-url-field"><span>/events/</span>{{ form.slug }}</div>
+                <div class="gh-field-help">{{ form.slug.help_text }}</div>{% for error in form.slug.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
                 <div class="gh-form-field">{{ form.description.label_tag }}{{ form.description }}{% for error in form.description.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
                 <div class="gh-form-field">{{ form.featured_image.label_tag }}{{ form.featured_image }}<div class="gh-field-help">{{ form.featured_image.help_text }}</div>{% for error in form.featured_image.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
                 <div class="gh-form-field">{{ form.host_name.label_tag }}{{ form.host_name }}<div class="gh-field-help">{{ form.host_name.help_text }}</div>{% for error in form.host_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
@@ -28,8 +29,16 @@
             <section class="gh-editor-card" aria-labelledby="event-schedule-heading">
                 <p class="gh-step-label">Step 2</p><h2 id="event-schedule-heading">Set the first date</h2>
                 <div class="gh-date-time-grid">
-                    <fieldset><legend>Starts</legend><div class="gh-form-field">{{ form.start_date.label_tag }}{{ form.start_date }}{% for error in form.start_date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.start_time.label_tag }}{{ form.start_time }}{% for error in form.start_time.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></fieldset>
-                    <fieldset><legend>Ends</legend><div class="gh-form-field">{{ form.end_date.label_tag }}{{ form.end_date }}{% for error in form.end_date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ form.end_time.label_tag }}{{ form.end_time }}{% for error in form.end_time.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></fieldset>
+                    <fieldset>
+                        <legend>Starts</legend>
+                        <div class="gh-form-field">{{ form.start_date.label_tag }}{{ form.start_date }}{% for error in form.start_date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                        <div class="gh-form-field">{{ form.start_time.label_tag }}{{ form.start_time }}{% for error in form.start_time.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Ends</legend>
+                        <div class="gh-form-field">{{ form.end_date.label_tag }}{{ form.end_date }}{% for error in form.end_date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                        <div class="gh-form-field">{{ form.end_time.label_tag }}{{ form.end_time }}{% for error in form.end_time.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                    </fieldset>
                 </div>
                 <div class="gh-form-field">{{ form.venue_name.label_tag }}{{ form.venue_name }}{% for error in form.venue_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
                 <div class="gh-form-field">{{ form.venue_address.label_tag }}{{ form.venue_address }}{% for error in form.venue_address.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>

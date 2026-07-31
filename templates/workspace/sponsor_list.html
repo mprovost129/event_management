@@ -11,6 +11,9 @@
     <div class="col-md-auto"><button class="btn btn-outline-primary" type="submit">Filter</button></div>
 </form>
 <div class="row g-3">
-    {% for sponsor in sponsors %}<div class="col-md-6 col-xl-4"><a class="card card-body h-100 shadow-sm text-decoration-none" href="{% url 'workspace:sponsor_detail' site.id sponsor.id %}"><h2 class="h5">{{ sponsor.name }}</h2><p class="text-secondary mb-2">{{ sponsor.contact_name|default:'No contact assigned' }}</p><span>{{ sponsor.get_status_display }} · {{ sponsor.sponsorship_count }} sponsorship{{ sponsor.sponsorship_count|pluralize }}</span></a></div>{% empty %}<div class="col-12"><p class="text-secondary">No sponsors match these filters.</p></div>{% endfor %}
+    {% for sponsor in sponsors %}<div class="col-md-6 col-xl-4"><a class="card card-body h-100 shadow-sm text-decoration-none" href="{% url 'workspace:sponsor_detail' site.id sponsor.id %}"><h2 class="h5">{{ sponsor.name }}</h2>
+    <p class="text-secondary mb-2">{{ sponsor.contact_name|default:'No contact assigned' }}</p><span>{{ sponsor.get_status_display }} · {{ sponsor.sponsorship_count }} sponsorship{{ sponsor.sponsorship_count|pluralize }}</span></a></div>{% empty %}<div class="col-12">
+    <p class="text-secondary">No sponsors match these filters.</p>
+    </div>{% endfor %}
 </div>
 {% endblock %}

@@ -28,6 +28,7 @@ class TicketTypeForm(forms.ModelForm):
             "max_per_order",
             "sales_start_at",
             "sales_end_at",
+            "refund_policy",
             "is_active",
         )
         widgets = {
@@ -42,6 +43,15 @@ class TicketTypeForm(forms.ModelForm):
             ),
             "sales_end_at": forms.DateTimeInput(
                 format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}
+            ),
+            "refund_policy": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": (
+                        "Example: Full refunds up to 48 hours before the event. "
+                        "No refunds after that, but tickets can be transferred."
+                    ),
+                }
             ),
         }
 
@@ -67,6 +77,15 @@ class TicketTypeForm(forms.ModelForm):
         self.fields[
             "is_active"
         ].help_text = "Inactive tickets are hidden from new checkout sessions."
+        self.fields["refund_policy"].label = "Refund policy"
+        # A buyer has to be told the terms before paying. If the organization
+        # has no default, this ticket type has to carry one.
+        if not site.default_refund_policy.strip():
+            self.fields["refund_policy"].required = True
+            self.fields["refund_policy"].help_text = (
+                "Required, because your organization has not set a default "
+                "refund policy yet. Buyers see this before they pay."
+            )
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -117,10 +136,12 @@ class TicketCheckoutForm(forms.Form):
         self.participant_count = participant_count
         super().__init__(*args, **kwargs)
         now = timezone.now()
-        self.fields["ticket_type"].queryset = TicketType.objects.filter(
-            occurrence=occurrence,
-            is_active=True,
-            max_per_order__gte=participant_count,
+        self.fields["ticket_type"].queryset = (
+            TicketType.objects.select_related("site").filter(
+                occurrence=occurrence,
+                is_active=True,
+                max_per_order__gte=participant_count,
+            )
         ).filter(
             Q(sales_start_at__isnull=True) | Q(sales_start_at__lte=now),
             Q(sales_end_at__isnull=True) | Q(sales_end_at__gt=now),

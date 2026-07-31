@@ -168,6 +168,17 @@ def launch_campaign(*, campaign, actor, usage_confirmed=False):
         raise CampaignUnavailable(
             f"{campaign.get_channel_display()} delivery is not configured."
         )
+    if (
+        campaign.channel == Campaign.Channel.EMAIL
+        and not campaign.site.postal_address.strip()
+    ):
+        # Fail closed. Sending commercial email without a postal address is a
+        # legal exposure for the subscriber, not a cosmetic omission.
+        raise CampaignUnavailable(
+            "Add your organization's mailing address in website settings before "
+            "sending a newsletter. The law requires it at the bottom of every "
+            "commercial email."
+        )
     if campaign.channel == Campaign.Channel.SMS:
         if not usage_confirmed:
             raise CampaignUnavailable("Confirm the estimated SMS usage before sending.")
@@ -224,10 +235,15 @@ def _new_unsubscribe_link(*, campaign, contact):
 
 
 def _marketing_body(campaign, unsubscribe_url):
-    label = (
-        "Unsubscribe" if campaign.channel == Campaign.Channel.EMAIL else "Stop messages"
-    )
-    return f"{campaign.body.rstrip()}\n\n{label}: {unsubscribe_url}"
+    if campaign.channel == Campaign.Channel.EMAIL:
+        # CAN-SPAM requires the sender's own postal address in every commercial
+        # email, alongside a working opt-out.
+        footer = f"Unsubscribe: {unsubscribe_url}"
+        postal_address = campaign.site.postal_address.strip()
+        if postal_address:
+            footer = f"{campaign.site.display_name}\n{postal_address}\n\n{footer}"
+        return f"{campaign.body.rstrip()}\n\n{footer}"
+    return f"{campaign.body.rstrip()}\n\nStop messages: {unsubscribe_url}"
 
 
 @transaction.atomic

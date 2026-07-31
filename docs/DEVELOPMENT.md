@@ -28,9 +28,9 @@ Use `ruff check . --fix` and `ruff format .` for automated formatting. Migration
 
 ## Settings
 
-- `config.Settings.dev` is the local server configuration.
-- `config.Settings.test` is deterministic test configuration.
-- `config.Settings.prod` enables HTTPS controls, Redis caching, compressed static files, and durable object storage.
+- `config.settings.dev` is the local server configuration.
+- `config.settings.test` is deterministic test configuration.
+- `config.settings.prod` enables HTTPS controls, Redis caching, compressed static files, and durable object storage.
 - Application code must never import a specific environment settings module.
 
 `.env` files are local-only and excluded from Git and Docker build contexts. Production secrets must be injected by the hosting platform's secret manager.
@@ -84,9 +84,11 @@ Event administrators and managers can upload a validated promotional image on
 the event create/edit screens. It appears on public event pages and takes
 priority over the site hero in branded event emails. The **Photo albums** area
 under Events supports draft/published albums tied to completed event dates.
-Photos require descriptive alt text, accept JPEG/PNG/WebP files up to 10 MB,
-are resized on upload, and support captions and an album cover. Published
-albums appear under `/photos/`; general page-builder galleries and
+Photos upload in batches of up to 50, accept JPEG/PNG/WebP files up to 10 MB
+each, and are stored as both a 2400px full size and a 600px thumbnail that
+gallery grids load. Alt text is required and defaults to the event name and
+date. Photos support captions, drag-and-drop reordering, and an album cover.
+Published albums appear under `/photos/`; general page-builder galleries and
 attendee-driven photo sharing remain deferred.
 - Stripe platform webhook: `/billing/stripe/`
 - Platform administration: `/platform-admin/`
@@ -319,7 +321,7 @@ Use `ops.services.record_audit_event` for privileged or sensitive domain actions
 Run Django's standard deployment checks with production settings and production-like environment variables before release:
 
 ```text
-python manage.py check --deploy --settings=config.Settings.prod
+python manage.py check --deploy --settings=config.settings.prod
 ```
 
 The production environment must provide a non-placeholder domain, allowed hosts, a durable media bucket, secure secrets, and both Standard-plan Stripe price IDs before paid-plan activation is enabled.

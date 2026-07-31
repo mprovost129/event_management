@@ -12,7 +12,8 @@
         <span class="gh-content-status">Draft</span>
     </div>
 
-    {% if source_post %}<div class="gh-source-banner"><span aria-hidden="true">POST</span><div><strong>Started from “{{ source_post.title }}”</strong><p>The newsletter is now an independent copy, so editing it will not change the blog post.</p></div><a href="{% url 'content:blog_edit' site.id source_post.id %}">View post</a></div>{% endif %}
+    {% if source_post %}<div class="gh-source-banner"><span aria-hidden="true">POST</span><div><strong>Started from “{{ source_post.title }}”</strong><p>The newsletter is now an independent copy, so editing it will not change the blog post.</p>
+    </div><a href="{% url 'content:blog_edit' site.id source_post.id %}">View post</a></div>{% endif %}
 
     <form method="post" class="gh-campaign-layout" data-campaign-editor>
         {% csrf_token %}

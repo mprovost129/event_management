@@ -36,18 +36,33 @@
                                         <tr><td style="font-size:17px;font-weight:700;color:#17233a;padding-bottom:16px;">{{ when }}</td></tr>
                                         <tr><td style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;padding-bottom:5px;">Where</td></tr>
                                         <tr><td style="font-size:16px;color:#17233a;{% if host %}padding-bottom:16px;{% endif %}">{{ venue }}{% if address %}<br><span style="color:#596579;">{{ address }}</span>{% endif %}</td></tr>
-                                        {% if host %}<tr><td style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;padding-bottom:5px;">Hosted by</td></tr><tr><td style="font-size:16px;color:#17233a;">{{ host }}</td></tr>{% endif %}
+                                        {% if host %}<tr>
+                                        <td style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;padding-bottom:5px;">Hosted by</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="font-size:16px;color:#17233a;">{{ host }}</td>
+                                        </tr>{% endif %}
                                     </table>
                                 </td></tr>
                             </table>
 
-                            {% if status_value %}<div style="border-left:5px solid {{ secondary_color }};background:#f4f7f1;padding:16px 18px;margin-bottom:22px;border-radius:4px 10px 10px 4px;"><div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#667085;margin-bottom:4px;">{{ status_label }}</div><div style="font-size:19px;font-weight:700;color:#17233a;">{{ status_value }}</div></div>{% endif %}
+                            {% if status_value %}<div style="border-left:5px solid {{ secondary_color }};background:#f4f7f1;padding:16px 18px;margin-bottom:22px;border-radius:4px 10px 10px 4px;">
+                            <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#667085;margin-bottom:4px;">{{ status_label }}</div>
+                            <div style="font-size:19px;font-weight:700;color:#17233a;">{{ status_value }}</div>
+                            </div>{% endif %}
 
-                            {% if participants %}<div style="margin-bottom:22px;"><h3 style="font-size:15px;margin:0 0 8px;color:#17233a;">Your party</h3><ul style="margin:0;padding-left:22px;color:#465269;line-height:1.6;">{% for participant in participants %}<li>{{ participant }}</li>{% endfor %}</ul></div>{% endif %}
+                            {% if participants %}<div style="margin-bottom:22px;">
+                            <h3 style="font-size:15px;margin:0 0 8px;color:#17233a;">Your party</h3>
+                            <ul style="margin:0;padding-left:22px;color:#465269;line-height:1.6;">{% for participant in participants %}<li>{{ participant }}</li>{% endfor %}</ul>
+                            </div>{% endif %}
                             {% if note %}<p style="font-size:15px;line-height:1.55;color:#465269;margin:0 0 22px;">{{ note }}</p>{% endif %}
 
                             {% if primary_url %}
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:8px 0 20px;"><tr><td bgcolor="{{ primary_color }}" style="border-radius:8px;"><a href="{{ primary_url }}" style="display:inline-block;padding:14px 24px;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;border-radius:8px;">{{ primary_label }}</a></td></tr></table>
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:8px 0 20px;">
+                                <tr>
+                                    <td bgcolor="{{ primary_color }}" style="border-radius:8px;"><a href="{{ primary_url }}" style="display:inline-block;padding:14px 24px;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;border-radius:8px;">{{ primary_label }}</a></td>
+                                </tr>
+                            </table>
                             {% endif %}
                             {% if secondary_url %}<p style="font-size:14px;line-height:1.5;margin:0;"><a href="{{ secondary_url }}" style="color:{{ primary_color }};font-weight:700;">{{ secondary_label }}</a></p>{% endif %}
                         </td>

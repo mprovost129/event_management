@@ -5862,3 +5862,100 @@ textarea {
         grid-template-columns: 1fr;
     }
 }
+
+/* Photo album editing: upload feedback and drag-to-reorder affordances. */
+.gh-public-photo-grid figure > a {
+    display: block;
+}
+
+.gh-upload-count {
+    margin: .25rem 0 1rem;
+    color: rgba(11, 29, 57, .7);
+    font-size: .9rem;
+}
+
+.gh-reorder-hint {
+    margin: 0;
+    color: rgba(11, 29, 57, .7);
+    font-size: .9rem;
+}
+
+.gh-photo-card[draggable="true"] {
+    cursor: grab;
+}
+
+.gh-photo-card.is-dragging {
+    opacity: .45;
+    outline: 2px dashed rgba(11, 29, 57, .35);
+    cursor: grabbing;
+}
+
+.gh-photo-reorder-controls {
+    display: flex;
+    gap: .35rem;
+    margin-top: .75rem;
+}
+
+/* The drag interaction is a convenience. The arrow buttons are the
+   keyboard-accessible path and stay visible whenever reordering is on. */
+.gh-photo-reorder-controls button {
+    min-width: 2.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gh-photo-card.is-dragging {
+        opacity: 1;
+    }
+}
+
+/* Dashboard: post-event photo prompt and the collapsed secondary toolset. */
+.gh-album-prompt {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid rgba(11, 29, 57, .12);
+    border-left: .35rem solid var(--gh-accent, #2f6fed);
+    border-radius: 1rem;
+    background: #fff;
+    box-shadow: 0 .5rem 1.5rem rgba(11, 29, 57, .07);
+}
+
+.gh-more-tools > summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem 1rem;
+    align-items: baseline;
+    padding: .85rem 1.1rem;
+    border: 1px solid rgba(11, 29, 57, .12);
+    border-radius: .75rem;
+    background: rgba(11, 29, 57, .03);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.gh-more-tools > summary:hover {
+    background: rgba(11, 29, 57, .06);
+}
+
+.gh-more-tools > summary:focus-visible {
+    outline: 2px solid var(--gh-accent, #2f6fed);
+    outline-offset: 2px;
+}
+
+.gh-more-tools > summary small {
+    color: rgba(11, 29, 57, .65);
+    font-weight: 400;
+}
+
+/* Refund terms shown before purchase. Legible, not buried in fine print. */
+.gh-refund-policy {
+    display: block;
+    margin-top: .5rem;
+    color: rgba(11, 29, 57, .75);
+    font-size: .85rem;
+    font-style: normal;
+    line-height: 1.45;
+}

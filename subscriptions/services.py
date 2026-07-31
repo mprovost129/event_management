@@ -23,6 +23,10 @@ SITE_STATUS_BY_SUBSCRIPTION = {
 
 
 def _billing_interval_for_price(price_id):
+    # An unconfigured price ID is blank. Never let blank match blank, or an
+    # unconfigured deployment would map arbitrary webhooks onto a paid plan.
+    if not price_id:
+        return ""
     if price_id == settings.STRIPE_STANDARD_MONTHLY_PRICE_ID:
         return PlatformSubscription.BillingInterval.MONTHLY
     if price_id == settings.STRIPE_STANDARD_YEARLY_PRICE_ID:

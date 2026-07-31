@@ -1,3 +1,5 @@
 {% extends 'public/site_base.html' %}
 {% block title %}Communication preferences &middot; {{ site.display_name }}{% endblock %}
-{% block content %}<section class="site-theme text-center py-5"><h1>Communication preferences</h1>{% if completed %}<p class="lead">You have been unsubscribed from {{ channel }} marketing messages from {{ site.display_name }}.</p>{% else %}<p class="lead">Stop marketing messages from {{ site.display_name }}?</p><form method="post">{% csrf_token %}<button class="btn btn-primary" type="submit">Unsubscribe</button></form>{% endif %}</section>{% endblock %}
+{% block content %}<section class="site-theme text-center py-5">
+<h1>Communication preferences</h1>{% if completed %}<p class="lead">You have been unsubscribed from {{ channel }} marketing messages from {{ site.display_name }}.</p>{% else %}<p class="lead">Stop marketing messages from {{ site.display_name }}?</p>
+<form method="post">{% csrf_token %}<button class="btn btn-primary" type="submit">Unsubscribe</button></form>{% endif %}</section>{% endblock %}

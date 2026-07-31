@@ -104,6 +104,21 @@ def test_paid_invite_only_event_requires_connect_and_a_sent_invitation():
         expires_at=occurrence.ends_at,
     )
 
+    # A paid event still is not launch-ready until buyers can be told the
+    # refund terms before they pay.
+    without_policy = pilot_readiness(site)
+    site.default_refund_policy = "Full refunds up to 48 hours before the event."
+    site.save(update_fields=("default_refund_policy", "updated_at"))
+
+    assert without_policy["ok"] is False
+    assert (
+        next(
+            check
+            for check in without_policy["required"]
+            if check["key"] == "refund_policy"
+        )["complete"]
+        is False
+    )
     assert pilot_readiness(site)["ok"] is True
 
 

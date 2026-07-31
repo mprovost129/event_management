@@ -2,7 +2,17 @@
 {% block title %}Create photo album | {{ site.display_name }}{% endblock %}
 {% block content %}
 <div class="gh-content-editor">
-    <div class="gh-editor-head"><div><a class="gh-back-link" href="{% url 'events:album_list' site.id %}">&larr; Photo albums</a><p class="gh-step-label mt-3">New album</p><h1>Remember a great event.</h1><p>Albums are created as drafts. Add photos and review everything before publishing.</p></div></div>
-    <form method="post" class="gh-editor-layout">{% csrf_token %}<section class="gh-editor-card"><h2>Album details</h2>{% if not form.occurrence.field.queryset %}<div class="alert alert-info">Albums can be created after an event date has ended.</div>{% endif %}{{ form.as_p }}</section><aside class="gh-editor-sidebar"><section class="gh-editor-card"><button class="btn btn-primary w-100" type="submit"{% if not form.occurrence.field.queryset %} disabled{% endif %}>Create album</button><a class="btn btn-link w-100" href="{% url 'events:album_list' site.id %}">Cancel</a></section></aside></form>
+    <div class="gh-editor-head">
+        <div><a class="gh-back-link" href="{% url 'events:album_list' site.id %}">&larr; Photo albums</a><p class="gh-step-label mt-3">New album</p>
+            <h1>Remember a great event.</h1>
+            <p>Albums are created as drafts. Add photos and review everything before publishing.</p>
+        </div>
+    </div>
+    <form method="post" class="gh-editor-layout">{% csrf_token %}<section class="gh-editor-card">
+        <h2>Album details</h2>{% if not form.occurrence.field.queryset %}<div class="alert alert-info">Albums can be created after an event date has ended.</div>{% endif %}{{ form.as_p }}</section>
+        <aside class="gh-editor-sidebar">
+            <section class="gh-editor-card"><button class="btn btn-primary w-100" type="submit"{% if not form.occurrence.field.queryset %} disabled{% endif %}>Create album</button><a class="btn btn-link w-100" href="{% url 'events:album_list' site.id %}">Cancel</a></section>
+        </aside>
+    </form>
 </div>
 {% endblock %}

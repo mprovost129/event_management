@@ -64,6 +64,10 @@ class TicketType(SiteOwnedModel):
     )
     sales_start_at = models.DateTimeField(null=True, blank=True)
     sales_end_at = models.DateTimeField(null=True, blank=True)
+    refund_policy = models.TextField(
+        blank=True,
+        help_text=("Leave blank to use your organization's default refund policy."),
+    )
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -102,6 +106,11 @@ class TicketType(SiteOwnedModel):
             and (not self.sales_start_at or self.sales_start_at <= now)
             and (not self.sales_end_at or self.sales_end_at > now)
         )
+
+    @property
+    def effective_refund_policy(self):
+        """The policy a buyer actually sees: the override, or the site default."""
+        return self.refund_policy.strip() or self.site.default_refund_policy.strip()
 
     def __str__(self):
         return f"{self.occurrence}: {self.name}"

@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Avg, Count, Max, Prefetch, Q
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -22,7 +22,7 @@ from .forms import (
     EventDetailsForm,
     EventForm,
     EventPhotoEditForm,
-    EventPhotoForm,
+    EventPhotoUploadForm,
     InvitationForm,
     ManagerResponseForm,
     OccurrenceEditForm,
@@ -373,7 +373,7 @@ def album_edit(request, site_id, album_id):
             "site": site,
             "album": album,
             "form": form,
-            "photo_form": EventPhotoForm(),
+            "photo_form": EventPhotoUploadForm(album=album),
             "photos": album.photos.all(),
             "public_hostname": site.domains.get(is_canonical=True).hostname,
         },
@@ -384,33 +384,47 @@ def album_edit(request, site_id, album_id):
 @require_POST
 def album_photo_upload(request, site_id, album_id):
     site = request.authorized_site
-    album = get_object_or_404(EventAlbum.objects.for_site(site), pk=album_id)
-    form = EventPhotoForm(request.POST, request.FILES)
+    album = get_object_or_404(
+        EventAlbum.objects.for_site(site).select_related("occurrence__event", "site"),
+        pk=album_id,
+    )
+    form = EventPhotoUploadForm(request.POST, request.FILES, album=album)
     if form.is_valid():
-        photo = form.save(commit=False)
-        photo.site = site
-        photo.album = album
-        photo.uploaded_by = request.user
-        photo.position = (
+        alt_text = form.default_alt_text()
+        next_position = (
             album.photos.aggregate(highest=Max("position"))["highest"] or 0
         ) + 1
-        photo.save()
-        if form.cleaned_data["make_cover"] or album.cover_photo_id is None:
-            album.cover_photo = photo
-            album.save(update_fields=("cover_photo", "updated_at"))
+        created = []
+        with transaction.atomic():
+            for offset, (full, thumbnail) in enumerate(form.cleaned_data["images"]):
+                photo = EventPhoto(
+                    site=site,
+                    album=album,
+                    alt_text=alt_text,
+                    position=next_position + offset,
+                    uploaded_by=request.user,
+                )
+                photo.image = full
+                photo.thumbnail = thumbnail
+                photo.save()
+                created.append(photo)
+            if album.cover_photo_id is None and created:
+                album.cover_photo = created[0]
+                album.save(update_fields=("cover_photo", "updated_at"))
         record_audit_event(
             action="event.photo.uploaded",
             actor=request.user,
             site_id=site.id,
-            target=photo,
-            summary={"album_id": str(album.id)},
+            target=album,
+            summary={"album_id": str(album.id), "photo_count": len(created)},
             request=request,
         )
-        messages.success(request, "Photo added to the album.")
+        messages.success(
+            request,
+            f"{len(created)} photo{'' if len(created) == 1 else 's'} added. "
+            "Add captions or reorder them below.",
+        )
         return redirect("events:album_edit", site_id=site.id, album_id=album.id)
-    album = EventAlbum.objects.for_site(site).select_related("occurrence__event").get(
-        pk=album.id
-    )
     return render(
         request,
         "events/album_edit.html",
@@ -424,6 +438,44 @@ def album_photo_upload(request, site_id, album_id):
         },
         status=400,
     )
+
+
+@site_staff_required
+@require_POST
+def album_photo_reorder(request, site_id, album_id):
+    """Persist a drag-and-drop reordering of an album's photos."""
+    site = request.authorized_site
+    album = get_object_or_404(EventAlbum.objects.for_site(site), pk=album_id)
+    ordered_ids = request.POST.getlist("photo_ids")
+    if not ordered_ids:
+        return JsonResponse({"error": "No photo order was submitted."}, status=400)
+
+    photos = {
+        str(photo.id): photo
+        for photo in EventPhoto.objects.for_site(site).filter(album=album)
+    }
+    if set(ordered_ids) != set(photos):
+        return JsonResponse(
+            {"error": "That order does not match this album."}, status=400
+        )
+
+    updated = []
+    for position, photo_id in enumerate(ordered_ids, start=1):
+        photo = photos[photo_id]
+        if photo.position != position:
+            photo.position = position
+            updated.append(photo)
+    if updated:
+        EventPhoto.objects.bulk_update(updated, ["position"])
+        record_audit_event(
+            action="event.album.reordered",
+            actor=request.user,
+            site_id=site.id,
+            target=album,
+            summary={"photo_count": len(ordered_ids)},
+            request=request,
+        )
+    return JsonResponse({"status": "saved", "photo_count": len(ordered_ids)})
 
 
 @site_staff_required
@@ -477,7 +529,9 @@ def album_photo_delete(request, site_id, album_id, photo_id):
         EventPhoto.objects.for_site(site), pk=photo_id, album=album
     )
     storage = photo.image.storage
-    image_name = photo.image.name
+    stored_names = [photo.image.name]
+    if photo.thumbnail:
+        stored_names.append(photo.thumbnail.name)
     was_cover = album.cover_photo_id == photo.id
     record_audit_event(
         action="event.photo.deleted",
@@ -491,7 +545,12 @@ def album_photo_delete(request, site_id, album_id, photo_id):
     if was_cover:
         album.cover_photo = album.photos.first()
         album.save(update_fields=("cover_photo", "updated_at"))
-    transaction.on_commit(lambda: storage.delete(image_name), robust=True)
+
+    def _remove_files():
+        for name in stored_names:
+            storage.delete(name)
+
+    transaction.on_commit(_remove_files, robust=True)
     messages.success(request, "Photo deleted.")
     return redirect("events:album_edit", site_id=site.id, album_id=album.id)
 
@@ -639,14 +698,16 @@ def photo_album_list(request):
         .filter(
             status=EventAlbum.Status.PUBLISHED,
             occurrence__ends_at__lte=timezone.now(),
-            photos__isnull=False,
         )
+        .annotate(photo_count=Count("photos"))
+        .filter(photo_count__gt=0)
         .select_related("occurrence__event", "cover_photo")
         .prefetch_related("photos")
-        .distinct()
     )
     for album in albums:
-        album.display_cover = album.cover_photo or album.photos.first()
+        # Read from the prefetch cache. Calling .first() here would issue a
+        # fresh LIMIT 1 query per album and bypass the prefetch entirely.
+        album.display_cover = album.cover_photo or next(iter(album.photos.all()), None)
     return render(
         request,
         "public/photo_albums.html",
@@ -727,7 +788,9 @@ def occurrence_detail(request, slug, occurrence_id):
         ),
         pk=occurrence_id,
     )
-    ticket_types = occurrence.ticket_types.filter(is_active=True)
+    # site is joined because effective_refund_policy falls back to the
+    # site default, and this list renders on a public page.
+    ticket_types = occurrence.ticket_types.filter(is_active=True).select_related("site")
     for ticket_type in ticket_types:
         ticket_type.price_display = Decimal(ticket_type.amount_cents) / 100
         ticket_type.inventory = ticket_inventory(ticket_type)

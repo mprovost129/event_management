@@ -257,3 +257,114 @@
     guestCount?.addEventListener("input", updateGuests);
     updateGuests();
 })();
+
+/* Photo album: upload feedback and drag-to-reorder.
+   Progressive enhancement. Without JavaScript the form still uploads and
+   photos keep whatever order they were added in. */
+(() => {
+    const uploadForm = document.querySelector("[data-photo-upload]");
+    if (uploadForm) {
+        const input = uploadForm.querySelector('input[type="file"]');
+        const counter = uploadForm.querySelector("[data-upload-count]");
+        const submit = uploadForm.querySelector("[data-upload-submit]");
+
+        input?.addEventListener("change", () => {
+            const count = input.files?.length ?? 0;
+            if (!counter) return;
+            counter.hidden = count === 0;
+            counter.textContent =
+                count === 1 ? "1 photo selected" : `${count} photos selected`;
+        });
+
+        uploadForm.addEventListener("submit", () => {
+            if (!submit) return;
+            const count = input?.files?.length ?? 0;
+            submit.disabled = true;
+            submit.textContent =
+                count > 1 ? `Uploading ${count} photos...` : "Uploading...";
+        });
+    }
+
+    const grid = document.querySelector("[data-photo-reorder]");
+    if (!grid) return;
+    const cards = () => [...grid.querySelectorAll("[data-photo-id]")];
+    if (cards().length < 2) return;
+
+    const status = document.querySelector("[data-reorder-status]");
+    const url = grid.dataset.reorderUrl;
+    const csrf = document.querySelector('[name="csrfmiddlewaretoken"]')?.value;
+    let dragged = null;
+    let saveTimer = null;
+
+    grid.querySelectorAll("[data-reorder-controls]").forEach((controls) => {
+        controls.hidden = false;
+    });
+
+    const announce = (message) => {
+        if (status) status.textContent = message;
+    };
+
+    const save = () => {
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(async () => {
+            const body = new FormData();
+            cards().forEach((card) => body.append("photo_ids", card.dataset.photoId));
+            announce("Saving order...");
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrf, "X-Requested-With": "fetch" },
+                    body,
+                });
+                announce(
+                    response.ok
+                        ? "Order saved."
+                        : "That order could not be saved. Reload and try again."
+                );
+            } catch {
+                announce("That order could not be saved. Check your connection.");
+            }
+        }, 400);
+    };
+
+    grid.addEventListener("dragstart", (event) => {
+        dragged = event.target.closest("[data-photo-id]");
+        if (!dragged) return;
+        dragged.classList.add("is-dragging");
+        event.dataTransfer.effectAllowed = "move";
+    });
+
+    grid.addEventListener("dragend", () => {
+        dragged?.classList.remove("is-dragging");
+        dragged = null;
+        save();
+    });
+
+    grid.addEventListener("dragover", (event) => {
+        if (!dragged) return;
+        event.preventDefault();
+        const target = event.target.closest("[data-photo-id]");
+        if (!target || target === dragged) return;
+        const { left, width } = target.getBoundingClientRect();
+        const after = event.clientX > left + width / 2;
+        grid.insertBefore(dragged, after ? target.nextSibling : target);
+    });
+
+    grid.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-move]");
+        if (!button) return;
+        const card = button.closest("[data-photo-id]");
+        const order = cards();
+        const index = order.indexOf(card);
+        const target = button.dataset.move === "up" ? index - 1 : index + 1;
+        if (target < 0 || target >= order.length) return;
+        if (button.dataset.move === "up") {
+            grid.insertBefore(card, order[target]);
+        } else {
+            grid.insertBefore(order[target], card);
+        }
+        button.focus();
+        announce(`Moved to position ${target + 1} of ${order.length}.`);
+        save();
+    });
+})();

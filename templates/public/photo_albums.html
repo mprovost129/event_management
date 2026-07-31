@@ -1,4 +1,40 @@
 {% extends 'public/site_base.html' %}
 {% load tz %}
 {% block title %}Photos | {{ site.display_name }}{% endblock %}
-{% block content %}<section class="site-theme"><p class="site-accent fw-semibold">Past events</p><h1>Photo albums</h1><p class="lead">See the moments that brought our community together.</p><div class="gh-album-grid">{% timezone site.timezone %}{% for album in albums %}<a class="gh-album-card" href="{% url 'events:photo_album_detail' album.slug %}">{% if album.display_cover %}<img src="{{ album.display_cover.image.url }}" alt="{{ album.display_cover.alt_text }}">{% endif %}<div><h2>{{ album.title }}</h2><p>{{ album.occurrence.event.title }} &middot; {{ album.occurrence.starts_at|date:"F j, Y" }}</p><span>View album</span></div></a>{% empty %}<div class="gh-empty-note"><h2>No albums have been published yet</h2><p>Check back after our next event.</p></div>{% endfor %}{% endtimezone %}</div></section>{% endblock %}
+
+{% block content %}
+<section class="site-theme">
+    <p class="site-accent fw-semibold">Past events</p>
+    <h1>Photo albums</h1>
+    <p class="lead">See the moments that brought our community together.</p>
+
+    <div class="gh-album-grid">
+        {% timezone site.timezone %}
+        {% for album in albums %}
+        <a class="gh-album-card" href="{% url 'events:photo_album_detail' album.slug %}">
+            {% if album.display_cover %}
+            <img src="{{ album.display_cover.preview.url }}"
+                 alt="{{ album.display_cover.alt_text }}"
+                 loading="lazy"
+                 decoding="async"
+                 {% if album.display_cover.image_width %}width="{{ album.display_cover.image_width }}" height="{{ album.display_cover.image_height }}"{% endif %}>
+            {% endif %}
+            <div>
+                <h2>{{ album.title }}</h2>
+                <p>
+                    {{ album.occurrence.event.title }} &middot;
+                    {{ album.occurrence.starts_at|date:"F j, Y" }}
+                </p>
+                <span>View {{ album.photo_count }} photo{{ album.photo_count|pluralize }}</span>
+            </div>
+        </a>
+        {% empty %}
+        <div class="gh-empty-note">
+            <h2>No albums have been published yet</h2>
+            <p>Check back after our next event.</p>
+        </div>
+        {% endfor %}
+        {% endtimezone %}
+    </div>
+</section>
+{% endblock %}

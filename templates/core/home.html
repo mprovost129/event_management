@@ -39,8 +39,25 @@
             {% if site.theme.hero_text %}<p class="lead">{{ site.theme.hero_text }}</p>{% endif %}
         </section>
         {% if home_page.body %}<section class="py-4">{{ home_page.body|linebreaks }}</section>{% endif %}
-        {% timezone site.timezone %}<section class="py-4"><div class="d-flex justify-content-between"><h2>Upcoming events</h2><a href="{% url 'events:calendar' %}">View calendar</a></div><div class="row g-3">{% for occurrence in upcoming_occurrences %}<div class="col-md-4"><article class="card h-100"><div class="card-body"><p class="site-accent fw-semibold">{{ occurrence.starts_at|date:"M j, Y" }}</p><h3 class="h5"><a href="{% url 'events:occurrence_detail' occurrence.event.slug occurrence.id %}">{{ occurrence.event.title }}</a></h3><p>{{ occurrence.venue_name }}</p></div></article></div>{% empty %}<p>No upcoming events yet.</p>{% endfor %}</div></section>{% endtimezone %}
-        {% if recent_posts %}<section class="py-4"><div class="d-flex justify-content-between"><h2>Latest updates</h2><a href="{% url 'content:blog_index' %}">View blog</a></div>{% for post in recent_posts %}<article class="py-2"><h3 class="h5"><a href="{% url 'content:blog_detail' post.slug %}">{{ post.title }}</a></h3><p>{{ post.excerpt }}</p></article>{% endfor %}</section>{% endif %}
+        {% timezone site.timezone %}<section class="py-4">
+        <div class="d-flex justify-content-between">
+            <h2>Upcoming events</h2><a href="{% url 'events:calendar' %}">View calendar</a></div>
+            <div class="row g-3">{% for occurrence in upcoming_occurrences %}<div class="col-md-4">
+                <article class="card h-100">
+                    <div class="card-body">
+                        <p class="site-accent fw-semibold">{{ occurrence.starts_at|date:"M j, Y" }}</p>
+                        <h3 class="h5"><a href="{% url 'events:occurrence_detail' occurrence.event.slug occurrence.id %}">{{ occurrence.event.title }}</a></h3>
+                        <p>{{ occurrence.venue_name }}</p>
+                    </div>
+                </article>
+            </div>{% empty %}<p>No upcoming events yet.</p>{% endfor %}</div>
+        </section>{% endtimezone %}
+        {% if recent_posts %}<section class="py-4">
+        <div class="d-flex justify-content-between">
+            <h2>Latest updates</h2><a href="{% url 'content:blog_index' %}">View blog</a></div>{% for post in recent_posts %}<article class="py-2">
+            <h3 class="h5"><a href="{% url 'content:blog_detail' post.slug %}">{{ post.title }}</a></h3>
+            <p>{{ post.excerpt }}</p>
+        </article>{% endfor %}</section>{% endif %}
     </div>
     {% else %}
     <div class="alert alert-warning">
@@ -92,12 +109,36 @@
             <p>Gather HQs works for clubs, dance groups, organizers, and growing communities—not only established businesses.</p>
         </div>
         <div class="row g-4 mt-2">
-            <div class="col-md-6 col-xl-4"><article class="gh-feature-card"><span class="gh-feature-number">01</span><h3>Your own group website</h3><p>Publish your story, calendar, blog, and updates at a memorable Gather HQs address.</p></article></div>
-            <div class="col-md-6 col-xl-4"><article class="gh-feature-card"><span class="gh-feature-number">02</span><h3>Invitations and RSVPs</h3><p>Run open or invite-only events with Going, Maybe, Not going, and named guests.</p></article></div>
-            <div class="col-md-6 col-xl-4"><article class="gh-feature-card"><span class="gh-feature-number">03</span><h3>Tickets and member dues</h3><p>Use your connected Stripe account for paid events and monthly or yearly memberships.</p></article></div>
-            <div class="col-md-6 col-xl-4"><article class="gh-feature-card"><span class="gh-feature-number">04</span><h3>Attendance that travels</h3><p>Search the mobile-friendly roster and check in attendees and guests right at the door.</p></article></div>
-            <div class="col-md-6 col-xl-4"><article class="gh-feature-card"><span class="gh-feature-number">05</span><h3>Blog and newsletters</h3><p>Share news once, turn posts into campaigns, and honor each contact's communication choices.</p></article></div>
-            <div class="col-md-6 col-xl-4"><article class="gh-feature-card"><span class="gh-feature-number">06</span><h3>Reports and reviews</h3><p>See responses, attendance, revenue, memberships, and participant feedback in one place.</p></article></div>
+            <div class="col-md-6 col-xl-4">
+                <article class="gh-feature-card"><span class="gh-feature-number">01</span><h3>Your own group website</h3>
+                    <p>Publish your story, calendar, blog, and updates at a memorable Gather HQs address.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-xl-4">
+                <article class="gh-feature-card"><span class="gh-feature-number">02</span><h3>Invitations and RSVPs</h3>
+                    <p>Run open or invite-only events with Going, Maybe, Not going, and named guests.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-xl-4">
+                <article class="gh-feature-card"><span class="gh-feature-number">03</span><h3>Tickets and member dues</h3>
+                    <p>Use your connected Stripe account for paid events and monthly or yearly memberships.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-xl-4">
+                <article class="gh-feature-card"><span class="gh-feature-number">04</span><h3>Attendance that travels</h3>
+                    <p>Search the mobile-friendly roster and check in attendees and guests right at the door.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-xl-4">
+                <article class="gh-feature-card"><span class="gh-feature-number">05</span><h3>Blog and newsletters</h3>
+                    <p>Share news once, turn posts into campaigns, and honor each contact's communication choices.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-xl-4">
+                <article class="gh-feature-card"><span class="gh-feature-number">06</span><h3>Reports and reviews</h3>
+                    <p>See responses, attendance, revenue, memberships, and participant feedback in one place.</p>
+                </article>
+            </div>
         </div>
     </section>
 

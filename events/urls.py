@@ -28,6 +28,11 @@ urlpatterns = [
         name="album_photo_upload",
     ),
     path(
+        "sites/<uuid:site_id>/event-albums/<uuid:album_id>/photos/reorder/",
+        views.album_photo_reorder,
+        name="album_photo_reorder",
+    ),
+    path(
         "sites/<uuid:site_id>/event-albums/<uuid:album_id>/photos/<uuid:photo_id>/cover/",
         views.album_cover_set,
         name="album_cover_set",

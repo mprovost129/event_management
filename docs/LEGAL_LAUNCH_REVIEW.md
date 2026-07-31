@@ -57,19 +57,28 @@ Production checks intentionally fail while `LEGAL_DRAFT=true` or
 
 ### Paid event refund disclosure
 
-The V1 specification says a manager can set an event refund policy and attendees
-can see it before purchase. The current models and checkout do not provide that
-field. Add an event- or ticket-specific cancellation/refund policy, snapshot it
-on the order, display it on the event and checkout pages, and include it in the
-receipt. Do not launch paid tickets until this is complete and tested.
+Partly resolved. `Site.default_refund_policy` and an optional
+`TicketType.refund_policy` override now exist, resolved through
+`TicketType.effective_refund_policy`. A ticket type cannot be created without a
+policy from one source or the other, the policy appears on public event pages
+and at checkout, and a paid event is not launch-ready until one is set.
+
+Still outstanding: the policy is read live rather than snapshotted onto the
+order, so amending it later changes the terms shown for past purchases, and it
+does not yet appear in the payment receipt. Snapshot it on `Order` at
+reservation and add it to the receipt before paid tickets go live.
 
 ### Commercial email postal address
 
-Campaign delivery currently appends an unsubscribe link but not a physical
-postal address. Gather HQs also does not collect a subscriber mailing address.
-Add a verified subscriber sender identity and mailing address, include both in
-every commercial campaign footer, and block marketing sends until the required
-information is present.
+Partly resolved. `Site.postal_address` is collected under website settings, the
+organization name and address now appear above the unsubscribe link in every
+marketing email footer, and `launch_campaign` refuses an email campaign while
+the address is blank. SMS is deliberately unaffected.
+
+Still outstanding: the sender identity is not verified. The address is accepted
+as typed, so a subscriber can supply an invalid one. Decide whether verification
+is required before the pilot or accepted as subscriber responsibility under the
+terms of service.
 
 ### SMS opt-out operations
 

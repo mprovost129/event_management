@@ -5,7 +5,7 @@ from django.db import models
 from django.utils import timezone
 
 from contacts.models import Contact
-from content.images import prepare_image
+from content.images import prepare_image, prepare_image_with_thumbnail
 
 from .models import Event, EventAlbum, EventOccurrence, EventPhoto, Registration
 from .services import local_datetime, occurrence_starts
@@ -63,7 +63,9 @@ class EventForm(forms.ModelForm):
         ].help_text = "Optional public name for the person or group hosting."
         self.fields[
             "featured_image"
-        ].help_text = "A wide promotional image used on the event page and in event emails."
+        ].help_text = (
+            "A wide promotional image used on the event page and in event emails."
+        )
         self.fields["max_guests"].label = "Guests per RSVP"
         self.fields[
             "max_guests"
@@ -158,7 +160,9 @@ class EventDetailsForm(forms.ModelForm):
         ].help_text = "Changing this also changes the event's public web address."
         self.fields[
             "featured_image"
-        ].help_text = "A wide promotional image used on the event page and in event emails."
+        ].help_text = (
+            "A wide promotional image used on the event page and in event emails."
+        )
         self.fields["max_guests"].label = "Guests per RSVP"
 
     def clean_slug(self):
@@ -200,9 +204,9 @@ class EventAlbumCreateForm(forms.ModelForm):
             .select_related("event")
             .order_by("-starts_at")
         )
-        self.fields["slug"].help_text = (
-            "Used in the public album address. Lowercase letters, numbers, and hyphens only."
-        )
+        self.fields[
+            "slug"
+        ].help_text = "Used in the public album address. Lowercase letters, numbers, and hyphens only."
 
     def clean_slug(self):
         slug = self.cleaned_data["slug"].lower()
@@ -243,21 +247,82 @@ class EventAlbumEditForm(forms.ModelForm):
         return cleaned
 
 
-class EventPhotoForm(forms.ModelForm):
-    make_cover = forms.BooleanField(
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleImageField(forms.ImageField):
+    """An image field that accepts and cleans a whole selection at once."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput(attrs={"accept": "image/*"}))
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        if not isinstance(data, (list, tuple)):
+            data = [data] if data else []
+        return [super(MultipleImageField, self).clean(item, initial) for item in data]
+
+
+class EventPhotoUploadForm(forms.Form):
+    """Accepts a whole batch of photos in one submission.
+
+    Alt text is still required on every photo, but it is filled in from the
+    event by default so uploading fifty photos is not fifty typing tasks. The
+    manager can refine any of them afterward.
+    """
+
+    MAX_PHOTOS_PER_UPLOAD = 50
+
+    images = MultipleImageField(
+        label="Photos",
+        help_text=("Select as many as you like. JPEG, PNG, or WebP up to 10 MB each."),
+    )
+    alt_text = forms.CharField(
+        max_length=180,
         required=False,
-        label="Use as the album cover",
+        label="Describe these photos",
+        help_text=(
+            "Used by screen readers for every photo in this batch. Leave blank "
+            "to describe them by event name and date."
+        ),
     )
 
-    class Meta:
-        model = EventPhoto
-        fields = ("image", "caption", "alt_text")
-        widgets = {
-            "image": forms.ClearableFileInput(attrs={"accept": "image/*"}),
-        }
+    def __init__(self, *args, album=None, **kwargs):
+        self.album = album
+        super().__init__(*args, **kwargs)
 
-    def clean_image(self):
-        return prepare_image(self.cleaned_data.get("image"), max_dimension=2400)
+    def clean_images(self):
+        uploads = self.cleaned_data["images"]
+        if not uploads:
+            raise forms.ValidationError("Choose at least one photo to add.")
+        if len(uploads) > self.MAX_PHOTOS_PER_UPLOAD:
+            raise forms.ValidationError(
+                f"Add up to {self.MAX_PHOTOS_PER_UPLOAD} photos at a time. "
+                f"You selected {len(uploads)}."
+            )
+        prepared = []
+        for index, upload in enumerate(uploads, start=1):
+            try:
+                prepared.append(prepare_image_with_thumbnail(upload))
+            except forms.ValidationError as exc:
+                raise forms.ValidationError(
+                    f"Photo {index} ({upload.name}): {exc.messages[0]}"
+                ) from exc
+        return prepared
+
+    def default_alt_text(self):
+        """Describe a photo by where it came from when nobody typed anything."""
+        supplied = self.cleaned_data.get("alt_text", "").strip()
+        if supplied:
+            return supplied[:180]
+        if self.album is None:
+            return "Event photo"
+        occurrence = self.album.occurrence
+        date_text = timezone.localtime(
+            occurrence.starts_at, ZoneInfo(self.album.site.timezone)
+        ).strftime("%B %-d, %Y")
+        return f"Photo from {occurrence.event.title} on {date_text}"[:180]
 
 
 class EventPhotoEditForm(forms.ModelForm):

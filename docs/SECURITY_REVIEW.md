@@ -20,7 +20,7 @@ Before every launch run:
 ruff check .
 ruff format --check .
 python manage.py check
-python manage.py check --deploy --settings=config.Settings.prod
+python manage.py check --deploy --settings=config.settings.prod
 python manage.py makemigrations --check --dry-run
 pytest
 pip-audit -r requirements.txt

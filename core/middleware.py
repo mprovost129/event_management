@@ -56,10 +56,12 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
             "form-action 'self'; "
             "frame-ancestors 'none'; "
             "object-src 'none'; "
-            "script-src 'self' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            # Bootstrap is vendored under static/vendor, so no third-party
+            # script, style, or font origin needs to be trusted.
+            "script-src 'self'; "
+            "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: https:; "
-            "font-src 'self' https://cdn.jsdelivr.net; "
+            "font-src 'self'; "
             "connect-src 'self'",
         )
         response.setdefault(

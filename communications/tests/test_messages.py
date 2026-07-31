@@ -83,7 +83,9 @@ def test_outbound_delivery_is_idempotent():
     assert message.html_body == ""
     assert len(mail.outbox) == 1
     assert mail.outbox[0].alternatives[0].mimetype == "text/html"
-    assert "<strong>The time changed.</strong>" in mail.outbox[0].alternatives[0].content
+    assert (
+        "<strong>The time changed.</strong>" in mail.outbox[0].alternatives[0].content
+    )
 
 
 @pytest.mark.django_db

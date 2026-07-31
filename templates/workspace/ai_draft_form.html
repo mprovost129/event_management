@@ -1,4 +1,9 @@
 {% extends 'base.html' %}{% block title %}Create AI Draft | {{ platform_name }}{% endblock %}{% block content %}
-<div class="mb-4"><p class="text-uppercase text-secondary small mb-1">AI content assistant</p><h1>Create content draft</h1><p class="text-secondary">Supply the facts and desired tone. Gather HQs will not intentionally invent missing event details.</p></div>
-<form method="post" class="card card-body shadow-sm">{% csrf_token %}{{ form.as_p }}<div><button class="btn btn-primary" type="submit">Generate draft</button> <a class="btn btn-outline-secondary" href="{% url 'workspace:ai_draft_list' site.id %}">Cancel</a></div></form>
+<div class="mb-4">
+    <p class="text-uppercase text-secondary small mb-1">AI content assistant</p>
+    <h1>Create content draft</h1>
+    <p class="text-secondary">Supply the facts and desired tone. Gather HQs will not intentionally invent missing event details.</p>
+</div>
+<form method="post" class="card card-body shadow-sm">{% csrf_token %}{{ form.as_p }}<div><button class="btn btn-primary" type="submit">Generate draft</button> <a class="btn btn-outline-secondary" href="{% url 'workspace:ai_draft_list' site.id %}">Cancel</a></div>
+</form>
 {% endblock %}

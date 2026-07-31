@@ -39,7 +39,8 @@
         {% endfor %}
     </div>
     {% else %}
-    <div class="gh-empty-note gh-campaign-empty"><span class="gh-campaign-mark" aria-hidden="true">EM</span><h2>{% if query or selected_status != 'all' or selected_channel != 'all' %}No campaigns match these filters{% else %}Send your first group update{% endif %}</h2><p>{% if query or selected_status != 'all' or selected_channel != 'all' %}Try another search, status, or channel.{% else %}Start from scratch here, or write a blog post and use it as the beginning of a newsletter.{% endif %}</p>{% if not query and selected_status == 'all' and selected_channel == 'all' %}<div><a class="btn btn-primary" href="{% url 'communications:campaign_create' site.id %}">Create campaign</a> <a class="btn btn-link" href="{% url 'content:blog_create' site.id %}">Write a blog post</a></div>{% endif %}</div>
+    <div class="gh-empty-note gh-campaign-empty"><span class="gh-campaign-mark" aria-hidden="true">EM</span><h2>{% if query or selected_status != 'all' or selected_channel != 'all' %}No campaigns match these filters{% else %}Send your first group update{% endif %}</h2>
+        <p>{% if query or selected_status != 'all' or selected_channel != 'all' %}Try another search, status, or channel.{% else %}Start from scratch here, or write a blog post and use it as the beginning of a newsletter.{% endif %}</p>{% if not query and selected_status == 'all' and selected_channel == 'all' %}<div><a class="btn btn-primary" href="{% url 'communications:campaign_create' site.id %}">Create campaign</a> <a class="btn btn-link" href="{% url 'content:blog_create' site.id %}">Write a blog post</a></div>{% endif %}</div>
     {% endif %}
 </div>
 {% endblock %}

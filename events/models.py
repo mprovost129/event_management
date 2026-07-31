@@ -183,7 +183,14 @@ class EventPhoto(SiteOwnedModel):
         on_delete=models.CASCADE,
         related_name="photos",
     )
-    image = models.ImageField(upload_to="event-albums/%Y/%m/")
+    image = models.ImageField(
+        upload_to="event-albums/%Y/%m/",
+        width_field="image_width",
+        height_field="image_height",
+    )
+    image_width = models.PositiveIntegerField(null=True, blank=True)
+    image_height = models.PositiveIntegerField(null=True, blank=True)
+    thumbnail = models.ImageField(upload_to="event-albums/%Y/%m/", blank=True)
     caption = models.CharField(max_length=240, blank=True)
     alt_text = models.CharField(
         max_length=180,
@@ -210,6 +217,12 @@ class EventPhoto(SiteOwnedModel):
         super().clean()
         if self.album_id and self.site_id != self.album.site_id:
             raise ValidationError("A photo must belong to its album's site.")
+
+    @property
+    def preview(self):
+        """The file a grid should load. Falls back to the full size for photos
+        uploaded before thumbnails existed."""
+        return self.thumbnail if self.thumbnail else self.image
 
     def __str__(self):
         return self.caption or self.alt_text

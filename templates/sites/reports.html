@@ -43,7 +43,8 @@
             <article class="gh-date-report-row{% if row.is_canceled %} is-canceled{% endif %}">
                 <div class="gh-report-date"><span>{{ row.occurrence.starts_at|date:"M" }}</span><strong>{{ row.occurrence.starts_at|date:"j" }}</strong><small>{{ row.occurrence.starts_at|date:"Y" }}</small></div>
                 <div class="gh-report-event">
-                    <div class="gh-report-event-title"><h3>{{ row.occurrence.event.title }}</h3>{% if row.is_canceled %}<span class="gh-content-status gh-content-status-archived">Canceled</span>{% elif row.is_complete %}<span class="gh-content-status">Completed</span>{% else %}<span class="gh-content-status gh-content-status-published">Upcoming</span>{% endif %}</div>
+                    <div class="gh-report-event-title">
+                        <h3>{{ row.occurrence.event.title }}</h3>{% if row.is_canceled %}<span class="gh-content-status gh-content-status-archived">Canceled</span>{% elif row.is_complete %}<span class="gh-content-status">Completed</span>{% else %}<span class="gh-content-status gh-content-status-published">Upcoming</span>{% endif %}</div>
                     <p>{{ row.occurrence.starts_at|date:"l · g:i A" }}{% if row.occurrence.venue_name %} · {{ row.occurrence.venue_name }}{% endif %}</p>
                     <div class="gh-report-response-mix"><span><b>{{ row.going }}</b> going</span><span>{{ row.maybe }} maybe</span><span>{{ row.not_going }} declined</span>{% if row.payment_pending %}<span class="is-warning">{{ row.payment_pending }} awaiting payment</span>{% endif %}</div>
                 </div>
@@ -57,7 +58,9 @@
                 <a class="gh-report-row-action" href="{% url 'attendance:roster' site.id row.occurrence.id %}" aria-label="Open {{ row.occurrence.event.title }} roster">Open roster <span aria-hidden="true">&rarr;</span></a>
             </article>
             {% empty %}
-            <div class="gh-report-empty"><h3>No event dates in this view</h3><p>{% if view_filter == 'completed' %}Completed events will appear here after their scheduled end time.{% elif view_filter == 'upcoming' %}Create or schedule another event to see it here.{% else %}Create your first event to begin tracking responses and attendance.{% endif %}</p>{% if view_filter == 'all' %}<a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create an event</a>{% else %}<a href="?view=all">View all dates</a>{% endif %}</div>
+            <div class="gh-report-empty">
+                <h3>No event dates in this view</h3>
+                <p>{% if view_filter == 'completed' %}Completed events will appear here after their scheduled end time.{% elif view_filter == 'upcoming' %}Create or schedule another event to see it here.{% else %}Create your first event to begin tracking responses and attendance.{% endif %}</p>{% if view_filter == 'all' %}<a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create an event</a>{% else %}<a href="?view=all">View all dates</a>{% endif %}</div>
             {% endfor %}
         </div>
     </section>
@@ -65,7 +68,30 @@
     {% if events %}
     <details class="gh-series-report">
         <summary><span><strong>Compare recurring event series</strong><small>Roll multiple dates into one total.</small></span><b aria-hidden="true">+</b></summary>
-        <div class="table-responsive" role="region" aria-label="Recurring event series comparison" tabindex="0"><table class="table align-middle"><thead><tr><th scope="col">Event series</th><th scope="col">Dates</th><th scope="col">Registrations</th><th scope="col">Attendance</th><th scope="col">Ticket gross</th><th scope="col">Refunds</th><th scope="col">Rating</th></tr></thead><tbody>{% for row in events %}<tr><td><strong>{{ row.event.title }}</strong></td><td>{{ row.occurrences }}</td><td>{{ row.registrations }}</td><td>{{ row.checked_in }}/{{ row.participants }}</td><td>${{ row.gross_display|floatformat:2 }}</td><td>${{ row.refunds_display|floatformat:2 }}</td><td>{% if row.rating_average %}{{ row.rating_average|floatformat:1 }}/5 <small>({{ row.review_count }})</small>{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+        <div class="table-responsive" role="region" aria-label="Recurring event series comparison" tabindex="0">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Event series</th>
+                        <th scope="col">Dates</th>
+                        <th scope="col">Registrations</th>
+                        <th scope="col">Attendance</th>
+                        <th scope="col">Ticket gross</th>
+                        <th scope="col">Refunds</th>
+                        <th scope="col">Rating</th>
+                    </tr>
+                </thead>
+                <tbody>{% for row in events %}<tr>
+                    <td><strong>{{ row.event.title }}</strong></td>
+                    <td>{{ row.occurrences }}</td>
+                    <td>{{ row.registrations }}</td>
+                    <td>{{ row.checked_in }}/{{ row.participants }}</td>
+                    <td>${{ row.gross_display|floatformat:2 }}</td>
+                    <td>${{ row.refunds_display|floatformat:2 }}</td>
+                    <td>{% if row.rating_average %}{{ row.rating_average|floatformat:1 }}/5 <small>({{ row.review_count }})</small>{% else %}—{% endif %}</td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>
     </details>
     {% endif %}
     <p class="gh-report-disclaimer">Financial values are operational reports from connected-account records and are not an accounting ledger.</p>

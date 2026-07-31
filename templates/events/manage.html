@@ -42,15 +42,33 @@
             {% for occurrence in event.occurrences.all %}
             <section class="gh-occurrence-row">
                 <div class="gh-occurrence-date"><span>{{ occurrence.starts_at|date:"M" }}</span><strong>{{ occurrence.starts_at|date:"j" }}</strong><small>{{ occurrence.starts_at|date:"Y" }}</small></div>
-                <div class="gh-occurrence-main"><h3>{{ occurrence.starts_at|date:"l, g:i A" }}</h3><p>{{ occurrence.venue_name|default:"Venue TBD" }}{% if occurrence.venue_address %} &middot; {{ occurrence.venue_address }}{% endif %}</p><span class="gh-content-status gh-content-status-{{ occurrence.status }}">{{ occurrence.get_status_display }}</span></div>
-                <dl class="gh-occurrence-metrics"><div><dt>Going</dt><dd>{{ occurrence.metrics.going }}</dd></div><div><dt>Maybe</dt><dd>{{ occurrence.metrics.maybe }}</dd></div><div><dt>People</dt><dd>{{ occurrence.metrics.participants }}</dd></div>{% if occurrence.metrics.capacity_remaining != None %}<div><dt>Spots left</dt><dd>{{ occurrence.metrics.capacity_remaining }}</dd></div>{% endif %}</dl>
+                <div class="gh-occurrence-main">
+                    <h3>{{ occurrence.starts_at|date:"l, g:i A" }}</h3>
+                    <p>{{ occurrence.venue_name|default:"Venue TBD" }}{% if occurrence.venue_address %} &middot; {{ occurrence.venue_address }}{% endif %}</p><span class="gh-content-status gh-content-status-{{ occurrence.status }}">{{ occurrence.get_status_display }}</span></div>
+                <dl class="gh-occurrence-metrics">
+                    <div>
+                        <dt>Going</dt>
+                        <dd>{{ occurrence.metrics.going }}</dd>
+                    </div>
+                    <div>
+                        <dt>Maybe</dt>
+                        <dd>{{ occurrence.metrics.maybe }}</dd>
+                    </div>
+                    <div>
+                        <dt>People</dt>
+                        <dd>{{ occurrence.metrics.participants }}</dd>
+                    </div>{% if occurrence.metrics.capacity_remaining != None %}<div>
+                    <dt>Spots left</dt>
+                    <dd>{{ occurrence.metrics.capacity_remaining }}</dd>
+                </div>{% endif %}</dl>
                 <nav class="gh-occurrence-actions" aria-label="Actions for {{ event.title }} on {{ occurrence.starts_at|date:'F j' }}"><a href="{% url 'events:invite' site.id occurrence.id %}">Invite</a><a href="{% url 'attendance:roster' site.id occurrence.id %}">Roster</a><a href="{% url 'payments:ticket_type_create' site.id occurrence.id %}">Tickets</a><a href="{% url 'events:occurrence_edit' site.id occurrence.id %}">Edit date</a></nav>
             </section>
             {% empty %}<p class="text-secondary p-3">No calendar dates remain for this event.</p>{% endfor %}
         </div>
     </article>
     {% empty %}
-    <div class="gh-empty-note gh-event-empty"><span class="gh-event-calendar-mark" aria-hidden="true">+1</span><h2>{% if query or selected_status != 'all' %}No events match these filters{% else %}Create your first event{% endif %}</h2><p>{% if query or selected_status != 'all' %}Try another search or status.{% else %}Add a date, choose who can attend, then invite contacts or share the public page.{% endif %}</p>{% if not query and selected_status == 'all' %}<a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create event</a>{% endif %}</div>
+    <div class="gh-empty-note gh-event-empty"><span class="gh-event-calendar-mark" aria-hidden="true">+1</span><h2>{% if query or selected_status != 'all' %}No events match these filters{% else %}Create your first event{% endif %}</h2>
+        <p>{% if query or selected_status != 'all' %}Try another search or status.{% else %}Add a date, choose who can attend, then invite contacts or share the public page.{% endif %}</p>{% if not query and selected_status == 'all' %}<a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create event</a>{% endif %}</div>
     {% endfor %}
     {% endtimezone %}
 </div>

@@ -1,4 +1,5 @@
 import math
+from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -33,6 +34,11 @@ from .services import (
     subscriber_site_creation_decision,
     user_site_roles,
 )
+
+# How long after an event finishes the dashboard keeps offering to start a
+# photo album. Long enough to cover a busy week, short enough that the
+# dashboard is not nagging about something from last season.
+ALBUM_PROMPT_DAYS = 30
 
 
 @login_required
@@ -136,6 +142,24 @@ def dashboard(request, site_id):
             .first()
         )
 
+    # After an event finishes, the most likely next thing a group wants to do
+    # is post photos. Surface that instead of making them navigate to Events,
+    # then Photo albums, then Create, then find the date in a dropdown.
+    album_prompt = None
+    if site.accepts_public_traffic:
+        album_prompt = (
+            EventOccurrence.objects.for_site(site)
+            .filter(
+                status=EventOccurrence.Status.SCHEDULED,
+                ends_at__lte=timezone.now(),
+                ends_at__gte=timezone.now() - timedelta(days=ALBUM_PROMPT_DAYS),
+                albums__isnull=True,
+            )
+            .select_related("event")
+            .order_by("-starts_at")
+            .first()
+        )
+
     from workspace.models import Activity, WorkTask
 
     context = {
@@ -152,6 +176,7 @@ def dashboard(request, site_id):
         "canonical_domain": site.domains.filter(is_canonical=True).first(),
         "setup": setup,
         "upcoming_occurrence": upcoming_occurrence,
+        "album_prompt": album_prompt,
         "workspace_activities": Activity.objects.for_site(site).select_related("actor")[
             :8
         ],
@@ -293,6 +318,9 @@ def launch_center(request, site_id):
         "contacts_entered": reverse("contacts:create", kwargs={"site_id": site.id}),
         "upcoming_event": reverse("events:create", kwargs={"site_id": site.id}),
         "commerce_ready": reverse("payments:manage", kwargs={"site_id": site.id}),
+        # Both live on the website settings screen under "A couple of legal details".
+        "refund_policy": reverse("content:presentation", kwargs={"site_id": site.id}),
+        "mailing_address": reverse("content:presentation", kwargs={"site_id": site.id}),
         "billing_selected": f"{dashboard_url}#subscription",
         "backup_manager": f"{dashboard_url}#managers",
         "data_exported": reverse("sites:export_data", kwargs={"site_id": site.id}),
@@ -335,6 +363,8 @@ def launch_center(request, site_id):
         "contacts_entered": "Add a contact",
         "upcoming_event": "Create an event",
         "commerce_ready": "Open payments",
+        "refund_policy": "Set refund policy",
+        "mailing_address": "Add mailing address",
         "invitation_path": "Open invitations",
         "billing_selected": "Choose billing",
         "venue_complete": "Edit occurrence",

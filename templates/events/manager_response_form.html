@@ -5,7 +5,10 @@
 {% timezone site.timezone %}
 <div class="gh-content-editor gh-door-response">
     <header class="gh-editor-header">
-        <div><a class="gh-back-link" href="{% url 'attendance:roster' site.id occurrence.id %}">&larr; Back to roster</a><p class="gh-step-label mt-3">At-the-door response</p><h1>Add or update an attendee</h1><p>{{ occurrence.event.title }} · {{ occurrence.starts_at|date:"F j, Y · g:i A" }}</p></div>
+        <div><a class="gh-back-link" href="{% url 'attendance:roster' site.id occurrence.id %}">&larr; Back to roster</a><p class="gh-step-label mt-3">At-the-door response</p>
+            <h1>Add or update an attendee</h1>
+            <p>{{ occurrence.event.title }} · {{ occurrence.starts_at|date:"F j, Y · g:i A" }}</p>
+        </div>
     </header>
     <form method="post" class="gh-editor-layout" data-manager-response>{% csrf_token %}
         <div class="gh-editor-main">
@@ -18,7 +21,8 @@
             <section class="gh-editor-card">
                 <p class="gh-step-label">Response</p>
                 <h2>Are they attending?</h2>
-                <fieldset class="gh-choice-cards gh-door-response-options"><legend class="visually-hidden">Response</legend>{% for radio in form.response %}<label>{{ radio.tag }}<span><strong>{{ radio.choice_label }}</strong><small>{% if radio.data.value == 'going' %}Add them to the event-day roster.{% elif radio.data.value == 'maybe' %}Keep their plans undecided.{% else %}Remove them from the active roster.{% endif %}</small></span></label>{% endfor %}</fieldset>
+                <fieldset class="gh-choice-cards gh-door-response-options">
+                    <legend class="visually-hidden">Response</legend>{% for radio in form.response %}<label>{{ radio.tag }}<span><strong>{{ radio.choice_label }}</strong><small>{% if radio.data.value == 'going' %}Add them to the event-day roster.{% elif radio.data.value == 'maybe' %}Keep their plans undecided.{% else %}Remove them from the active roster.{% endif %}</small></span></label>{% endfor %}</fieldset>
                 {% for error in form.response.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
             </section>
             {% if occurrence.event.max_guests %}
@@ -28,7 +32,17 @@
                 <div class="gh-form-field gh-guest-count">{{ form.guest_count.label_tag }}{{ form.guest_count }}<div class="gh-field-help">{{ form.guest_count.help_text }}</div>{% for error in form.guest_count.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
                 <div class="gh-door-guest-list">
                     {% for group in guest_groups %}
-                    <fieldset class="gh-door-guest" data-guest-group="{{ group.number }}"><legend>Guest {{ group.number }}</legend><div class="gh-name-grid"><div class="gh-form-field">{{ group.first_name.label_tag }}{{ group.first_name }}{% for error in group.first_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ group.last_name.label_tag }}{{ group.last_name }}{% for error in group.last_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div><div class="gh-name-grid"><div class="gh-form-field">{{ group.email.label_tag }}{{ group.email }}{% for error in group.email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div><div class="gh-form-field">{{ group.phone.label_tag }}{{ group.phone }}{% for error in group.phone.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div></fieldset>
+                    <fieldset class="gh-door-guest" data-guest-group="{{ group.number }}">
+                        <legend>Guest {{ group.number }}</legend>
+                        <div class="gh-name-grid">
+                            <div class="gh-form-field">{{ group.first_name.label_tag }}{{ group.first_name }}{% for error in group.first_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                            <div class="gh-form-field">{{ group.last_name.label_tag }}{{ group.last_name }}{% for error in group.last_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                        </div>
+                        <div class="gh-name-grid">
+                            <div class="gh-form-field">{{ group.email.label_tag }}{{ group.email }}{% for error in group.email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                            <div class="gh-form-field">{{ group.phone.label_tag }}{{ group.phone }}{% for error in group.phone.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                        </div>
+                    </fieldset>
                     {% endfor %}
                 </div>
             </section>

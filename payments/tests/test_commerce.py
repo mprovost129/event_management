@@ -829,3 +829,72 @@ def test_ticket_checkout_only_shows_options_that_cover_the_whole_party(client):
     assert "$30.00 total" in content
     assert "2 tickets" in content
     assert "Payment handled by Stripe" in content
+
+
+@pytest.mark.django_db
+def test_ticket_refund_policy_falls_back_to_the_site_default():
+    _, site, _, _, ticket_type, _ = commerce_fixture()
+    site.default_refund_policy = "Full refunds up to 48 hours before the event."
+    site.save(update_fields=("default_refund_policy", "updated_at"))
+    ticket_type.refresh_from_db()
+
+    inherited = ticket_type.effective_refund_policy
+
+    ticket_type.refund_policy = "This ticket is non-refundable."
+    ticket_type.save(update_fields=("refund_policy", "updated_at"))
+
+    overridden = ticket_type.effective_refund_policy
+
+    assert inherited == "Full refunds up to 48 hours before the event."
+    # A ticket-level policy wins over the organization default.
+    assert overridden == "This ticket is non-refundable."
+
+
+@pytest.mark.django_db
+def test_ticket_type_form_requires_a_policy_when_the_site_has_no_default(client):
+    owner, site, _, occurrence, _, _ = commerce_fixture()
+    client.force_login(owner)
+    url = reverse("payments:ticket_type_create", args=(site.id, occurrence.id))
+    values = {
+        "name": "Early bird",
+        "description": "",
+        "price": "12.00",
+        "quantity": "20",
+        "max_per_order": "4",
+        "sales_start_at": "",
+        "sales_end_at": "",
+        "is_active": "on",
+    }
+
+    without_policy = client.post(url, {**values, "refund_policy": ""})
+    rejected = not TicketType.objects.filter(name="Early bird").exists()
+
+    site.default_refund_policy = "Refunds up to 48 hours before the event."
+    site.save(update_fields=("default_refund_policy", "updated_at"))
+    with_site_default = client.post(url, {**values, "refund_policy": ""})
+
+    assert without_policy.status_code == 200
+    assert "refund policy" in without_policy.content.decode().lower()
+    assert rejected
+    # Once the organization has a default, the per-ticket field is optional.
+    assert with_site_default.status_code == 302
+    assert TicketType.objects.filter(name="Early bird").exists()
+
+
+@pytest.mark.django_db
+def test_public_event_page_shows_the_refund_policy_before_purchase(client):
+    _, site, _, occurrence, _, _ = commerce_fixture()
+    site.default_refund_policy = "Full refunds up to 48 hours before the event."
+    site.save(update_fields=("default_refund_policy", "updated_at"))
+
+    response = client.get(
+        reverse(
+            "events:occurrence_detail",
+            args=(occurrence.event.slug, occurrence.id),
+        ),
+        headers={"host": "boot-scooters.localhost"},
+    )
+
+    content = response.content.decode()
+    assert response.status_code == 200
+    assert "Full refunds up to 48 hours before the event." in content

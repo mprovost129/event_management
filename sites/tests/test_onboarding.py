@@ -7,7 +7,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from contacts.models import Contact
-from events.models import Event
+from events.models import Event, EventAlbum
+from events.services import create_event_series
 from ops.models import AuditEvent
 from payments.models import ConnectedAccount
 from sites.models import Site, SiteDomain, SiteRole, SiteTheme
@@ -152,9 +153,9 @@ def test_active_subscriber_can_start_one_additional_trial_but_not_a_third(client
     assert dashboard.status_code == 200
     assert "Create another organization" in dashboard.content.decode()
     assert second_site.status_code == 302
-    assert Site.objects.get(slug="second-organization").platform_subscription.status == (
-        PlatformSubscription.Status.TRIALING
-    )
+    assert Site.objects.get(
+        slug="second-organization"
+    ).platform_subscription.status == (PlatformSubscription.Status.TRIALING)
     assert third_site.status_code == 403
     assert not Site.objects.filter(slug="third-organization").exists()
 
@@ -503,3 +504,73 @@ def test_suspended_site_exposes_only_owner_recovery_routes(client):
         ).status_code
         == 200
     )
+
+
+@pytest.mark.django_db
+def test_dashboard_prompts_for_photos_after_an_event_finishes(client):
+    owner = verified_user("owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+    client.force_login(owner)
+    finished = timezone.now() - timedelta(days=2)
+    event = create_event_series(
+        site=site,
+        creator=owner,
+        event_values={
+            "title": "Summer social",
+            "slug": "summer-social",
+            "description": "",
+            "host_name": "Pat",
+            "visibility": Event.Visibility.PUBLIC,
+            "status": Event.Status.PUBLISHED,
+            "recurrence": Event.Recurrence.NONE,
+            "recurrence_interval": 1,
+            "recurrence_until": None,
+            "max_guests": 0,
+        },
+        first_start=finished,
+        first_end=finished + timedelta(hours=2),
+        venue_name="Town Hall",
+    )
+    occurrence = event.occurrences.get()
+
+    prompted = client.get(reverse("sites:dashboard", kwargs={"site_id": site.id}))
+
+    # Once an album exists for that date, the dashboard stops asking.
+    EventAlbum.objects.create(
+        site=site,
+        occurrence=occurrence,
+        title="Summer Social Highlights",
+        slug="summer-social-highlights",
+        created_by=owner,
+    )
+    settled = client.get(reverse("sites:dashboard", kwargs={"site_id": site.id}))
+
+    assert "Add photos from Summer social" in prompted.content.decode()
+    assert "Add photos from Summer social" not in settled.content.decode()
+
+
+@pytest.mark.django_db
+def test_dashboard_keeps_secondary_tools_collapsed_behind_more_tools(client):
+    owner = verified_user("owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+    client.force_login(owner)
+
+    content = client.get(
+        reverse("sites:dashboard", kwargs={"site_id": site.id})
+    ).content.decode()
+
+    # The core loop stays visible; everything else is one click away.
+    assert "Photo albums" in content
+    assert "Events &amp; calendar" in content
+    assert "gh-more-tools" in content
+    assert content.index("gh-more-tools") < content.index("Sponsors")

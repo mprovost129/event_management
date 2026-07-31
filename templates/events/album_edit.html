@@ -1,11 +1,110 @@
 {% extends 'base.html' %}
 {% load tz %}
 {% block title %}{{ album.title }} photos | {{ site.display_name }}{% endblock %}
+
 {% block content %}
-<div class="gh-builder-head"><div><a class="gh-back-link" href="{% url 'events:album_list' site.id %}">&larr; Photo albums</a><p class="gh-step-label mt-3">{{ album.occurrence.event.title }} &middot; {% timezone site.timezone %}{{ album.occurrence.starts_at|date:"F j, Y" }}{% endtimezone %}</p><h1>{{ album.title }}</h1></div>{% if album.status == 'published' %}<a class="btn btn-outline-primary" href="//{{ public_hostname }}{% url 'events:photo_album_detail' album.slug %}">View public album</a>{% endif %}</div>
-<div class="gh-album-editor-grid">
-    <section class="gh-editor-card"><h2>Album details</h2><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary" type="submit">Save album</button></form></section>
-    <section class="gh-editor-card"><h2>Add a photo</h2><p>JPEG, PNG, or WebP up to 10 MB. Images are resized automatically.</p><form method="post" enctype="multipart/form-data" action="{% url 'events:album_photo_upload' site.id album.id %}">{% csrf_token %}{{ photo_form.as_p }}<button class="btn btn-primary" type="submit">Add photo</button></form></section>
+<div class="gh-builder-head">
+    <div>
+        <a class="gh-back-link" href="{% url 'events:album_list' site.id %}">&larr; Photo albums</a>
+        <p class="gh-step-label mt-3">
+            {{ album.occurrence.event.title }} &middot;
+            {% timezone site.timezone %}{{ album.occurrence.starts_at|date:"F j, Y" }}{% endtimezone %}
+        </p>
+        <h1>{{ album.title }}</h1>
+    </div>
+    {% if album.status == 'published' %}
+    <a class="btn btn-outline-primary" href="//{{ public_hostname }}{% url 'events:photo_album_detail' album.slug %}">
+        View public album
+    </a>
+    {% endif %}
 </div>
-<section class="mt-5"><div><p class="gh-step-label">Album photos</p><h2>{{ photos|length }} photo{{ photos|length|pluralize }}</h2></div><div class="gh-photo-grid">{% for photo in photos %}<article class="gh-photo-card"><img src="{{ photo.image.url }}" alt="{{ photo.alt_text }}"><div>{% if album.cover_photo_id == photo.id %}<span class="gh-content-status gh-content-status-published">Cover</span>{% endif %}{% if photo.caption %}<p>{{ photo.caption }}</p>{% endif %}<small>{{ photo.alt_text }}</small><div class="d-flex gap-2 mt-3"><a class="btn btn-sm btn-outline-secondary" href="{% url 'events:album_photo_edit' site.id album.id photo.id %}">Edit details</a>{% if album.cover_photo_id != photo.id %}<form method="post" action="{% url 'events:album_cover_set' site.id album.id photo.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit">Make cover</button></form>{% endif %}<form method="post" action="{% url 'events:album_photo_delete' site.id album.id photo.id %}" onsubmit="return confirm('Delete this photo permanently?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Delete</button></form></div></div></article>{% empty %}<div class="gh-empty-note"><h3>Add the first photo</h3><p>The first photo automatically becomes the album cover.</p></div>{% endfor %}</div></section>
+
+<div class="gh-album-editor-grid">
+    <section class="gh-editor-card">
+        <h2>Album details</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn btn-primary" type="submit">Save album</button>
+        </form>
+    </section>
+
+    <section class="gh-editor-card">
+        <h2>Add photos</h2>
+        <p>Select as many as you like at once. JPEG, PNG, or WebP up to 10 MB each.</p>
+        <form method="post"
+              enctype="multipart/form-data"
+              action="{% url 'events:album_photo_upload' site.id album.id %}"
+              data-photo-upload>
+            {% csrf_token %}
+            {{ photo_form.as_p }}
+            <p class="gh-upload-count" data-upload-count hidden></p>
+            <button class="btn btn-primary" type="submit" data-upload-submit>Add photos</button>
+        </form>
+    </section>
+</div>
+
+<section class="mt-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
+        <div>
+            <p class="gh-step-label">Album photos</p>
+            <h2>{{ photos|length }} photo{{ photos|length|pluralize }}</h2>
+        </div>
+        {% if photos|length > 1 %}
+        <p class="gh-reorder-hint" data-reorder-status role="status" aria-live="polite">
+            Drag a photo to change its order, or use the arrow buttons.
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="gh-photo-grid"
+         data-photo-reorder
+         data-reorder-url="{% url 'events:album_photo_reorder' site.id album.id %}">
+        {% for photo in photos %}
+        <article class="gh-photo-card" draggable="true" data-photo-id="{{ photo.id }}">
+            <img src="{{ photo.preview.url }}"
+                 alt="{{ photo.alt_text }}"
+                 loading="lazy"
+                 decoding="async"
+                 {% if photo.image_width %}width="{{ photo.image_width }}" height="{{ photo.image_height }}"{% endif %}>
+            <div>
+                {% if album.cover_photo_id == photo.id %}
+                <span class="gh-content-status gh-content-status-published">Cover</span>
+                {% endif %}
+                {% if photo.caption %}<p>{{ photo.caption }}</p>{% endif %}
+                <small>{{ photo.alt_text }}</small>
+
+                <div class="gh-photo-reorder-controls" data-reorder-controls hidden>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-move="up"
+                            aria-label="Move {{ photo.alt_text }} earlier">&uarr;</button>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-move="down"
+                            aria-label="Move {{ photo.alt_text }} later">&darr;</button>
+                </div>
+
+                <div class="d-flex gap-2 mt-3 flex-wrap">
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="{% url 'events:album_photo_edit' site.id album.id photo.id %}">Edit details</a>
+                    {% if album.cover_photo_id != photo.id %}
+                    <form method="post" action="{% url 'events:album_cover_set' site.id album.id photo.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-outline-primary" type="submit">Make cover</button>
+                    </form>
+                    {% endif %}
+                    <form method="post"
+                          action="{% url 'events:album_photo_delete' site.id album.id photo.id %}"
+                          onsubmit="return confirm('Delete this photo permanently?')">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </article>
+        {% empty %}
+        <div class="gh-empty-note">
+            <h3>Add the first photo</h3>
+            <p>The first photo automatically becomes the album cover.</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
 {% endblock %}

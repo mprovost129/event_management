@@ -4,17 +4,123 @@
 <h1>Platform operations</h1>
 <p class="text-secondary">Support, delivery health, moderation, and retention controls.</p>
 {% if operational_alerts %}<div class="alert alert-danger"><strong>Operational attention required</strong><ul class="mb-2">{% for alert in operational_alerts %}<li>{{ alert.label }}{% if alert.count > 1 %} ({{ alert.count }}){% endif %}</li>{% endfor %}</ul>{% for alert in operational_alerts %}{% if alert.code == 'background_processing_stale' %}<p class="mb-0 small">The Celery worker or scheduler has not completed the scheduled heartbeat recently. On Render, confirm both <strong>gather-hqs-worker</strong> and <strong>gather-hqs-scheduler</strong> are deployed and running, then allow several minutes for this warning to clear.</p>{% endif %}{% endfor %}</div>{% endif %}
-<section class="row g-3 mb-4" aria-label="Ticket application fee summary"><div class="col-sm-6 col-lg-3"><div class="card h-100"><div class="card-body"><small>Net Gather HQs fees</small><div class="h3 mb-1">${{ platform_fees.net|floatformat:2 }}</div><span class="text-secondary">After proportional fee returns</span></div></div></div><div class="col-sm-6 col-lg-3"><div class="card h-100"><div class="card-body"><small>Fees collected</small><div class="h3 mb-1">${{ platform_fees.collected|floatformat:2 }}</div><span class="text-secondary">Across {{ platform_fees.orders }} paid order{{ platform_fees.orders|pluralize }}</span></div></div></div><div class="col-sm-6 col-lg-3"><div class="card h-100"><div class="card-body"><small>Fees returned</small><div class="h3 mb-1">${{ platform_fees.returned|floatformat:2 }}</div><span class="text-secondary">From ticket refunds</span></div></div></div><div class="col-sm-6 col-lg-3"><div class="card h-100"><div class="card-body"><small>Selling sites</small><div class="h3 mb-1">{{ platform_fees.sites }}</div><span class="text-secondary">With settled paid tickets</span></div></div></div></section>
-<form method="get" class="row g-2 mb-4" role="search"><div class="col-md-6"><label class="visually-hidden" for="operations-search">Search sites and users</label><input class="form-control" id="operations-search" type="search" name="q" value="{{ query }}" placeholder="Search site name, slug, or user email"></div><div class="col-auto"><button class="btn btn-primary" type="submit">Search</button></div></form>
+<section class="row g-3 mb-4" aria-label="Ticket application fee summary">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body"><small>Net Gather HQs fees</small><div class="h3 mb-1">${{ platform_fees.net|floatformat:2 }}</div><span class="text-secondary">After proportional fee returns</span></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body"><small>Fees collected</small><div class="h3 mb-1">${{ platform_fees.collected|floatformat:2 }}</div><span class="text-secondary">Across {{ platform_fees.orders }} paid order{{ platform_fees.orders|pluralize }}</span></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body"><small>Fees returned</small><div class="h3 mb-1">${{ platform_fees.returned|floatformat:2 }}</div><span class="text-secondary">From ticket refunds</span></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body"><small>Selling sites</small><div class="h3 mb-1">{{ platform_fees.sites }}</div><span class="text-secondary">With settled paid tickets</span></div>
+        </div>
+    </div>
+</section>
+<form method="get" class="row g-2 mb-4" role="search">
+    <div class="col-md-6"><label class="visually-hidden" for="operations-search">Search sites and users</label><input class="form-control" id="operations-search" type="search" name="q" value="{{ query }}" placeholder="Search site name, slug, or user email"></div>
+    <div class="col-auto"><button class="btn btn-primary" type="submit">Search</button></div>
+</form>
 
 <section class="mb-5" aria-labelledby="sites-heading">
     <h2 id="sites-heading">Sites</h2>
-    <div class="table-responsive" role="region" aria-labelledby="sites-heading" tabindex="0"><table class="table align-middle"><thead><tr><th scope="col">Site</th><th scope="col">Subscription</th><th scope="col">Support</th><th scope="col">Controls</th></tr></thead><tbody>{% for site in sites %}<tr><td>{{ site.display_name }}<br><small>{{ site.slug }}</small></td><td>{{ site.platform_subscription.get_status_display }}</td><td><form method="post" action="{% url 'ops:support_grant' site.id %}" class="d-flex gap-1">{% csrf_token %}<label class="visually-hidden" for="support-reason-{{ site.id }}">Support reason for {{ site.display_name }}</label><input class="form-control form-control-sm" id="support-reason-{{ site.id }}" name="reason" required placeholder="Support reason"><input type="hidden" name="hours" value="1"><button class="btn btn-sm btn-outline-primary" type="submit">Open read-only</button></form></td><td><form method="post" action="{% url 'ops:suspend_site' site.id %}" class="d-flex gap-1 mb-1" onsubmit="return confirm('Suspend {{ site.display_name|escapejs }}?')">{% csrf_token %}<label class="visually-hidden" for="suspension-reason-{{ site.id }}">Suspension reason for {{ site.display_name }}</label><input class="form-control form-control-sm" id="suspension-reason-{{ site.id }}" name="reason" required placeholder="Suspension reason"><button class="btn btn-sm btn-outline-warning" type="submit">Suspend</button></form><form method="post" action="{% url 'ops:deletion_request' site.id %}" class="d-flex gap-1" onsubmit="return confirm('Request permanent deletion of {{ site.display_name|escapejs }} after the retention period?')">{% csrf_token %}<label class="visually-hidden" for="deletion-reason-{{ site.id }}">Deletion reason for {{ site.display_name }}</label><input class="form-control form-control-sm" id="deletion-reason-{{ site.id }}" name="reason" required placeholder="Deletion reason"><button class="btn btn-sm btn-outline-danger" type="submit">Request deletion</button></form></td></tr>{% empty %}<tr><td colspan="4">No sites found.</td></tr>{% endfor %}</tbody></table></div>
+    <div class="table-responsive" role="region" aria-labelledby="sites-heading" tabindex="0">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Site</th>
+                    <th scope="col">Subscription</th>
+                    <th scope="col">Support</th>
+                    <th scope="col">Controls</th>
+                </tr>
+            </thead>
+            <tbody>{% for site in sites %}<tr>
+                <td>{{ site.display_name }}<br><small>{{ site.slug }}</small></td>
+                <td>{{ site.platform_subscription.get_status_display }}</td>
+                <td>
+                <form method="post" action="{% url 'ops:support_grant' site.id %}" class="d-flex gap-1">{% csrf_token %}<label class="visually-hidden" for="support-reason-{{ site.id }}">Support reason for {{ site.display_name }}</label><input class="form-control form-control-sm" id="support-reason-{{ site.id }}" name="reason" required placeholder="Support reason"><input type="hidden" name="hours" value="1"><button class="btn btn-sm btn-outline-primary" type="submit">Open read-only</button></form>
+                </td>
+                <td>
+                <form method="post" action="{% url 'ops:suspend_site' site.id %}" class="d-flex gap-1 mb-1" onsubmit="return confirm('Suspend {{ site.display_name|escapejs }}?')">{% csrf_token %}<label class="visually-hidden" for="suspension-reason-{{ site.id }}">Suspension reason for {{ site.display_name }}</label><input class="form-control form-control-sm" id="suspension-reason-{{ site.id }}" name="reason" required placeholder="Suspension reason"><button class="btn btn-sm btn-outline-warning" type="submit">Suspend</button></form>
+                <form method="post" action="{% url 'ops:deletion_request' site.id %}" class="d-flex gap-1" onsubmit="return confirm('Request permanent deletion of {{ site.display_name|escapejs }} after the retention period?')">{% csrf_token %}<label class="visually-hidden" for="deletion-reason-{{ site.id }}">Deletion reason for {{ site.display_name }}</label><input class="form-control form-control-sm" id="deletion-reason-{{ site.id }}" name="reason" required placeholder="Deletion reason"><button class="btn btn-sm btn-outline-danger" type="submit">Request deletion</button></form>
+                </td>
+            </tr>{% empty %}<tr>
+            <td colspan="4">No sites found.</td>
+        </tr>{% endfor %}</tbody>
+    </table>
+    </div>
 </section>
 
 {% if users_found %}<section class="mb-5"><h2>Users</h2><ul>{% for item in users_found %}<li>{{ item.email }}{% if item.is_superuser %} &middot; platform admin{% endif %}</li>{% endfor %}</ul></section>{% endif %}
-{% if reported_reviews %}<section class="mb-5"><h2>Reported reviews</h2>{% for review in reported_reviews %}<article class="card mb-2"><div class="card-body"><strong>{{ review.rating }}/5 &middot; {{ review.display_name }}</strong><p>{{ review.comment|linebreaksbr }}</p><div class="row g-2"><div class="col"><form method="post" action="{% url 'ops:moderate_review' review.id 'hidden' %}" onsubmit="return confirm('Hide this reported review?')">{% csrf_token %}<label class="visually-hidden" for="hide-reason-{{ review.id }}">Reason for hiding this review</label><input class="form-control mb-1" id="hide-reason-{{ review.id }}" name="reason" required placeholder="Moderation reason"><button class="btn btn-sm btn-danger" type="submit">Hide</button></form></div><div class="col"><form method="post" action="{% url 'ops:moderate_review' review.id 'restored' %}">{% csrf_token %}<label class="visually-hidden" for="restore-reason-{{ review.id }}">Reason for keeping this review visible</label><input class="form-control mb-1" id="restore-reason-{{ review.id }}" name="reason" required placeholder="Resolution reason"><button class="btn btn-sm btn-outline-primary" type="submit">Keep visible</button></form></div></div></div></article>{% endfor %}</section>{% endif %}
-{% if deletions %}<section class="mb-5"><h2>Retention requests</h2><ul class="list-group">{% for deletion in deletions %}<li class="list-group-item"><div class="d-flex justify-content-between"><span>{{ deletion.site_name }} &middot; {{ deletion.get_status_display }}{% if deletion.deletion_eligible_at %} &middot; eligible {{ deletion.deletion_eligible_at }}{% endif %}</span>{% if deletion.status == 'requested' %}<form method="post" action="{% url 'ops:deletion_approve' deletion.id %}" onsubmit="return confirm('Approve permanent deletion after the retention period?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Second-admin approval</button></form>{% endif %}</div><form method="post" action="{% url 'ops:deletion_cancel' deletion.id %}" class="d-flex gap-1 mt-2">{% csrf_token %}<label class="visually-hidden" for="cancellation-reason-{{ deletion.id }}">Cancellation reason for {{ deletion.site_name }}</label><input class="form-control form-control-sm" id="cancellation-reason-{{ deletion.id }}" name="reason" required placeholder="Cancellation reason"><button class="btn btn-sm btn-outline-secondary" type="submit">Cancel request</button></form></li>{% endfor %}</ul></section>{% endif %}
-<section class="mb-5"><h2>Operational exceptions</h2><div class="row"><div class="col-md"><h3 class="h5">Failed platform webhooks</h3><ul>{% for item in failed_platform_webhooks %}<li>{{ item.event_type }} &middot; {{ item.error|truncatechars:80 }}</li>{% empty %}<li>None</li>{% endfor %}</ul><h3 class="h5">Failed Connect webhooks</h3><ul>{% for item in failed_connect_webhooks %}<li>{{ item.event_type }} &middot; {{ item.error|truncatechars:80 }}</li>{% empty %}<li>None</li>{% endfor %}</ul></div><div class="col-md"><h3 class="h5">Failed provider callbacks</h3><ul>{% for item in failed_callbacks %}<li>{{ item.provider }} &middot; {{ item.event_type }} &middot; {{ item.error|truncatechars:80 }}</li>{% empty %}<li>None</li>{% endfor %}</ul><h3 class="h5">Failed/stale messages</h3><ul>{% for item in failed_messages %}<li>{{ item.kind }} &middot; {{ item.last_error|truncatechars:80 }}</li>{% empty %}<li>None failed</li>{% endfor %}{% for item in stale_messages %}<li>Stale: {{ item.kind }} &middot; {{ item.id }}</li>{% endfor %}</ul></div><div class="col-md"><h3 class="h5">Connected accounts needing attention</h3><ul>{% for item in connected_attention %}<li>{{ item.site }} &middot; {{ item.get_status_display }}</li>{% empty %}<li>None</li>{% endfor %}</ul></div></div></section>
-<section aria-labelledby="audit-heading"><h2 id="audit-heading">Recent audit history</h2><div class="table-responsive" role="region" aria-labelledby="audit-heading" tabindex="0"><table class="table"><thead><tr><th scope="col">When</th><th scope="col">Action</th><th scope="col">Actor</th><th scope="col">Site</th></tr></thead><tbody>{% for item in audit_events %}<tr><td>{{ item.created_at }}</td><td>{{ item.action }}</td><td>{{ item.actor|default:'system' }}</td><td>{{ item.site_id|default:'&mdash;' }}</td></tr>{% endfor %}</tbody></table></div></section>
+{% if reported_reviews %}<section class="mb-5">
+<h2>Reported reviews</h2>{% for review in reported_reviews %}<article class="card mb-2">
+<div class="card-body"><strong>{{ review.rating }}/5 &middot; {{ review.display_name }}</strong><p>{{ review.comment|linebreaksbr }}</p>
+    <div class="row g-2">
+        <div class="col">
+            <form method="post" action="{% url 'ops:moderate_review' review.id 'hidden' %}" onsubmit="return confirm('Hide this reported review?')">{% csrf_token %}<label class="visually-hidden" for="hide-reason-{{ review.id }}">Reason for hiding this review</label><input class="form-control mb-1" id="hide-reason-{{ review.id }}" name="reason" required placeholder="Moderation reason"><button class="btn btn-sm btn-danger" type="submit">Hide</button></form>
+        </div>
+        <div class="col">
+            <form method="post" action="{% url 'ops:moderate_review' review.id 'restored' %}">{% csrf_token %}<label class="visually-hidden" for="restore-reason-{{ review.id }}">Reason for keeping this review visible</label><input class="form-control mb-1" id="restore-reason-{{ review.id }}" name="reason" required placeholder="Resolution reason"><button class="btn btn-sm btn-outline-primary" type="submit">Keep visible</button></form>
+        </div>
+    </div>
+</div>
+</article>{% endfor %}</section>{% endif %}
+{% if deletions %}<section class="mb-5">
+<h2>Retention requests</h2>
+<ul class="list-group">{% for deletion in deletions %}<li class="list-group-item">
+    <div class="d-flex justify-content-between"><span>{{ deletion.site_name }} &middot; {{ deletion.get_status_display }}{% if deletion.deletion_eligible_at %} &middot; eligible {{ deletion.deletion_eligible_at }}{% endif %}</span>{% if deletion.status == 'requested' %}<form method="post" action="{% url 'ops:deletion_approve' deletion.id %}" onsubmit="return confirm('Approve permanent deletion after the retention period?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Second-admin approval</button></form>{% endif %}</div>
+    <form method="post" action="{% url 'ops:deletion_cancel' deletion.id %}" class="d-flex gap-1 mt-2">{% csrf_token %}<label class="visually-hidden" for="cancellation-reason-{{ deletion.id }}">Cancellation reason for {{ deletion.site_name }}</label><input class="form-control form-control-sm" id="cancellation-reason-{{ deletion.id }}" name="reason" required placeholder="Cancellation reason"><button class="btn btn-sm btn-outline-secondary" type="submit">Cancel request</button></form>
+    </li>{% endfor %}</ul>
+</section>{% endif %}
+<section class="mb-5">
+    <h2>Operational exceptions</h2>
+    <div class="row">
+        <div class="col-md">
+            <h3 class="h5">Failed platform webhooks</h3>
+            <ul>{% for item in failed_platform_webhooks %}<li>{{ item.event_type }} &middot; {{ item.error|truncatechars:80 }}</li>{% empty %}<li>None</li>{% endfor %}</ul>
+            <h3 class="h5">Failed Connect webhooks</h3>
+            <ul>{% for item in failed_connect_webhooks %}<li>{{ item.event_type }} &middot; {{ item.error|truncatechars:80 }}</li>{% empty %}<li>None</li>{% endfor %}</ul>
+        </div>
+        <div class="col-md">
+            <h3 class="h5">Failed provider callbacks</h3>
+            <ul>{% for item in failed_callbacks %}<li>{{ item.provider }} &middot; {{ item.event_type }} &middot; {{ item.error|truncatechars:80 }}</li>{% empty %}<li>None</li>{% endfor %}</ul>
+            <h3 class="h5">Failed/stale messages</h3>
+            <ul>{% for item in failed_messages %}<li>{{ item.kind }} &middot; {{ item.last_error|truncatechars:80 }}</li>{% empty %}<li>None failed</li>{% endfor %}{% for item in stale_messages %}<li>Stale: {{ item.kind }} &middot; {{ item.id }}</li>{% endfor %}</ul>
+        </div>
+        <div class="col-md">
+            <h3 class="h5">Connected accounts needing attention</h3>
+            <ul>{% for item in connected_attention %}<li>{{ item.site }} &middot; {{ item.get_status_display }}</li>{% empty %}<li>None</li>{% endfor %}</ul>
+        </div>
+    </div>
+</section>
+<section aria-labelledby="audit-heading">
+    <h2 id="audit-heading">Recent audit history</h2>
+    <div class="table-responsive" role="region" aria-labelledby="audit-heading" tabindex="0">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">When</th>
+                    <th scope="col">Action</th>
+                    <th scope="col">Actor</th>
+                    <th scope="col">Site</th>
+                </tr>
+            </thead>
+            <tbody>{% for item in audit_events %}<tr>
+                <td>{{ item.created_at }}</td>
+                <td>{{ item.action }}</td>
+                <td>{{ item.actor|default:'system' }}</td>
+                <td>{{ item.site_id|default:'&mdash;' }}</td>
+            </tr>{% endfor %}</tbody>
+        </table>
+    </div>
+</section>
 {% endblock %}

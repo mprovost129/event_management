@@ -136,4 +136,4 @@ Reports should use tenant-scoped service functions. Large exports should move to
 
 ## Deployment configuration
 
-Environment-specific settings live under `config/Settings/`. Secrets must remain in environment variables. New services, variables, migrations, and operational requirements must be documented in the README and changelog.
+Environment-specific settings live under `config/settings/`. Secrets must remain in environment variables. New services, variables, migrations, and operational requirements must be documented in the README and changelog.

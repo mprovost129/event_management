@@ -247,7 +247,7 @@ envVarGroups:
   - name: gather-hqs-runtime
     envVars:
       - key: DJANGO_SETTINGS_MODULE
-        value: config.Settings.prod
+        value: config.settings.prod
       - key: PLATFORM_NAME
         value: Gather HQs
       - key: PLATFORM_LONG_NAME

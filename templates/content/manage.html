@@ -22,7 +22,10 @@
             <p class="gh-step-label">Three simple steps</p>
             <h2 id="website-setup-title">Website setup</h2>
             <p>{{ website_setup.completed }} of {{ website_setup.total }} complete</p>
-            <div class="progress" role="progressbar" aria-label="Website setup progress" aria-valuenow="{{ website_setup.percent }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: {{ website_setup.percent }}%"></div></div>
+            <div class="progress" role="progressbar" aria-label="Website setup progress" aria-valuenow="{{ website_setup.percent }}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" style="width: {{ website_setup.percent }}%">
+                </div>
+            </div>
         </div>
         <ol class="gh-website-checks">
             {% for check in website_setup.checks %}
@@ -63,7 +66,9 @@
         <div class="gh-post-list">
             {% for post in posts %}
             <article>
-                <div><span class="gh-content-status gh-content-status-{{ post.status }}">{{ post.get_status_display }}</span><h3><a href="{% url 'content:blog_edit' site.id post.id %}">{{ post.title }}</a></h3><p>{{ post.excerpt|default:"No excerpt yet."|truncatechars:140 }}</p></div>
+                <div><span class="gh-content-status gh-content-status-{{ post.status }}">{{ post.get_status_display }}</span><h3><a href="{% url 'content:blog_edit' site.id post.id %}">{{ post.title }}</a></h3>
+                    <p>{{ post.excerpt|default:"No excerpt yet."|truncatechars:140 }}</p>
+                </div>
                 <a class="btn btn-sm btn-outline-primary" href="{% url 'communications:campaign_create' site.id %}?blog_post={{ post.id }}">Use in newsletter</a>
             </article>
             {% endfor %}

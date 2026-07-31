@@ -1,3 +1,5 @@
 {% extends 'public/site_base.html' %}
 {% block title %}Review received{% endblock %}
-{% block content %}<div class="site-theme mx-auto" style="max-width: 42rem"><h1>{% if deleted %}Review deleted{% else %}Thank you for your review{% endif %}</h1><p>{% if deleted %}Your public review content has been removed.{% else %}Your feedback has been recorded.{% endif %}</p><a class="btn btn-primary" href="/">Return home</a></div>{% endblock %}
+{% block content %}<div class="site-theme mx-auto" style="max-width: 42rem">
+<h1>{% if deleted %}Review deleted{% else %}Thank you for your review{% endif %}</h1>
+<p>{% if deleted %}Your public review content has been removed.{% else %}Your feedback has been recorded.{% endif %}</p><a class="btn btn-primary" href="/">Return home</a></div>{% endblock %}

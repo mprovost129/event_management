@@ -48,6 +48,8 @@ def site_export(site):
             "status": site.status,
             "timezone": site.timezone,
             "currency": site.currency,
+            "postal_address": site.postal_address,
+            "default_refund_policy": site.default_refund_policy,
         },
         "pages": _rows(
             SitePage.objects.for_site(site),

@@ -100,6 +100,25 @@
                 </div>
             </section>
 
+            <section class="gh-builder-section" aria-labelledby="business-heading">
+                <div class="gh-builder-section-number">4</div>
+                <div class="gh-builder-section-body">
+                    <p class="gh-step-label">Details</p>
+                    <h2 id="business-heading">A couple of legal details</h2>
+                    <p class="text-secondary">You only need these once you email your list or sell tickets.</p>
+                    <div class="gh-form-field">
+                        {{ form.postal_address.label_tag }}{{ form.postal_address }}
+                        <div class="gh-field-help">{{ form.postal_address.help_text }}</div>
+                        {% for error in form.postal_address.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="gh-form-field">
+                        {{ form.default_refund_policy.label_tag }}{{ form.default_refund_policy }}
+                        <div class="gh-field-help">{{ form.default_refund_policy.help_text }}</div>
+                        {% for error in form.default_refund_policy.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                </div>
+            </section>
+
             <section class="gh-publish-card" aria-labelledby="publish-heading">
                 <div>
                     <p class="gh-step-label">Visibility</p>

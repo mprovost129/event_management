@@ -1,5 +1,15 @@
 {% extends 'public/site_base.html' %}
 {% block title %}Memberships | {{ site.display_name }}{% endblock %}
 {% block content %}
-<section class="site-theme gh-public-memberships"><header><p class="gh-step-label">Support the group</p><h1>Become a member of {{ site.display_name }}.</h1><p>Membership dues help the group keep gathering. You will still RSVP separately for each event and purchase event tickets when required.</p></header>{% if request.GET.membership == 'success' %}<div class="alert alert-success">Thank you. Stripe is confirming your membership payment.</div>{% elif request.GET.membership == 'canceled' %}<div class="alert alert-info">Checkout was canceled and you were not charged.</div>{% endif %}{% if plans %}<div class="gh-public-membership-grid">{% for plan in plans %}<article><p>{{ plan.get_interval_display }} membership</p><h2>{{ plan.name }}</h2>{% if plan.description %}<div>{{ plan.description|linebreaks }}</div>{% endif %}<strong><span>$</span>{{ plan.price_display|floatformat:2 }} <small>{{ plan.currency|upper }} / {{ plan.get_interval_display|lower }}</small></strong><a class="btn btn-primary" href="{% url 'payments:membership_join' plan.id %}">Choose this membership</a></article>{% endfor %}</div>{% else %}<div class="gh-empty-note"><h2>No paid memberships are available right now.</h2><p>Check back later or contact the group leader for membership information.</p></div>{% endif %}</section>
+<section class="site-theme gh-public-memberships">
+    <header>
+        <p class="gh-step-label">Support the group</p>
+        <h1>Become a member of {{ site.display_name }}.</h1>
+        <p>Membership dues help the group keep gathering. You will still RSVP separately for each event and purchase event tickets when required.</p>
+    </header>{% if request.GET.membership == 'success' %}<div class="alert alert-success">Thank you. Stripe is confirming your membership payment.</div>{% elif request.GET.membership == 'canceled' %}<div class="alert alert-info">Checkout was canceled and you were not charged.</div>{% endif %}{% if plans %}<div class="gh-public-membership-grid">{% for plan in plans %}<article>
+    <p>{{ plan.get_interval_display }} membership</p>
+    <h2>{{ plan.name }}</h2>{% if plan.description %}<div>{{ plan.description|linebreaks }}</div>{% endif %}<strong><span>$</span>{{ plan.price_display|floatformat:2 }} <small>{{ plan.currency|upper }} / {{ plan.get_interval_display|lower }}</small></strong><a class="btn btn-primary" href="{% url 'payments:membership_join' plan.id %}">Choose this membership</a></article>{% endfor %}</div>{% else %}<div class="gh-empty-note">
+    <h2>No paid memberships are available right now.</h2>
+    <p>Check back later or contact the group leader for membership information.</p>
+</div>{% endif %}</section>
 {% endblock %}

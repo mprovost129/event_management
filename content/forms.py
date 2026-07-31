@@ -163,6 +163,32 @@ class SitePresentationForm(forms.Form):
             ("rounded", "Rounded sans serif"),
         )
     )
+    postal_address = forms.CharField(
+        max_length=300,
+        required=False,
+        label="Mailing address",
+        widget=forms.Textarea(attrs={"rows": 2}),
+        help_text=(
+            "Required at the bottom of every newsletter you send. A PO box "
+            "registered to your group works. Newsletters cannot be sent without it."
+        ),
+    )
+    default_refund_policy = forms.CharField(
+        required=False,
+        label="Default refund policy",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": (
+                    "Example: Full refunds up to 48 hours before the event. "
+                    "No refunds after that, but tickets can be transferred."
+                ),
+            }
+        ),
+        help_text=(
+            "Shown to buyers before they pay. Individual ticket types can override it."
+        ),
+    )
 
     def __init__(self, *args, site, **kwargs):
         self.site = site
@@ -174,6 +200,8 @@ class SitePresentationForm(forms.Form):
                     "display_name": site.display_name,
                     "template_key": site.template_key,
                     "is_published": site.is_published,
+                    "postal_address": site.postal_address,
+                    "default_refund_policy": site.default_refund_policy,
                     "hero_heading": theme.hero_heading,
                     "hero_text": theme.hero_text,
                     "primary_color": theme.primary_color,
@@ -187,8 +215,17 @@ class SitePresentationForm(forms.Form):
         site.display_name = self.cleaned_data["display_name"]
         site.template_key = self.cleaned_data["template_key"]
         site.is_published = self.cleaned_data["is_published"]
+        site.postal_address = self.cleaned_data["postal_address"].strip()
+        site.default_refund_policy = self.cleaned_data["default_refund_policy"].strip()
         site.save(
-            update_fields=("display_name", "template_key", "is_published", "updated_at")
+            update_fields=(
+                "display_name",
+                "template_key",
+                "is_published",
+                "postal_address",
+                "default_refund_policy",
+                "updated_at",
+            )
         )
         theme = site.theme
         for field in (

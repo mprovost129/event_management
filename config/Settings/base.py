@@ -1,3 +1,5 @@
+# ruff: noqa: F401, F403
+from config.settings.base import *
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -22,15 +24,14 @@ PLATFORM_DEFAULT_CURRENCY = env("PLATFORM_DEFAULT_CURRENCY", "usd").lower()
 RELEASE_VERSION = env(
     "RELEASE_VERSION", env("RENDER_GIT_COMMIT", "development", allow_blank=True)
 )
+# No default. A billing identifier that falls back to a hardcoded value can
+# silently bill against the wrong price if a deployment forgets to set it, so
+# an unset price ID stays blank and core.checks raises platform.W002.
 STRIPE_STANDARD_MONTHLY_PRICE_ID = env(
-    "STRIPE_STANDARD_MONTHLY_PRICE_ID",
-    "price_1TyGKX2dujKmWAFggUOrejZz",
-    allow_blank=True,
+    "STRIPE_STANDARD_MONTHLY_PRICE_ID", "", allow_blank=True
 )
 STRIPE_STANDARD_YEARLY_PRICE_ID = env(
-    "STRIPE_STANDARD_YEARLY_PRICE_ID",
-    "price_1TyGKX2dujKmWAFgx9MQuP3R",
-    allow_blank=True,
+    "STRIPE_STANDARD_YEARLY_PRICE_ID", "", allow_blank=True
 )
 STRIPE_STANDARD_MONTHLY_LOOKUP_KEY = env(
     "STRIPE_STANDARD_MONTHLY_LOOKUP_KEY", "standard_monthly"

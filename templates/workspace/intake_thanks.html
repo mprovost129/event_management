@@ -1,1 +1,9 @@
-{% extends 'base.html' %}{% block title %}Response received{% endblock %}{% block content %}<div class="row justify-content-center"><div class="col-lg-7"><div class="card card-body shadow-sm text-center p-5"><h1>Response received</h1><p class="lead">{{ intake_form.confirmation_message }}</p><p class="text-secondary mb-0">{{ intake_form.site.display_name }}</p></div></div></div>{% endblock %}
+{% extends 'base.html' %}{% block title %}Response received{% endblock %}{% block content %}<div class="row justify-content-center">
+<div class="col-lg-7">
+    <div class="card card-body shadow-sm text-center p-5">
+        <h1>Response received</h1>
+        <p class="lead">{{ intake_form.confirmation_message }}</p>
+        <p class="text-secondary mb-0">{{ intake_form.site.display_name }}</p>
+    </div>
+</div>
+</div>{% endblock %}
