@@ -2,7 +2,14 @@ from attendance.models import AttendanceRecord
 from communications.models import Campaign, CampaignRecipient, OutboundMessage
 from contacts.models import Contact, Member, MemberSubscription
 from content.models import BlogPost, SitePage
-from events.models import Event, EventOccurrence, Participant, Registration
+from events.models import (
+    Event,
+    EventAlbum,
+    EventOccurrence,
+    EventPhoto,
+    Participant,
+    Registration,
+)
 from notifications.models import Notification
 from ops.models import AuditEvent
 from payments.models import MembershipPayment, Order
@@ -94,6 +101,7 @@ def site_export(site):
             "title",
             "slug",
             "description",
+            "featured_image",
             "visibility",
             "status",
             "recurrence",
@@ -109,6 +117,28 @@ def site_export(site):
             "venue_address",
             "capacity",
             "status",
+        ),
+        "event_albums": _rows(
+            EventAlbum.objects.for_site(site),
+            "id",
+            "occurrence_id",
+            "title",
+            "slug",
+            "description",
+            "status",
+            "cover_photo_id",
+            "published_at",
+            "created_by_id",
+        ),
+        "event_photos": _rows(
+            EventPhoto.objects.for_site(site),
+            "id",
+            "album_id",
+            "image",
+            "caption",
+            "alt_text",
+            "position",
+            "uploaded_by_id",
         ),
         "registrations": _rows(
             Registration.objects.for_site(site),

@@ -7,6 +7,41 @@ app_name = "events"
 urlpatterns = [
     path("sites/<uuid:site_id>/events/", views.manage_events, name="manage"),
     path("sites/<uuid:site_id>/events/new/", views.event_create, name="create"),
+    path(
+        "sites/<uuid:site_id>/event-albums/",
+        views.album_list,
+        name="album_list",
+    ),
+    path(
+        "sites/<uuid:site_id>/event-albums/new/",
+        views.album_create,
+        name="album_create",
+    ),
+    path(
+        "sites/<uuid:site_id>/event-albums/<uuid:album_id>/",
+        views.album_edit,
+        name="album_edit",
+    ),
+    path(
+        "sites/<uuid:site_id>/event-albums/<uuid:album_id>/photos/",
+        views.album_photo_upload,
+        name="album_photo_upload",
+    ),
+    path(
+        "sites/<uuid:site_id>/event-albums/<uuid:album_id>/photos/<uuid:photo_id>/cover/",
+        views.album_cover_set,
+        name="album_cover_set",
+    ),
+    path(
+        "sites/<uuid:site_id>/event-albums/<uuid:album_id>/photos/<uuid:photo_id>/edit/",
+        views.album_photo_edit,
+        name="album_photo_edit",
+    ),
+    path(
+        "sites/<uuid:site_id>/event-albums/<uuid:album_id>/photos/<uuid:photo_id>/delete/",
+        views.album_photo_delete,
+        name="album_photo_delete",
+    ),
     path("sites/<uuid:site_id>/events/<uuid:event_id>/", views.event_edit, name="edit"),
     path(
         "sites/<uuid:site_id>/occurrences/<uuid:occurrence_id>/",
@@ -29,6 +64,7 @@ urlpatterns = [
         name="cancel",
     ),
     path("events/", views.calendar, name="calendar"),
+    path("events/<slug:slug>/image/", views.public_event_image, name="event_image"),
     path("events/<slug:slug>/", views.event_detail, name="detail"),
     path(
         "events/<slug:slug>/<uuid:occurrence_id>/",
@@ -49,5 +85,11 @@ urlpatterns = [
         "invitations/<str:token>/",
         views.invitation_response,
         name="invitation_response",
+    ),
+    path("photos/", views.photo_album_list, name="photo_album_list"),
+    path(
+        "photos/<slug:slug>/",
+        views.photo_album_detail,
+        name="photo_album_detail",
     ),
 ]

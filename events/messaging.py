@@ -64,6 +64,14 @@ def _public_event_url(occurrence, hostname):
     return f"https://{hostname}{path}"
 
 
+def _event_image_url(occurrence, hostname):
+    if not occurrence.event.featured_image:
+        return _brand_asset_url(occurrence.site, hostname, "hero")
+    path = reverse("events:event_image", kwargs={"slug": occurrence.event.slug})
+    version = int(occurrence.event.updated_at.timestamp())
+    return f"https://{hostname}{path}?v={version}"
+
+
 def _description(occurrence):
     event_description = occurrence.event.description.strip()
     if event_description:
@@ -112,7 +120,7 @@ def _event_email_html(
             "primary_color": theme.primary_color if theme else "#0B1D39",
             "secondary_color": theme.secondary_color if theme else "#516543",
             "logo_url": _brand_asset_url(site, hostname, "logo"),
-            "hero_url": _brand_asset_url(site, hostname, "hero"),
+            "hero_url": _event_image_url(occurrence, hostname),
             "eyebrow": eyebrow,
             "headline": headline,
             "event_title": occurrence.event.title,

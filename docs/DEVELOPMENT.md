@@ -79,6 +79,15 @@ confirmations contain a signed management link that remains usable until the
 event ends. Submitting the public form again for an existing email sends that
 link rather than changing the response based on email knowledge alone. An
 invited responder can continue to use the secure link from the invitation.
+
+Event administrators and managers can upload a validated promotional image on
+the event create/edit screens. It appears on public event pages and takes
+priority over the site hero in branded event emails. The **Photo albums** area
+under Events supports draft/published albums tied to completed event dates.
+Photos require descriptive alt text, accept JPEG/PNG/WebP files up to 10 MB,
+are resized on upload, and support captions and an album cover. Published
+albums appear under `/photos/`; general page-builder galleries and
+attendee-driven photo sharing remain deferred.
 - Stripe platform webhook: `/billing/stripe/`
 - Platform administration: `/platform-admin/`
 

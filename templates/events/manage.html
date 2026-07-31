@@ -10,7 +10,7 @@
             <h1>Plan it once. Keep everyone on the same page.</h1>
             <p>Manage dates, invitations, tickets, responses, and attendance for every gathering.</p>
         </div>
-        <a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create event</a>
+        <div class="d-flex flex-wrap gap-2"><a class="btn btn-outline-primary" href="{% url 'events:album_list' site.id %}">Photo albums</a><a class="btn btn-primary" href="{% url 'events:create' site.id %}">Create event</a></div>
     </div>
 
     <form method="get" class="row g-2 mb-4" role="search">

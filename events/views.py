@@ -1,7 +1,8 @@
 from decimal import Decimal
 
 from django.contrib import messages
-from django.db.models import Avg, Count, Prefetch, Q
+from django.db import transaction
+from django.db.models import Avg, Count, Max, Prefetch, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -16,8 +17,12 @@ from payments.services import registration_checkout_token, ticket_inventory
 from sites.permissions import site_staff_required
 
 from .forms import (
+    EventAlbumCreateForm,
+    EventAlbumEditForm,
     EventDetailsForm,
     EventForm,
+    EventPhotoEditForm,
+    EventPhotoForm,
     InvitationForm,
     ManagerResponseForm,
     OccurrenceEditForm,
@@ -29,7 +34,7 @@ from .messaging import (
     queue_occurrence_notice,
     queue_rsvp_manage_link,
 )
-from .models import Event, EventOccurrence, Registration
+from .models import Event, EventAlbum, EventOccurrence, EventPhoto, Registration
 from .registration import (
     CapacityExceeded,
     PublicResponseAlreadyExists,
@@ -132,7 +137,7 @@ def manage_events(request, site_id):
 @require_http_methods(["GET", "POST"])
 def event_create(request, site_id):
     site = request.authorized_site
-    form = EventForm(request.POST or None, site=site)
+    form = EventForm(request.POST or None, request.FILES or None, site=site)
     if request.method == "POST" and form.is_valid():
         model_fields = {
             field: form.cleaned_data[field]
@@ -140,6 +145,7 @@ def event_create(request, site_id):
                 "title",
                 "slug",
                 "description",
+                "featured_image",
                 "host_name",
                 "visibility",
                 "status",
@@ -190,7 +196,12 @@ def event_edit(request, site_id, event_id):
         "visibility": event.visibility,
         "status": event.status,
     }
-    form = EventDetailsForm(request.POST or None, instance=event, site=site)
+    form = EventDetailsForm(
+        request.POST or None,
+        request.FILES or None,
+        instance=event,
+        site=site,
+    )
     if request.method == "POST" and form.is_valid():
         event = form.save()
         record_audit_event(
@@ -277,6 +288,212 @@ def occurrence_edit(request, site_id, occurrence_id):
         "events/occurrence_form.html",
         {"site": site, "occurrence": occurrence, "form": form},
     )
+
+
+@site_staff_required
+def album_list(request, site_id):
+    site = request.authorized_site
+    albums = (
+        EventAlbum.objects.for_site(site)
+        .select_related("occurrence__event", "cover_photo")
+        .annotate(photo_count=Count("photos"))
+    )
+    return render(
+        request,
+        "events/album_list.html",
+        {"site": site, "albums": albums},
+    )
+
+
+@site_staff_required
+@require_http_methods(["GET", "POST"])
+def album_create(request, site_id):
+    site = request.authorized_site
+    initial = {}
+    requested_occurrence = request.GET.get("occurrence", "")
+    if requested_occurrence:
+        initial["occurrence"] = requested_occurrence
+    form = EventAlbumCreateForm(request.POST or None, site=site, initial=initial)
+    if request.method == "POST" and form.is_valid():
+        album = form.save(commit=False)
+        album.site = site
+        album.created_by = request.user
+        album.save()
+        record_audit_event(
+            action="event.album.created",
+            actor=request.user,
+            site_id=site.id,
+            target=album,
+            summary={"occurrence_id": str(album.occurrence_id)},
+            request=request,
+        )
+        messages.success(request, "Album created. Add photos, then publish it.")
+        return redirect("events:album_edit", site_id=site.id, album_id=album.id)
+    return render(
+        request,
+        "events/album_form.html",
+        {"site": site, "form": form},
+    )
+
+
+@site_staff_required
+@require_http_methods(["GET", "POST"])
+def album_edit(request, site_id, album_id):
+    site = request.authorized_site
+    album = get_object_or_404(
+        EventAlbum.objects.for_site(site).select_related("occurrence__event"),
+        pk=album_id,
+    )
+    previous_status = album.status
+    form = EventAlbumEditForm(request.POST or None, instance=album, site=site)
+    if request.method == "POST" and form.is_valid():
+        album = form.save(commit=False)
+        if (
+            album.status == EventAlbum.Status.PUBLISHED
+            and previous_status != EventAlbum.Status.PUBLISHED
+        ):
+            album.published_at = timezone.now()
+        elif album.status == EventAlbum.Status.DRAFT:
+            album.published_at = None
+        album.save()
+        record_audit_event(
+            action="event.album.updated",
+            actor=request.user,
+            site_id=site.id,
+            target=album,
+            summary={"status": album.status},
+            request=request,
+        )
+        messages.success(request, "Album details were saved.")
+        return redirect("events:album_edit", site_id=site.id, album_id=album.id)
+    return render(
+        request,
+        "events/album_edit.html",
+        {
+            "site": site,
+            "album": album,
+            "form": form,
+            "photo_form": EventPhotoForm(),
+            "photos": album.photos.all(),
+            "public_hostname": site.domains.get(is_canonical=True).hostname,
+        },
+    )
+
+
+@site_staff_required
+@require_POST
+def album_photo_upload(request, site_id, album_id):
+    site = request.authorized_site
+    album = get_object_or_404(EventAlbum.objects.for_site(site), pk=album_id)
+    form = EventPhotoForm(request.POST, request.FILES)
+    if form.is_valid():
+        photo = form.save(commit=False)
+        photo.site = site
+        photo.album = album
+        photo.uploaded_by = request.user
+        photo.position = (
+            album.photos.aggregate(highest=Max("position"))["highest"] or 0
+        ) + 1
+        photo.save()
+        if form.cleaned_data["make_cover"] or album.cover_photo_id is None:
+            album.cover_photo = photo
+            album.save(update_fields=("cover_photo", "updated_at"))
+        record_audit_event(
+            action="event.photo.uploaded",
+            actor=request.user,
+            site_id=site.id,
+            target=photo,
+            summary={"album_id": str(album.id)},
+            request=request,
+        )
+        messages.success(request, "Photo added to the album.")
+        return redirect("events:album_edit", site_id=site.id, album_id=album.id)
+    album = EventAlbum.objects.for_site(site).select_related("occurrence__event").get(
+        pk=album.id
+    )
+    return render(
+        request,
+        "events/album_edit.html",
+        {
+            "site": site,
+            "album": album,
+            "form": EventAlbumEditForm(instance=album, site=site),
+            "photo_form": form,
+            "photos": album.photos.all(),
+            "public_hostname": site.domains.get(is_canonical=True).hostname,
+        },
+        status=400,
+    )
+
+
+@site_staff_required
+@require_POST
+def album_cover_set(request, site_id, album_id, photo_id):
+    site = request.authorized_site
+    album = get_object_or_404(EventAlbum.objects.for_site(site), pk=album_id)
+    photo = get_object_or_404(
+        EventPhoto.objects.for_site(site), pk=photo_id, album=album
+    )
+    album.cover_photo = photo
+    album.save(update_fields=("cover_photo", "updated_at"))
+    messages.success(request, "Album cover updated.")
+    return redirect("events:album_edit", site_id=site.id, album_id=album.id)
+
+
+@site_staff_required
+@require_http_methods(["GET", "POST"])
+def album_photo_edit(request, site_id, album_id, photo_id):
+    site = request.authorized_site
+    album = get_object_or_404(EventAlbum.objects.for_site(site), pk=album_id)
+    photo = get_object_or_404(
+        EventPhoto.objects.for_site(site), pk=photo_id, album=album
+    )
+    form = EventPhotoEditForm(request.POST or None, instance=photo)
+    if request.method == "POST" and form.is_valid():
+        photo = form.save()
+        record_audit_event(
+            action="event.photo.updated",
+            actor=request.user,
+            site_id=site.id,
+            target=photo,
+            summary={"album_id": str(album.id)},
+            request=request,
+        )
+        messages.success(request, "Photo details were saved.")
+        return redirect("events:album_edit", site_id=site.id, album_id=album.id)
+    return render(
+        request,
+        "events/photo_edit.html",
+        {"site": site, "album": album, "photo": photo, "form": form},
+    )
+
+
+@site_staff_required
+@require_POST
+def album_photo_delete(request, site_id, album_id, photo_id):
+    site = request.authorized_site
+    album = get_object_or_404(EventAlbum.objects.for_site(site), pk=album_id)
+    photo = get_object_or_404(
+        EventPhoto.objects.for_site(site), pk=photo_id, album=album
+    )
+    storage = photo.image.storage
+    image_name = photo.image.name
+    was_cover = album.cover_photo_id == photo.id
+    record_audit_event(
+        action="event.photo.deleted",
+        actor=request.user,
+        site_id=site.id,
+        target=photo,
+        summary={"album_id": str(album.id)},
+        request=request,
+    )
+    photo.delete()
+    if was_cover:
+        album.cover_photo = album.photos.first()
+        album.save(update_fields=("cover_photo", "updated_at"))
+    transaction.on_commit(lambda: storage.delete(image_name), robust=True)
+    messages.success(request, "Photo deleted.")
+    return redirect("events:album_edit", site_id=site.id, album_id=album.id)
 
 
 @site_staff_required
@@ -399,6 +616,61 @@ def cancel_event(request, site_id, event_id):
         "The event was canceled. Notices are being sent to affected attendees.",
     )
     return redirect("events:manage", site_id=site.id)
+
+
+def public_event_image(request, slug):
+    site = _public_site(request)
+    event = get_object_or_404(
+        Event.objects.for_site(site),
+        slug=slug,
+        status=Event.Status.PUBLISHED,
+    )
+    if not event.featured_image:
+        raise Http404("Event image not found.")
+    response = redirect(event.featured_image.url)
+    response["Cache-Control"] = "public, max-age=300"
+    return response
+
+
+def photo_album_list(request):
+    site = _public_site(request)
+    albums = list(
+        EventAlbum.objects.for_site(site)
+        .filter(
+            status=EventAlbum.Status.PUBLISHED,
+            occurrence__ends_at__lte=timezone.now(),
+            photos__isnull=False,
+        )
+        .select_related("occurrence__event", "cover_photo")
+        .prefetch_related("photos")
+        .distinct()
+    )
+    for album in albums:
+        album.display_cover = album.cover_photo or album.photos.first()
+    return render(
+        request,
+        "public/photo_albums.html",
+        {"site": site, "albums": albums},
+    )
+
+
+def photo_album_detail(request, slug):
+    site = _public_site(request)
+    album = get_object_or_404(
+        EventAlbum.objects.for_site(site)
+        .filter(
+            status=EventAlbum.Status.PUBLISHED,
+            occurrence__ends_at__lte=timezone.now(),
+        )
+        .select_related("occurrence__event")
+        .prefetch_related("photos"),
+        slug=slug,
+    )
+    return render(
+        request,
+        "public/photo_album_detail.html",
+        {"site": site, "album": album, "photos": album.photos.all()},
+    )
 
 
 def calendar(request):

@@ -2,7 +2,9 @@ from django.contrib import admin
 
 from .models import (
     Event,
+    EventAlbum,
     EventOccurrence,
+    EventPhoto,
     Invitation,
     Participant,
     Registration,
@@ -21,6 +23,19 @@ class EventAdmin(admin.ModelAdmin):
 class EventOccurrenceAdmin(admin.ModelAdmin):
     list_display = ("event", "site", "starts_at", "status", "venue_name")
     list_filter = ("status", "timezone")
+
+
+@admin.register(EventAlbum)
+class EventAlbumAdmin(admin.ModelAdmin):
+    list_display = ("title", "site", "occurrence", "status", "published_at")
+    list_filter = ("status",)
+    search_fields = ("title", "occurrence__event__title", "site__display_name")
+
+
+@admin.register(EventPhoto)
+class EventPhotoAdmin(admin.ModelAdmin):
+    list_display = ("album", "site", "caption", "position", "created_at")
+    search_fields = ("caption", "alt_text", "album__title")
 
 
 @admin.register(Invitation)

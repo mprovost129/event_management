@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import F, Q
+from django.utils import timezone
 
 from sites.models import SiteOwnedModel
 from sites.validators import validate_timezone
@@ -28,6 +29,7 @@ class Event(SiteOwnedModel):
     title = models.CharField(max_length=180)
     slug = models.SlugField(max_length=180)
     description = models.TextField(blank=True)
+    featured_image = models.ImageField(upload_to="event-images/%Y/%m/", blank=True)
     host_name = models.CharField(max_length=160, blank=True)
     visibility = models.CharField(
         max_length=20, choices=Visibility.choices, default=Visibility.PUBLIC
@@ -107,6 +109,110 @@ class EventOccurrence(SiteOwnedModel):
 
     def __str__(self):
         return f"{self.event} at {self.starts_at}"
+
+
+class EventAlbum(SiteOwnedModel):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published"
+
+    occurrence = models.ForeignKey(
+        EventOccurrence,
+        on_delete=models.PROTECT,
+        related_name="albums",
+    )
+    title = models.CharField(max_length=180)
+    slug = models.SlugField(max_length=180)
+    description = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.DRAFT,
+        db_index=True,
+    )
+    cover_photo = models.ForeignKey(
+        "EventPhoto",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="event_albums_created",
+    )
+    published_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-occurrence__starts_at", "title")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("site", "slug"),
+                name="events_unique_album_slug_per_site",
+            )
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.occurrence_id and self.site_id != self.occurrence.site_id:
+            raise ValidationError("An album must belong to its event date's site.")
+        if self.occurrence_id and self.occurrence.ends_at > timezone.now():
+            raise ValidationError(
+                {"occurrence": "Photo albums can be created after an event date ends."}
+            )
+        if self.cover_photo_id and (
+            self.cover_photo.album_id != self.id
+            or self.cover_photo.site_id != self.site_id
+        ):
+            raise ValidationError("The cover photo must belong to this album.")
+
+    @property
+    def event(self):
+        return self.occurrence.event
+
+    def __str__(self):
+        return self.title
+
+
+class EventPhoto(SiteOwnedModel):
+    album = models.ForeignKey(
+        EventAlbum,
+        on_delete=models.CASCADE,
+        related_name="photos",
+    )
+    image = models.ImageField(upload_to="event-albums/%Y/%m/")
+    caption = models.CharField(max_length=240, blank=True)
+    alt_text = models.CharField(
+        max_length=180,
+        help_text="Briefly describe what is visible for people using screen readers.",
+    )
+    position = models.PositiveIntegerField(default=0)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="event_photos_uploaded",
+    )
+
+    class Meta:
+        ordering = ("position", "created_at")
+        indexes = [
+            models.Index(
+                fields=("album", "position"), name="events_photo_album_pos_idx"
+            )
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.album_id and self.site_id != self.album.site_id:
+            raise ValidationError("A photo must belong to its album's site.")
+
+    def __str__(self):
+        return self.caption or self.alt_text
 
 
 class Invitation(SiteOwnedModel):

@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -313,11 +314,14 @@ def test_public_rsvp_needs_no_account_and_existing_response_uses_secure_link(cli
     assert secure_change.status_code == 200
     assert registration.response == Registration.Response.NOT_GOING
     assert registration.contact.first_name == "Alex"
-    assert OutboundMessage.objects.filter(
+    manage_message = OutboundMessage.objects.get(
         registration=registration,
         subject=f"Manage your RSVP: {event.title}",
-        body__contains=manage_url,
-    ).exists()
+    )
+    assert (
+        f"/events/{event.slug}/{occurrence.id}/respond/manage/"
+        in manage_message.body
+    )
     tampered_token = (
         ("x" if manage_token[0] != "x" else "y") + manage_token[1:]
     )
@@ -367,24 +371,18 @@ def test_public_manage_request_supports_manager_entered_response(client):
         },
         headers={"host": "boot-scooters.localhost"},
     )
-    manage_url = reverse(
-        "events:public_response_manage",
-        kwargs={
-            "slug": event.slug,
-            "occurrence_id": occurrence.id,
-            "token": public_rsvp_manage_token(registration),
-        },
+    manage_message = OutboundMessage.objects.get(
+        registration=registration,
+        subject=f"Manage your RSVP: {event.title}",
     )
+    emailed_url = manage_message.body.split("secure link:\n\n", 1)[1].splitlines()[0]
+    manage_url = urlsplit(emailed_url).path
 
     registration.refresh_from_db()
     assert response.status_code == 200
     assert "Check your email" in response.content.decode()
     assert registration.response == Registration.Response.GOING
-    assert OutboundMessage.objects.filter(
-        registration=registration,
-        subject=f"Manage your RSVP: {event.title}",
-        body__contains=manage_url,
-    ).exists()
+    assert manage_url in manage_message.body
     assert (
         client.get(
             manage_url,
@@ -430,6 +428,8 @@ def test_manager_invitation_queues_secure_link_for_invite_only_event(client):
     site.theme.logo.name = "site-logos/brand.png"
     site.theme.hero_image.name = "site-heroes/dance.jpg"
     site.theme.save(update_fields=("logo", "hero_image", "updated_at"))
+    event.featured_image.name = "event-images/friday-dance.jpg"
+    event.save(update_fields=("featured_image", "updated_at"))
     client.force_login(owner)
     invitation_url = reverse(
         "events:invite",
@@ -467,7 +467,10 @@ def test_manager_invitation_queues_secure_link_for_invite_only_event(client):
     assert "An evening of country line dancing." in message.body
     assert "An evening of country line dancing." in message.html_body
     assert "View invitation and RSVP" in message.html_body
-    assert "https://boot-scooters.localhost/branding/hero/?v=" in message.html_body
+    assert (
+        "https://boot-scooters.localhost/events/friday-dance/image/?v="
+        in message.html_body
+    )
     assert "https://boot-scooters.localhost/branding/logo/?v=" in message.html_body
     assert invitation.token_hash != token
     assert invite_page.status_code == 200

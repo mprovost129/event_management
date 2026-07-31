@@ -72,7 +72,7 @@ The internal code may use `tenant` or `organization` where technically helpful, 
 
 ### 4.2 Explicitly deferred
 
-- Community discussion forums, groups, chat, photo sharing, and document libraries
+- Community discussion forums, groups, chat, attendee-driven photo sharing, and document libraries; subscriber-managed past-event albums are supported
 - Artificial intelligence features
 - Native iOS and Android applications
 - Badge printing

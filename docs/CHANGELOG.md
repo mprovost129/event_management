@@ -6,6 +6,10 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Added
 
+- Subscriber-managed event promotional images and past-event photo albums with
+  draft/published visibility, validated image resizing, captions, required alt
+  text, cover selection, public galleries, tenant isolation, audit history, and
+  subscriber export coverage.
 - Branded multipart event emails for invitations, RSVP confirmations,
   management links, reminders, updates, and cancellations, including event
   descriptions, organization colors, public logo/hero imagery, useful details,

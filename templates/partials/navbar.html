@@ -9,6 +9,7 @@
             <a href="/">{{ site_navigation.home.navigation_label|default:"Home" }}</a>
             {% if site_navigation.about %}<a href="{% url 'content:about' %}">{{ site_navigation.about.navigation_label }}</a>{% endif %}
             <a href="{% url 'events:calendar' %}">Events</a>
+            <a href="{% url 'events:photo_album_list' %}">Photos</a>
             <a href="{% url 'content:blog_index' %}">Blog</a>
             <a href="{% url 'payments:membership_plans' %}">Memberships</a>
             <a href="{% url 'content:newsletter' %}">{{ site_navigation.newsletter.navigation_label|default:"Newsletter" }}</a>

@@ -1,0 +1,4 @@
+{% extends 'public/site_base.html' %}
+{% load tz %}
+{% block title %}{{ album.title }} | {{ site.display_name }}{% endblock %}
+{% block content %}<article class="site-theme"><a class="gh-back-link" href="{% url 'events:photo_album_list' %}">&larr; Photo albums</a><p class="site-accent fw-semibold mt-4">{% timezone site.timezone %}{{ album.occurrence.starts_at|date:"F j, Y" }}{% endtimezone %}</p><h1>{{ album.title }}</h1>{% if album.description %}<div class="lead">{{ album.description|linebreaks }}</div>{% endif %}<div class="gh-public-photo-grid">{% for photo in photos %}<figure><img src="{{ photo.image.url }}" alt="{{ photo.alt_text }}" loading="lazy">{% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}</figure>{% endfor %}</div></article>{% endblock %}

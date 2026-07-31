@@ -1,14 +1,17 @@
 from datetime import datetime, timedelta
+from io import BytesIO
 from zoneinfo import ZoneInfo
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
+from PIL import Image
 
 from contacts.models import Contact
-from events.models import Event, EventOccurrence
+from events.models import Event, EventAlbum, EventOccurrence, EventPhoto
 from events.services import (
     create_event_series,
     occurrence_starts,
@@ -54,6 +57,12 @@ def create_series(site, owner, *, visibility=Event.Visibility.PUBLIC, slug="less
         venue_name="Town Hall",
         capacity=40,
     )
+
+
+def image_upload(name="event.jpg", *, width=1800, height=1200):
+    source = BytesIO()
+    Image.new("RGB", (width, height), color="navy").save(source, format="JPEG")
+    return SimpleUploadedFile(name, source.getvalue(), content_type="image/jpeg")
 
 
 @pytest.mark.django_db
@@ -242,6 +251,203 @@ def test_new_event_redirects_to_highlighted_next_actions(client):
     assert "Invite contacts" in content
     assert "Add tickets" in content
     assert "Friday Night Line Dance" in content
+
+
+@pytest.mark.django_db
+def test_owner_uploads_event_promotional_image_for_public_page_and_email_url(client):
+    owner, site = create_site()
+    event = create_series(site, owner)
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("events:edit", args=(site.id, event.id)),
+        {
+            "title": event.title,
+            "slug": event.slug,
+            "description": event.description,
+            "featured_image": image_upload(),
+            "host_name": event.host_name,
+            "visibility": event.visibility,
+            "status": event.status,
+            "max_guests": event.max_guests,
+        },
+    )
+
+    event.refresh_from_db()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    public_page = client.get(
+        reverse("events:detail", kwargs={"slug": event.slug}),
+        headers={"host": "boot-scooters.localhost"},
+    )
+    image_response = client.get(
+        reverse("events:event_image", kwargs={"slug": event.slug}),
+        headers={"host": "boot-scooters.localhost"},
+    )
+
+    assert response.status_code == 302
+    assert event.featured_image.name.startswith("event-images/")
+    assert "gh-public-event-image" in public_page.content.decode()
+    assert image_response.status_code == 302
+    assert image_response.headers["Cache-Control"] == "public, max-age=300"
+
+
+@pytest.mark.django_db
+def test_owner_builds_and_publishes_album_for_completed_event(client):
+    owner, site = create_site()
+    past_start = timezone.now() - timedelta(days=2)
+    event = create_event_series(
+        site=site,
+        creator=owner,
+        event_values={
+            "title": "Summer social",
+            "slug": "summer-social",
+            "description": "A joyful night with friends.",
+            "host_name": "Pat",
+            "visibility": Event.Visibility.PUBLIC,
+            "status": Event.Status.PUBLISHED,
+            "recurrence": Event.Recurrence.NONE,
+            "recurrence_interval": 1,
+            "recurrence_until": None,
+            "max_guests": 2,
+        },
+        first_start=past_start,
+        first_end=past_start + timedelta(hours=2),
+        venue_name="Town Hall",
+    )
+    occurrence = event.occurrences.get()
+    client.force_login(owner)
+
+    create_response = client.post(
+        reverse("events:album_create", args=(site.id,)),
+        {
+            "occurrence": str(occurrence.id),
+            "title": "Summer Social Highlights",
+            "slug": "summer-social-highlights",
+            "description": "Favorite moments from the dance floor.",
+        },
+    )
+    album = EventAlbum.objects.get(site=site)
+    early_publish = client.post(
+        reverse("events:album_edit", args=(site.id, album.id)),
+        {
+            "title": album.title,
+            "slug": album.slug,
+            "description": album.description,
+            "status": EventAlbum.Status.PUBLISHED,
+        },
+    )
+    upload_response = client.post(
+        reverse("events:album_photo_upload", args=(site.id, album.id)),
+        {
+            "image": image_upload("dance-floor.jpg"),
+            "caption": "Everyone on the dance floor",
+            "alt_text": "A group of dancers smiling under blue lights",
+            "make_cover": "on",
+        },
+    )
+    photo = EventPhoto.objects.get(album=album)
+    client.post(
+        reverse("events:album_photo_upload", args=(site.id, album.id)),
+        {
+            "image": image_upload("group-photo.jpg"),
+            "caption": "Friends posing after the last song",
+            "alt_text": "Six friends posing together near the stage",
+        },
+    )
+    second_photo = EventPhoto.objects.exclude(pk=photo.id).get(album=album)
+    cover_response = client.post(
+        reverse(
+            "events:album_cover_set",
+            args=(site.id, album.id, second_photo.id),
+        )
+    )
+    album.refresh_from_db()
+    selected_cover_id = album.cover_photo_id
+    photo_edit_response = client.post(
+        reverse(
+            "events:album_photo_edit",
+            args=(site.id, album.id, photo.id),
+        ),
+        {
+            "caption": "Opening dance with everyone together",
+            "alt_text": "A large group dancing together under blue lights",
+        },
+    )
+    publish_response = client.post(
+        reverse("events:album_edit", args=(site.id, album.id)),
+        {
+            "title": album.title,
+            "slug": album.slug,
+            "description": album.description,
+            "status": EventAlbum.Status.PUBLISHED,
+        },
+    )
+
+    album.refresh_from_db()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    public_list = client.get(
+        reverse("events:photo_album_list"),
+        headers={"host": "boot-scooters.localhost"},
+    )
+    public_detail = client.get(
+        reverse("events:photo_album_detail", args=(album.slug,)),
+        headers={"host": "boot-scooters.localhost"},
+    )
+    delete_response = client.post(
+        reverse(
+            "events:album_photo_delete",
+            args=(site.id, album.id, second_photo.id),
+        )
+    )
+    album.refresh_from_db()
+    other_owner, other_site = create_site("other-group")
+    client.force_login(other_owner)
+    cross_tenant = client.get(
+        reverse("events:album_edit", args=(other_site.id, album.id))
+    )
+
+    assert create_response.status_code == 302
+    assert album.status == EventAlbum.Status.PUBLISHED
+    assert early_publish.status_code == 200
+    assert "Add at least one photo" in early_publish.content.decode()
+    assert upload_response.status_code == 302
+    assert publish_response.status_code == 302
+    assert cover_response.status_code == 302
+    assert photo_edit_response.status_code == 302
+    assert selected_cover_id == second_photo.id
+    assert delete_response.status_code == 302
+    assert album.cover_photo_id == photo.id
+    assert album.photos.count() == 1
+    assert photo.image.name.startswith("event-albums/")
+    assert "Summer Social Highlights" in public_list.content.decode()
+    assert "Opening dance with everyone together" in public_detail.content.decode()
+    assert "A large group dancing together" in public_detail.content.decode()
+    assert cross_tenant.status_code == 404
+
+
+@pytest.mark.django_db
+def test_future_event_date_cannot_be_used_for_past_event_album(client):
+    owner, site = create_site()
+    event = create_series(site, owner)
+    occurrence = event.occurrences.first()
+    client.force_login(owner)
+
+    page = client.get(reverse("events:album_create", args=(site.id,)))
+    response = client.post(
+        reverse("events:album_create", args=(site.id,)),
+        {
+            "occurrence": str(occurrence.id),
+            "title": "Too early",
+            "slug": "too-early",
+            "description": "This event has not happened yet.",
+        },
+    )
+
+    assert occurrence not in page.context["form"].fields["occurrence"].queryset
+    assert response.status_code == 200
+    assert not EventAlbum.objects.exists()
 
 
 @pytest.mark.django_db

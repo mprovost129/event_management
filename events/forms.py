@@ -2,10 +2,12 @@ from zoneinfo import ZoneInfo
 
 from django import forms
 from django.db import models
+from django.utils import timezone
 
 from contacts.models import Contact
+from content.images import prepare_image
 
-from .models import Event, EventOccurrence, Registration
+from .models import Event, EventAlbum, EventOccurrence, EventPhoto, Registration
 from .services import local_datetime, occurrence_starts
 
 
@@ -24,6 +26,7 @@ class EventForm(forms.ModelForm):
             "title",
             "slug",
             "description",
+            "featured_image",
             "host_name",
             "visibility",
             "status",
@@ -43,6 +46,7 @@ class EventForm(forms.ModelForm):
                     "placeholder": "What should people know before they decide to attend?",
                 }
             ),
+            "featured_image": forms.ClearableFileInput(attrs={"accept": "image/*"}),
             "visibility": forms.RadioSelect,
             "recurrence": forms.RadioSelect,
             "recurrence_until": forms.DateInput(attrs={"type": "date"}),
@@ -57,6 +61,9 @@ class EventForm(forms.ModelForm):
         self.fields[
             "host_name"
         ].help_text = "Optional public name for the person or group hosting."
+        self.fields[
+            "featured_image"
+        ].help_text = "A wide promotional image used on the event page and in event emails."
         self.fields["max_guests"].label = "Guests per RSVP"
         self.fields[
             "max_guests"
@@ -74,6 +81,11 @@ class EventForm(forms.ModelForm):
         if Event.objects.for_site(self.site).filter(slug=slug).exists():
             raise forms.ValidationError("That event URL is already in use.")
         return slug
+
+    def clean_featured_image(self):
+        return prepare_image(
+            self.cleaned_data.get("featured_image"), max_dimension=2200
+        )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -126,6 +138,7 @@ class EventDetailsForm(forms.ModelForm):
             "title",
             "slug",
             "description",
+            "featured_image",
             "host_name",
             "visibility",
             "status",
@@ -133,6 +146,7 @@ class EventDetailsForm(forms.ModelForm):
         )
         widgets = {
             "description": forms.Textarea(attrs={"rows": 8}),
+            "featured_image": forms.ClearableFileInput(attrs={"accept": "image/*"}),
             "visibility": forms.RadioSelect,
         }
 
@@ -142,6 +156,9 @@ class EventDetailsForm(forms.ModelForm):
         self.fields[
             "slug"
         ].help_text = "Changing this also changes the event's public web address."
+        self.fields[
+            "featured_image"
+        ].help_text = "A wide promotional image used on the event page and in event emails."
         self.fields["max_guests"].label = "Guests per RSVP"
 
     def clean_slug(self):
@@ -152,6 +169,101 @@ class EventDetailsForm(forms.ModelForm):
         if existing.exists():
             raise forms.ValidationError("That event URL is already in use.")
         return slug
+
+    def clean_featured_image(self):
+        return prepare_image(
+            self.cleaned_data.get("featured_image"), max_dimension=2200
+        )
+
+
+class PastOccurrenceChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, occurrence):
+        local_start = occurrence.starts_at.astimezone(ZoneInfo(occurrence.timezone))
+        return f"{occurrence.event.title} — {local_start.strftime('%B %d, %Y')}"
+
+
+class EventAlbumCreateForm(forms.ModelForm):
+    occurrence = PastOccurrenceChoiceField(queryset=EventOccurrence.objects.none())
+
+    class Meta:
+        model = EventAlbum
+        fields = ("occurrence", "title", "slug", "description")
+        widgets = {"description": forms.Textarea(attrs={"rows": 5})}
+
+    def __init__(self, *args, site, **kwargs):
+        self.site = site
+        super().__init__(*args, **kwargs)
+        self.instance.site = site
+        self.fields["occurrence"].queryset = (
+            EventOccurrence.objects.for_site(site)
+            .filter(ends_at__lte=timezone.now())
+            .select_related("event")
+            .order_by("-starts_at")
+        )
+        self.fields["slug"].help_text = (
+            "Used in the public album address. Lowercase letters, numbers, and hyphens only."
+        )
+
+    def clean_slug(self):
+        slug = self.cleaned_data["slug"].lower()
+        if EventAlbum.objects.for_site(self.site).filter(slug=slug).exists():
+            raise forms.ValidationError("That album URL is already in use.")
+        return slug
+
+
+class EventAlbumEditForm(forms.ModelForm):
+    class Meta:
+        model = EventAlbum
+        fields = ("title", "slug", "description", "status")
+        widgets = {"description": forms.Textarea(attrs={"rows": 5})}
+
+    def __init__(self, *args, site, **kwargs):
+        self.site = site
+        super().__init__(*args, **kwargs)
+
+    def clean_slug(self):
+        slug = self.cleaned_data["slug"].lower()
+        if (
+            EventAlbum.objects.for_site(self.site)
+            .filter(slug=slug)
+            .exclude(pk=self.instance.pk)
+            .exists()
+        ):
+            raise forms.ValidationError("That album URL is already in use.")
+        return slug
+
+    def clean(self):
+        cleaned = super().clean()
+        if (
+            cleaned.get("status") == EventAlbum.Status.PUBLISHED
+            and self.instance.pk
+            and not self.instance.photos.exists()
+        ):
+            self.add_error("status", "Add at least one photo before publishing.")
+        return cleaned
+
+
+class EventPhotoForm(forms.ModelForm):
+    make_cover = forms.BooleanField(
+        required=False,
+        label="Use as the album cover",
+    )
+
+    class Meta:
+        model = EventPhoto
+        fields = ("image", "caption", "alt_text")
+        widgets = {
+            "image": forms.ClearableFileInput(attrs={"accept": "image/*"}),
+        }
+
+    def clean_image(self):
+        return prepare_image(self.cleaned_data.get("image"), max_dimension=2400)
+
+
+class EventPhotoEditForm(forms.ModelForm):
+    class Meta:
+        model = EventPhoto
+        fields = ("caption", "alt_text")
 
 
 class OccurrenceEditForm(forms.ModelForm):
