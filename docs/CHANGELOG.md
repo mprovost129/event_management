@@ -6,6 +6,9 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Added
 
+- S3 media URL hardening that forces Signature Version 4, normalizes accidental
+  AWS object URLs used as endpoints, preserves legacy object prefixes, and
+  validates AWS endpoint configuration.
 - Subscriber-level site creation policy: one self-service trial at a time,
   active paid status before another owned organization, separate subscriptions,
   invited-manager access excluded, and transaction-safe enforcement.

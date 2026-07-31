@@ -77,12 +77,20 @@ worker where needed:
 | `AWS_STORAGE_BUCKET_NAME` | Private media bucket name |
 | `AWS_S3_REGION_NAME` | Bucket region, or blank when the provider does not use one |
 | `AWS_S3_ENDPOINT_URL` | Provider endpoint, or blank for AWS S3 |
+| `AWS_MEDIA_LOCATION` | Optional object-key prefix; blank for a new bucket |
 | `AWS_ACCESS_KEY_ID` | Bucket-scoped credential |
 | `AWS_SECRET_ACCESS_KEY` | Bucket-scoped secret |
 
 The Blueprint also routes Django account verification and password-reset email
 through the Resend HTTPS API backend. No SMTP host, port, username, or password
 is required.
+
+For AWS S3, never paste a bucket page, object URL, or URL containing a path into
+`AWS_S3_ENDPOINT_URL`; leave it blank and provide only the bucket and region.
+The Blueprint forces `AWS_S3_SIGNATURE_VERSION=s3v4`. If correcting a legacy
+endpoint that included a path, copy that path without leading/trailing slashes
+to `AWS_MEDIA_LOCATION` before clearing the endpoint so existing object keys
+continue to resolve.
 
 Do not paste `.env` wholesale into Render. It can contain local or sandbox
 values that should not be promoted. If a new `sync: false` variable is added

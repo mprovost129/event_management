@@ -269,6 +269,11 @@ That command permanently deletes the site and its retained tenant records. Gener
 
 Production uses an S3-compatible bucket through `django-storages`. Configure `MEDIA_STORAGE_BACKEND=s3`, the bucket, its region or endpoint, and credentials supplied by the hosting platform. Local filesystem media is intentionally rejected by the deployment system check.
 
+For AWS S3, leave `AWS_S3_ENDPOINT_URL` blank; it is only for non-AWS
+S3-compatible providers. Use `AWS_MEDIA_LOCATION` for an optional object-key
+prefix and keep `AWS_S3_SIGNATURE_VERSION=s3v4`. Supplying an AWS object or
+bucket URL as the endpoint can produce invalid signed image URLs.
+
 Organization-document uploads are restricted by `DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS` and `DOCUMENT_UPLOAD_MAX_BYTES` (10 MiB by default locally and 3,500,000 bytes on the Cloudmersive free tier). Staff downloads pass through tenant and role authorization before storage is read. Local development may use `DOCUMENT_UPLOAD_SCAN_BACKEND=disabled`. Production uses `DOCUMENT_UPLOAD_SCAN_BACKEND=cloudmersive` with `CLOUDMERSIVE_API_KEY`, `CLOUDMERSIVE_API_URL`, and `CLOUDMERSIVE_TIMEOUT_SECONDS`. Only an explicit clean result permits storage; detections, policy rejections, quota or rate limits, scanner outages, and unexpected responses fail closed and leave the upload unsaved. The `clamav` backend remains available as a self-hosted alternative.
 
 Cloudmersive provisioning, free-tier limits, EICAR validation, outage testing, privacy review, and troubleshooting are documented in `CLOUDMERSIVE_SETUP.md`. Self-hosted ClamAV operations are documented separately in `CLAMAV_SETUP.md`.

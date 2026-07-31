@@ -257,6 +257,35 @@ def deployment_product_check(app_configs, **kwargs):
                 id="platform.E033",
             )
         )
+    s3_endpoint_url = getattr(settings, "AWS_S3_ENDPOINT_URL", "")
+    if (
+        getattr(settings, "MEDIA_STORAGE_BACKEND", "filesystem") == "s3"
+        and s3_endpoint_url
+    ):
+        parsed_s3_endpoint = urlparse(s3_endpoint_url)
+        if (parsed_s3_endpoint.hostname or "").lower().endswith(".amazonaws.com"):
+            issues.append(
+                Warning(
+                    "AWS_S3_ENDPOINT_URL should be blank when using AWS S3.",
+                    hint=(
+                        "Set the bucket in AWS_STORAGE_BUCKET_NAME, the region in "
+                        "AWS_S3_REGION_NAME, and use AWS_MEDIA_LOCATION only for "
+                        "an object-key prefix."
+                    ),
+                    id="platform.W005",
+                )
+            )
+    if (
+        getattr(settings, "MEDIA_STORAGE_BACKEND", "filesystem") == "s3"
+        and getattr(settings, "AWS_S3_SIGNATURE_VERSION", "s3v4") != "s3v4"
+    ):
+        issues.append(
+            Error(
+                "AWS S3 media URLs require Signature Version 4.",
+                hint="Set AWS_S3_SIGNATURE_VERSION=s3v4.",
+                id="platform.E039",
+            )
+        )
     if (
         settings.DOCUMENT_UPLOAD_SCAN_BACKEND == "cloudmersive"
         and not settings.CLOUDMERSIVE_API_KEY

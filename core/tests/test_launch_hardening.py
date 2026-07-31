@@ -7,6 +7,7 @@ from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 
+from config.storage import normalize_s3_endpoint
 from core.checks import deployment_product_check, product_configuration_check
 from core.logging import JsonFormatter, RequestContextFilter
 from ops.models import SystemHeartbeat
@@ -168,6 +169,49 @@ def test_production_deployment_requires_document_malware_scanning():
     issue_ids = {issue.id for issue in deployment_product_check(None)}
 
     assert "platform.E033" in issue_ids
+
+
+@override_settings(
+    DEBUG=False,
+    MEDIA_STORAGE_BACKEND="s3",
+    AWS_S3_ENDPOINT_URL=(
+        "https://example-bucket.s3.us-east-1.amazonaws.com/media/example-bucket"
+    ),
+)
+def test_production_deployment_warns_when_aws_object_url_is_used_as_endpoint():
+    issue_ids = {issue.id for issue in deployment_product_check(None)}
+
+    assert "platform.W005" in issue_ids
+
+
+@override_settings(
+    DEBUG=False,
+    MEDIA_STORAGE_BACKEND="s3",
+    AWS_S3_SIGNATURE_VERSION="s3",
+)
+def test_production_deployment_requires_s3_signature_version_4():
+    issue_ids = {issue.id for issue in deployment_product_check(None)}
+
+    assert "platform.E039" in issue_ids
+
+
+def test_aws_endpoint_normalization_preserves_legacy_object_prefix():
+    endpoint_url, location = normalize_s3_endpoint(
+        "https://example-bucket.s3.us-east-1.amazonaws.com/media/example-bucket",
+    )
+
+    assert endpoint_url is None
+    assert location == "media/example-bucket"
+
+
+def test_non_aws_s3_compatible_endpoint_is_preserved():
+    endpoint_url, location = normalize_s3_endpoint(
+        "https://objects.example.com",
+        "media",
+    )
+
+    assert endpoint_url == "https://objects.example.com"
+    assert location == "media"
 
 
 @override_settings(

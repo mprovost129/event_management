@@ -2,6 +2,7 @@
 from django.core.exceptions import ImproperlyConfigured
 
 from config.env import env, env_bool, env_int, env_list
+from config.storage import normalize_s3_endpoint
 
 from .base import *
 
@@ -22,15 +23,24 @@ MEDIA_STORAGE_BACKEND = env("MEDIA_STORAGE_BACKEND", "s3").lower()
 if MEDIA_STORAGE_BACKEND == "s3":
     INSTALLED_APPS += ["storages"]
     bucket_name = env("AWS_STORAGE_BUCKET_NAME")
+    # AWS SDK region/bucket resolution is safer than treating an S3 object URL
+    # as a custom endpoint. Preserve a legacy path prefix so existing uploads
+    # remain addressable after normalizing the endpoint.
+    endpoint_url, media_location = normalize_s3_endpoint(
+        AWS_S3_ENDPOINT_URL,
+        AWS_MEDIA_LOCATION,
+    )
     s3_options = {
         "bucket_name": bucket_name,
         "region_name": env("AWS_S3_REGION_NAME", "", allow_blank=True) or None,
-        "endpoint_url": env("AWS_S3_ENDPOINT_URL", "", allow_blank=True) or None,
+        "endpoint_url": endpoint_url,
         "access_key": env("AWS_ACCESS_KEY_ID", "", allow_blank=True) or None,
         "secret_key": env("AWS_SECRET_ACCESS_KEY", "", allow_blank=True) or None,
         "default_acl": None,
         "file_overwrite": False,
         "querystring_auth": env_bool("AWS_QUERYSTRING_AUTH", True),
+        "signature_version": AWS_S3_SIGNATURE_VERSION,
+        "location": media_location or None,
     }
     STORAGES["default"] = {
         "BACKEND": "storages.backends.s3.S3Storage",

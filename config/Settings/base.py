@@ -176,12 +176,15 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", "", allow_blank=True)
+AWS_MEDIA_LOCATION = env("AWS_MEDIA_LOCATION", "", allow_blank=True).strip("/")
+AWS_S3_SIGNATURE_VERSION = env("AWS_S3_SIGNATURE_VERSION", "s3v4")
 
 STORAGES = {
     "default": {

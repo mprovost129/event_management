@@ -330,6 +330,10 @@ envVarGroups:
         value: s3
       - key: AWS_QUERYSTRING_AUTH
         value: "true"
+      - key: AWS_S3_SIGNATURE_VERSION
+        value: s3v4
+      - key: AWS_MEDIA_LOCATION
+        sync: false
       - key: HEALTHCHECK_REQUIRE_BACKGROUND_WORKERS
         value: "true"
       - key: BACKGROUND_HEARTBEAT_MAX_AGE_SECONDS
