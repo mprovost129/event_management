@@ -305,7 +305,14 @@ def invite_contacts(request, site_id, occurrence_id):
                 token=token,
                 response_url=f"{scheme}://{hostname}{response_path}",
             )
-        messages.success(request, f"Queued {len(invitations)} invitation(s).")
+        invitation_count = len(invitations)
+        if invitation_count == 1:
+            success_message = "Invitation is being sent to 1 person."
+        else:
+            success_message = (
+                f"Invitations are being sent to {invitation_count} people."
+            )
+        messages.success(request, success_message)
         return redirect("events:manage", site_id=site.id)
     return render(
         request,

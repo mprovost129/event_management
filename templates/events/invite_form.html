@@ -26,7 +26,7 @@
             <div class="gh-empty-note"><h3>No contacts are ready to invite</h3><p>Add a contact with an email address, then come back to this event.</p><a class="btn btn-outline-primary" href="{% url 'contacts:create' site.id %}">Add contact</a></div>
             {% endif %}
         </section>
-        <aside class="gh-editor-sidebar"><section class="gh-launch-card"><p class="gh-step-label">Send</p><h2>Personal invitation links</h2><p>Each selected person receives their own secure response link for this date. Existing invitations will not be duplicated.</p><button class="btn btn-light w-100" type="submit"{% if not form.contacts.field.queryset %} disabled{% endif %}>Queue invitations</button><a class="btn btn-link text-white w-100" href="{% url 'events:manage' site.id %}">Cancel</a></section><div class="gh-editor-tip"><strong>Going, Maybe, or Not going</strong>Responses flow into the event roster automatically, including each guest's name.</div></aside>
+        <aside class="gh-editor-sidebar"><section class="gh-launch-card"><p class="gh-step-label">Send</p><h2>Personal invitation links</h2><p>Each selected person receives their own secure response link for this date. Existing invitations will not be duplicated.</p><button class="btn btn-light w-100" type="submit"{% if not form.contacts.field.queryset %} disabled{% endif %}>Send invitations</button><a class="btn btn-link text-white w-100" href="{% url 'events:manage' site.id %}">Cancel</a></section><div class="gh-editor-tip"><strong>Going, Maybe, or Not going</strong>Responses flow into the event roster automatically, including each guest's name.</div></aside>
     </form>
 </div>
 {% endtimezone %}

@@ -423,13 +423,16 @@ def test_manager_invitation_queues_secure_link_for_invite_only_event(client):
         site=site, first_name="Alex", last_name="Dancer", email="alex@example.com"
     )
     client.force_login(owner)
+    invitation_url = reverse(
+        "events:invite",
+        kwargs={"site_id": site.id, "occurrence_id": occurrence.id},
+    )
+    form_page = client.get(invitation_url)
 
     response = client.post(
-        reverse(
-            "events:invite",
-            kwargs={"site_id": site.id, "occurrence_id": occurrence.id},
-        ),
+        invitation_url,
         {"contacts": [str(contact.id)]},
+        follow=True,
     )
 
     invitation = Invitation.objects.get(contact=contact, occurrence=occurrence)
@@ -447,7 +450,10 @@ def test_manager_invitation_queues_secure_link_for_invite_only_event(client):
         headers={"host": "boot-scooters.localhost"},
     )
 
-    assert response.status_code == 302
+    assert form_page.status_code == 200
+    assert "Send invitations" in form_page.content.decode()
+    assert response.status_code == 200
+    assert "Invitation is being sent to 1 person." in response.content.decode()
     assert invitation.token_hash != token
     assert invite_page.status_code == 200
     assert "Friday dance" in invite_page.content.decode()
