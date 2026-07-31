@@ -49,3 +49,49 @@ class ResendVerificationForm(forms.Form):
 
     def clean_email(self):
         return User.objects.normalize_email(self.cleaned_data["email"]).lower()
+
+
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = (
+            "avatar",
+            "username",
+            "first_name",
+            "last_name",
+            "mailing_address_line1",
+            "mailing_address_line2",
+            "mailing_city",
+            "mailing_state",
+            "mailing_postal_code",
+            "mailing_country",
+        )
+        widgets = {
+            "avatar": forms.ClearableFileInput(
+                attrs={"class": "form-control", "accept": "image/*"}
+            ),
+            "username": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Your public name"}
+            ),
+            "first_name": forms.TextInput(attrs={"class": "form-control"}),
+            "last_name": forms.TextInput(attrs={"class": "form-control"}),
+            "mailing_address_line1": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Street address"}
+            ),
+            "mailing_address_line2": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Apt, suite, unit (optional)",
+                }
+            ),
+            "mailing_city": forms.TextInput(attrs={"class": "form-control"}),
+            "mailing_state": forms.TextInput(attrs={"class": "form-control"}),
+            "mailing_postal_code": forms.TextInput(attrs={"class": "form-control"}),
+            "mailing_country": forms.TextInput(attrs={"class": "form-control"}),
+        }
+        help_texts = {
+            "avatar": "Optional profile image shown in your account menu.",
+        }
+
+    def clean_username(self):
+        return self.cleaned_data["username"].strip()

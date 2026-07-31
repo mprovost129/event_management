@@ -14,8 +14,7 @@
     <div class="gh-public-photo-grid">
         {% for photo in photos %}
         <figure>
-            {# The grid loads thumbnails. The link opens the full-size file for
-               anyone who wants a closer look or wants to save it. #}
+            {# The grid loads thumbnails. The link opens the full-size file for anyone who wants a closer look or wants to save it. #}
             <a href="{{ photo.image.url }}" target="_blank" rel="noopener">
                 <img src="{{ photo.preview.url }}"
                      alt="{{ photo.alt_text }}"

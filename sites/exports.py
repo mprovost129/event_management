@@ -1,6 +1,6 @@
 from attendance.models import AttendanceRecord
 from communications.models import Campaign, CampaignRecipient, OutboundMessage
-from contacts.models import Contact, Member, MembershipPlan, MemberSubscription
+from contacts.models import Contact, Member, MemberSubscription
 from content.models import BlogPost, SitePage
 from events.models import (
     Event,
@@ -12,16 +12,7 @@ from events.models import (
 )
 from notifications.models import Notification
 from ops.models import AuditEvent
-from payments.models import (
-    Dispute,
-    FinancialTransition,
-    MembershipPayment,
-    Order,
-    OrderLine,
-    Refund,
-    Ticket,
-    TicketType,
-)
+from payments.models import MembershipPayment, Order
 from reviews.models import Review
 from workspace.models import (
     Activity,
@@ -97,27 +88,11 @@ def site_export(site):
             "ends_on",
             "notes",
         ),
-        "membership_plans": _rows(
-            MembershipPlan.objects.for_site(site),
-            "id",
-            "name",
-            "description",
-            "amount_cents",
-            "currency",
-            "interval",
-            "stripe_product_id",
-            "stripe_price_id",
-            "is_active",
-        ),
         "member_subscriptions": _rows(
             MemberSubscription.objects.for_site(site),
             "member_id",
             "plan_id",
             "status",
-            "connected_account_id",
-            "stripe_customer_id",
-            "stripe_subscription_id",
-            "stripe_checkout_session_id",
             "current_period_starts_at",
             "current_period_ends_at",
             "cancel_at_period_end",
@@ -196,21 +171,6 @@ def site_export(site):
             "note",
             "recorded_at",
         ),
-        "ticket_types": _rows(
-            TicketType.objects.for_site(site),
-            "id",
-            "occurrence_id",
-            "name",
-            "description",
-            "amount_cents",
-            "currency",
-            "quantity",
-            "max_per_order",
-            "sales_start_at",
-            "sales_end_at",
-            "refund_policy",
-            "is_active",
-        ),
         "orders": _rows(
             Order.objects.for_site(site),
             "id",
@@ -222,68 +182,14 @@ def site_export(site):
             "application_fee_bps",
             "application_fee_cents",
             "application_fee_refunded_cents",
-            "stripe_checkout_session_id",
-            "stripe_payment_intent_id",
-            "stripe_charge_id",
-            "stripe_balance_transaction_id",
             "stripe_fee_cents",
             "stripe_net_cents",
             "status",
             "paid_at",
         ),
-        "order_lines": _rows(
-            OrderLine.objects.filter(order__site=site),
-            "order_id",
-            "ticket_type_id",
-            "description",
-            "unit_amount_cents",
-            "quantity",
-            "line_total_cents",
-            "created_at",
-        ),
-        "tickets": _rows(
-            Ticket.objects.for_site(site),
-            "order_line_id",
-            "participant_id",
-            "display_code",
-            "status",
-        ),
-        "refunds": _rows(
-            Refund.objects.for_site(site),
-            "order_id",
-            "amount_cents",
-            "reason",
-            "status",
-            "stripe_refund_id",
-            "succeeded_at",
-            "failure_reason",
-        ),
-        "disputes": _rows(
-            Dispute.objects.for_site(site),
-            "order_id",
-            "stripe_dispute_id",
-            "amount_cents",
-            "status",
-            "reason",
-            "due_by",
-        ),
-        "financial_history": _rows(
-            # Ordered forward so the file reads as a timeline. The model's own
-            # ordering is newest-first, which suits a screen, not an archive.
-            FinancialTransition.objects.for_site(site).order_by("created_at"),
-            "order_id",
-            "refund_id",
-            "event_type",
-            "previous_status",
-            "new_status",
-            "stripe_event_id",
-            "details",
-            "created_at",
-        ),
         "membership_payments": _rows(
             MembershipPayment.objects.for_site(site),
             "member_subscription_id",
-            "stripe_invoice_id",
             "amount_due_cents",
             "amount_paid_cents",
             "currency",

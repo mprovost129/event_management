@@ -8,8 +8,16 @@ from .managers import UserManager
 
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
+    username = models.CharField(max_length=80, blank=True)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
+    avatar = models.ImageField(upload_to="user-avatars/%Y/%m/", blank=True)
+    mailing_address_line1 = models.CharField(max_length=180, blank=True)
+    mailing_address_line2 = models.CharField(max_length=180, blank=True)
+    mailing_city = models.CharField(max_length=80, blank=True)
+    mailing_state = models.CharField(max_length=80, blank=True)
+    mailing_postal_code = models.CharField(max_length=20, blank=True)
+    mailing_country = models.CharField(max_length=80, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
@@ -29,6 +37,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def save(self, *args, **kwargs):
         self.email = self.email.strip().lower()
+        self.username = self.username.strip()
         super().save(*args, **kwargs)
 
     def get_full_name(self):

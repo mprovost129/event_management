@@ -4,7 +4,7 @@ import re
 
 import pytest
 from django.conf import settings
-from django.test import override_settings
+from django.test import RequestFactory, override_settings
 from django.urls import reverse
 
 from config.storage import normalize_s3_endpoint
@@ -18,24 +18,30 @@ def test_data_tables_and_images_keep_baseline_accessibility_markup():
     failures = []
     for template in (settings.BASE_DIR / "templates").rglob("*.html"):
         source = template.read_text(encoding="utf-8")
-        for header in re.findall(r"<th\b[^>]*>", source, flags=re.IGNORECASE):
-            if not re.search(r"\bscope=[\"'](?:col|row)[\"']", header):
-                failures.append(f"{template.relative_to(settings.BASE_DIR)}: {header}")
-        for image in re.findall(r"<img\b[^>]*>", source, flags=re.IGNORECASE):
-            if not re.search(r"\balt=[\"']", image):
-                failures.append(f"{template.relative_to(settings.BASE_DIR)}: {image}")
+        failures.extend(
+            f"{template.relative_to(settings.BASE_DIR)}: {header}"
+            for header in re.findall(r"<th\b[^>]*>", source, flags=re.IGNORECASE)
+            if not re.search(r"\bscope=[\"'](?:col|row)[\"']", header)
+        )
+        failures.extend(
+            f"{template.relative_to(settings.BASE_DIR)}: {image}"
+            for image in re.findall(r"<img\b[^>]*>", source, flags=re.IGNORECASE)
+            if not re.search(r"\balt=[\"']", image)
+        )
         responsive_regions = re.findall(
             r'<div\b[^>]*class="[^"]*\btable-responsive\b[^"]*"[^>]*>', source
         )
-        for region in responsive_regions:
+        failures.extend(
+            f"{template.relative_to(settings.BASE_DIR)}: {region}"
+            for region in responsive_regions
             if (
                 'role="region"' not in region
                 or 'tabindex="0"' not in region
                 or not re.search(r'\baria-label(?:ledby)?="', region)
-            ):
-                failures.append(f"{template.relative_to(settings.BASE_DIR)}: {region}")
+            )
+        )
 
-    assert failures == []
+    assert not failures
 
 
 @override_settings(RELEASE_VERSION="release-abc123")
@@ -54,6 +60,65 @@ def test_structured_logs_include_the_release_identifier():
     payload = json.loads(JsonFormatter().format(record))
 
     assert payload["release"] == "release-abc123"
+
+
+def test_structured_logs_include_request_diagnostics_for_404_records():
+    request = RequestFactory().get(
+        "/platform-ops/",
+        HTTP_HOST="tenant.localhost",
+        REMOTE_ADDR="10.20.30.40",
+        HTTP_X_FORWARDED_FOR="198.51.100.20",
+    )
+    record = logging.LogRecord(
+        name="django.request",
+        level=logging.WARNING,
+        pathname=__file__,
+        lineno=1,
+        msg="Not Found: /platform-ops/",
+        args=(),
+        exc_info=None,
+    )
+    record.request = request
+    record.status_code = 404
+    RequestContextFilter().filter(record)
+
+    payload = json.loads(JsonFormatter().format(record))
+
+    assert payload["status_code"] == 404
+    assert payload["request_host"] == "tenant.localhost"
+    assert payload["request_path"] == "/platform-ops/"
+    assert payload["request_method"] == "GET"
+    assert payload["request_scheme"] == "http"
+    assert payload["request_route"] == "-"
+    assert payload["actor_user_id"] is None
+    assert payload["actor_is_superuser"] is None
+    assert payload["client_ip"] == "10.20.30.40"
+    assert payload["forwarded_for"] == "198.51.100.20"
+    assert payload["platform_route_on_non_control_host"] is True
+
+
+@override_settings(PLATFORM_CONTROL_HOSTS=("control.gatherhqs.com",))
+def test_structured_logs_mark_platform_route_as_control_host_when_expected():
+    request = RequestFactory().get(
+        "/platform-ops/",
+        HTTP_HOST="control.gatherhqs.com",
+    )
+    record = logging.LogRecord(
+        name="django.request",
+        level=logging.WARNING,
+        pathname=__file__,
+        lineno=1,
+        msg="Not Found: /platform-ops/",
+        args=(),
+        exc_info=None,
+    )
+    record.request = request
+    record.status_code = 404
+    RequestContextFilter().filter(record)
+
+    payload = json.loads(JsonFormatter().format(record))
+
+    assert payload["platform_route_on_non_control_host"] is False
 
 
 @pytest.mark.django_db
@@ -127,6 +192,16 @@ def test_platform_home_explains_trial_pricing_and_social_preview(client):
     assert "deducted from your group's proceeds" in content
     assert 'property="og:image"' in content
     assert "/static/img/gather-hqs-social.png" in content
+
+
+def test_help_center_page_is_available_with_feature_guidance(client):
+    response = client.get(reverse("core:help"))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "How to use Gather HQs" in content
+    assert "Notifications and communications" in content
+    assert "Support and operations" in content
 
 
 @override_settings(

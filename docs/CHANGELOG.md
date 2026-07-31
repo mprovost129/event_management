@@ -14,26 +14,6 @@ All notable changes should be recorded here. Until the project adopts a formal r
 - Subscriber mailing address, included in the footer of every marketing email
   alongside the unsubscribe link as CAN-SPAM requires. Email campaigns fail
   closed at launch when it is unset; SMS is unaffected.
-- The campaign review screen warns about a missing mailing address, with a link
-  to fix it, rather than letting the problem surface at launch.
-
-### Fixed
-
-- The subscriber data export contained order totals but none of the commerce
-  records behind them. It now includes ticket types, order lines, tickets,
-  refunds, disputes, and the per-order financial audit trail, so a departing
-  subscriber gets a usable financial record rather than unexplained totals.
-- Exported commerce rows now carry their Stripe identifiers (checkout session,
-  payment intent, charge, balance transaction, refund, dispute, invoice,
-  customer, and subscription), so a subscriber can reconcile the export against
-  their own connected-account dashboard. No API keys, webhook secrets, or raw
-  payment payloads are included.
-- Membership plans were never exported even though member subscriptions
-  referenced them, leaving a dangling `plan_id` in every export.
-- A campaign that reached `scheduled` before the mailing-address requirement
-  existed bypassed the launch guard entirely, because background expansion never
-  rechecked it. Expansion now applies the same rule and marks such a campaign
-  failed with a readable reason instead of queueing non-compliant mail.
 - Both fields are editable under website settings and included in the subscriber
   data export.
 
