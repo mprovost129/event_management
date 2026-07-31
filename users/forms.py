@@ -79,13 +79,14 @@ class ProfileForm(forms.ModelForm):
                 attrs={"class": "form-control", "placeholder": "Street address"}
             ),
             "mailing_address_line2": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Apt, suite, unit (optional)"}
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Apt, suite, unit (optional)",
+                }
             ),
             "mailing_city": forms.TextInput(attrs={"class": "form-control"}),
             "mailing_state": forms.TextInput(attrs={"class": "form-control"}),
-            "mailing_postal_code": forms.TextInput(
-                attrs={"class": "form-control"}
-            ),
+            "mailing_postal_code": forms.TextInput(attrs={"class": "form-control"}),
             "mailing_country": forms.TextInput(attrs={"class": "form-control"}),
         }
         help_texts = {

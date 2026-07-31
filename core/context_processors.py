@@ -20,9 +20,7 @@ def _control_origin(request):
     # Preserve local development ports when targeting localhost-like hosts.
     if host in {"localhost", "127.0.0.1"}:
         port = request.get_port()
-        if (scheme == "http" and port != "80") or (
-            scheme == "https" and port != "443"
-        ):
+        if (scheme == "http" and port != "80") or (scheme == "https" and port != "443"):
             host = f"{host}:{port}"
 
     return f"{scheme}://{host}"

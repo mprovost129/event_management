@@ -58,4 +58,4 @@ def account_navigation(request):
         "nav_avatar_url": user.avatar.url if getattr(user, "avatar", None) else "",
         "nav_has_any_site": primary_role is not None,
         "platform_help_url": help_url,
-     }
+    }
