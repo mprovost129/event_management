@@ -258,6 +258,33 @@ def test_subscriber_dashboard_offers_monthly_and_yearly_standard_billing(client)
 
 
 @pytest.mark.django_db
+def test_quick_start_renders_every_growth_step_route(client):
+    owner = verified_user("owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+    client.force_login(owner)
+
+    response = client.get(reverse("sites:quick_start", kwargs={"site_id": site.id}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    expected_routes = (
+        "content:manage",
+        "content:blog_create",
+        "workspace:task_create",
+        "workspace:intake_form_create",
+        "workspace:document_upload",
+        "workspace:automation_create",
+    )
+    for route_name in expected_routes:
+        assert reverse(route_name, kwargs={"site_id": site.id}) in content
+
+
+@pytest.mark.django_db
 def test_setup_progress_tracks_pilot_launch_essentials():
     owner = verified_user("owner@example.com")
     site = create_subscriber_site(

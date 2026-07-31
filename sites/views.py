@@ -211,14 +211,16 @@ def quick_start(request, site_id):
             "label": "Create a form or waiver",
             "description": "Collect information, applications, volunteer interest, or signed waivers.",
             "complete": IntakeForm.objects.for_site(site).exists(),
-            "action_url": reverse("workspace:form_create", kwargs={"site_id": site.id}),
+            "action_url": reverse(
+                "workspace:intake_form_create", kwargs={"site_id": site.id}
+            ),
         },
         {
             "label": "Upload an organization document",
             "description": "Store a contract, policy, flyer, insurance certificate, or waiver.",
             "complete": Document.objects.for_site(site).exists(),
             "action_url": reverse(
-                "workspace:document_create", kwargs={"site_id": site.id}
+                "workspace:document_upload", kwargs={"site_id": site.id}
             ),
         },
         {

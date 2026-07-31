@@ -6,6 +6,7 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Added
 
+- Quick-start regression coverage for every guided growth-step route.
 - S3 media URL hardening that forces Signature Version 4, normalizes accidental
   AWS object URLs used as endpoints, preserves legacy object prefixes, and
   validates AWS endpoint configuration.
@@ -62,6 +63,8 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Fixed
 
+- Corrected stale form and document route names that caused the quick-start
+  page to return HTTP 500.
 - Public pricing now discloses the 3% paid-ticket application fee while clarifying that member dues remain fee-free and attendees do not receive a separate surcharge.
 - Updated pytest to 9.0.3 to resolve `PYSEC-2026-1845` in the development and CI dependency set.
 - PostgreSQL row locks now target only their primary records when related data is optional, preventing campaign, delivery, review, and site-deletion operations from failing on nullable outer joins.
