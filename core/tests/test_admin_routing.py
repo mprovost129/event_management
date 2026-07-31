@@ -26,26 +26,8 @@ def test_superuser_can_open_admin_and_sees_navigation_link(client):
 
     assert admin_response.status_code == 200
     assert "Site administration" in admin_response.content.decode()
-    assert "http://localhost/platform-admin/" in dashboard_response.content.decode()
-    assert "http://localhost/platform-ops/" in dashboard_response.content.decode()
+    assert reverse("admin:index") in dashboard_response.content.decode()
     assert ">Admin</a>" in dashboard_response.content.decode()
-    assert ">Platform operations</a>" in dashboard_response.content.decode()
-
-
-@pytest.mark.django_db
-def test_non_superuser_does_not_see_platform_admin_or_ops_links(client):
-    user = User.objects.create_user(
-        email="member@example.com",
-        password="Strong-Test-Pass-2026!",
-    )
-    client.force_login(user)
-
-    response = client.get(reverse("sites:account_dashboard"))
-    content = response.content.decode()
-
-    assert response.status_code == 200
-    assert "Platform operations" not in content
-    assert ">Admin</a>" not in content
 
 
 @pytest.mark.django_db

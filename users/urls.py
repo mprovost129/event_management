@@ -44,7 +44,6 @@ urlpatterns = [
         name="password_reset_complete",
     ),
     path("signup/", views.signup, name="signup"),
-    path("profile/", views.profile, name="profile"),
     path("verification-sent/", views.verification_sent, name="verification_sent"),
     path(
         "verify/<uidb64>/<token>/",

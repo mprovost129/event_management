@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.encoding import force_str
@@ -11,7 +10,7 @@ from core.rate_limits import public_write_rate_limit
 from ops.services import record_audit_event
 from subscriptions.gateway import billing_options
 
-from .forms import ProfileForm, ResendVerificationForm, SignupForm
+from .forms import ResendVerificationForm, SignupForm
 from .models import User
 from .services import send_verification_email
 from .tokens import email_verification_token
@@ -81,16 +80,3 @@ def resend_verification(request):
         )
         return redirect("users:verification_sent")
     return render(request, "users/resend_verification.html", {"form": form})
-
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def profile(request):
-    form = ProfileForm(
-        request.POST or None, request.FILES or None, instance=request.user
-    )
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Your profile has been updated.")
-        return redirect("users:profile")
-    return render(request, "users/profile.html", {"form": form})

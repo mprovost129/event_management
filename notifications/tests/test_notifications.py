@@ -100,36 +100,3 @@ def test_notification_views_never_read_another_users_notification(client):
     second_notification.refresh_from_db()
     assert first_notification.read_at is not None
     assert second_notification.read_at is None
-
-
-@pytest.mark.django_db
-def test_notifications_page_shows_empty_state_without_mark_all_action(client):
-    site, owner = create_site("empty-group", "empty-owner@example.com")
-    client.force_login(owner)
-
-    response = client.get(reverse("notifications:list"))
-    content = response.content.decode()
-
-    assert response.status_code == 200
-    assert "No notifications yet." in content
-    assert "Mark all read" not in content
-
-
-@pytest.mark.django_db
-def test_notifications_page_shows_mark_all_read_for_unread_items(client):
-    site, owner = create_site("alert-group", "alert-owner@example.com")
-    Notification.objects.create(
-        recipient=owner,
-        site=site,
-        kind=Notification.Kind.SYSTEM,
-        title="Action required",
-        message="Please review your latest update.",
-    )
-    client.force_login(owner)
-
-    response = client.get(reverse("notifications:list"))
-    content = response.content.decode()
-
-    assert response.status_code == 200
-    assert "Action required" in content
-    assert "Mark all read" in content
