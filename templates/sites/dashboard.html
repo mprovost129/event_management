@@ -14,11 +14,19 @@
             <h1>{{ site.display_name }}</h1>
             {% if canonical_domain %}<p class="gh-dashboard-domain mb-0">{{ canonical_domain.hostname }}</p>{% endif %}
         </div>
-        <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-outline-primary" href="{% url 'sites:quick_start' site.id %}">Quick start</a>
-            {% if site_role.role == 'subscriber_admin' %}<a class="btn btn-outline-primary" href="{% url 'sites:launch_center' site.id %}">Pilot launch center</a>{% endif %}
-            {% if site.accepts_public_traffic %}<a class="btn btn-outline-primary" href="{% url 'content:presentation' site.id %}">Website settings</a>{% endif %}
-            {% if site.is_published and canonical_domain %}<a class="btn btn-primary" href="//{{ canonical_domain.hostname }}">View live site</a>{% endif %}
+        <div class="gh-dashboard-actions" aria-label="Dashboard actions">
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-outline-primary" href="{% url 'sites:quick_start' site.id %}">Quick start</a>
+                {% if site_role.role == 'subscriber_admin' %}<a class="btn btn-outline-primary" href="{% url 'sites:launch_center' site.id %}">Pilot launch center</a>{% endif %}
+                {% if site.accepts_public_traffic %}<a class="btn btn-outline-primary" href="{% url 'content:presentation' site.id %}">Website settings</a>{% endif %}
+                {% if site.is_published and canonical_domain %}<a class="btn btn-primary" href="//{{ canonical_domain.hostname }}">View live site</a>{% endif %}
+            </div>
+            <nav class="gh-dashboard-quicklinks" aria-label="Quick links">
+                <a href="{% url 'sites:reports' site.id %}">Reports</a>
+                <a href="{% url 'workspace:task_list' site.id %}">Tasks</a>
+                <a href="{% url 'contacts:list' site.id %}">People</a>
+                <a href="{% url 'communications:campaign_list' site.id %}">Campaigns</a>
+            </nav>
         </div>
     </header>
 

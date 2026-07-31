@@ -2,29 +2,73 @@
 
 {% block title %}Profile | {{ platform_name }}{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-xl-8">
-        <section class="card shadow-sm">
-            <div class="card-body p-4 p-lg-5">
-                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
-                    <div>
-                        <p class="text-uppercase small fw-semibold text-secondary mb-1">Your profile</p>
-                        <h1 class="h3 mb-1">Account details</h1>
-                        <p class="text-secondary mb-0">Manage your public name, avatar, and mailing information.</p>
-                    </div>
-                    <a class="btn btn-outline-secondary" href="{% url 'sites:account_dashboard' %}">Back to account</a>
-                </div>
+<section class="gh-profile-shell">
+    <header class="gh-profile-header">
+        <div>
+            <p class="gh-step-label mb-1">Your profile</p>
+            <h1 class="h3 mb-1">Account details</h1>
+            <p class="text-secondary mb-0">Manage your public name, avatar, and mailing information.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="{% url 'sites:account_dashboard' %}">Back to account</a>
+    </header>
 
-                <form method="post" enctype="multipart/form-data" novalidate>
-                    {% csrf_token %}
-                    {% include 'includes/form_fields.html' %}
-                    <div class="d-flex flex-wrap gap-2 mt-4">
-                        <button class="btn btn-primary" type="submit">Save profile</button>
-                        <a class="btn btn-outline-secondary" href="{% url 'sites:account_dashboard' %}">Cancel</a>
+    <div class="row g-4 align-items-start">
+        <div class="col-lg-8">
+            <section class="card shadow-sm">
+                <div class="card-body p-4 p-lg-5">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+
+                        <section class="mb-4" aria-labelledby="profile-identity-heading">
+                            <h2 class="h5 mb-3" id="profile-identity-heading">Identity</h2>
+                            <div class="gh-form-field">{{ form.avatar.label_tag }}{{ form.avatar }}{% if form.avatar.help_text %}<div class="gh-field-help" id="{{ form.avatar.auto_id }}_helptext">{{ form.avatar.help_text }}</div>{% endif %}{% for error in form.avatar.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                            <div class="row g-3">
+                                <div class="col-md-6"><div class="gh-form-field">{{ form.username.label_tag }}{{ form.username }}{% for error in form.username.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div>
+                                <div class="col-md-6"><div class="gh-form-field">{{ form.first_name.label_tag }}{{ form.first_name }}{% for error in form.first_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div>
+                                <div class="col-md-6"><div class="gh-form-field">{{ form.last_name.label_tag }}{{ form.last_name }}{% for error in form.last_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div>
+                            </div>
+                        </section>
+
+                        <section aria-labelledby="profile-mailing-heading">
+                            <h2 class="h5 mb-3" id="profile-mailing-heading">Mailing address</h2>
+                            <div class="row g-3">
+                                <div class="col-12"><div class="gh-form-field">{{ form.mailing_address_line1.label_tag }}{{ form.mailing_address_line1 }}{% for error in form.mailing_address_line1.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div>
+                                <div class="col-12"><div class="gh-form-field">{{ form.mailing_address_line2.label_tag }}{{ form.mailing_address_line2 }}{% for error in form.mailing_address_line2.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div>
+                                <div class="col-md-6"><div class="gh-form-field">{{ form.mailing_city.label_tag }}{{ form.mailing_city }}{% for error in form.mailing_city.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div>
+                                <div class="col-md-6"><div class="gh-form-field">{{ form.mailing_state.label_tag }}{{ form.mailing_state }}{% for error in form.mailing_state.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div>
+                                <div class="col-md-6"><div class="gh-form-field">{{ form.mailing_postal_code.label_tag }}{{ form.mailing_postal_code }}{% for error in form.mailing_postal_code.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div>
+                                <div class="col-md-6"><div class="gh-form-field">{{ form.mailing_country.label_tag }}{{ form.mailing_country }}{% for error in form.mailing_country.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div>
+                            </div>
+                        </section>
+
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <button class="btn btn-primary" type="submit">Save profile</button>
+                            <a class="btn btn-outline-secondary" href="{% url 'sites:account_dashboard' %}">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </div>
+        <div class="col-lg-4">
+            <aside class="card shadow-sm gh-profile-sidecard">
+                <div class="card-body">
+                    <h2 class="h5">Menu preview</h2>
+                    <p class="text-secondary small">This information appears in your top-right account menu.</p>
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="" class="rounded-circle" width="44" height="44">
+                        {% else %}
+                        <span class="rounded-circle d-inline-flex justify-content-center align-items-center text-white gh-profile-initials">{{ nav_avatar_initials }}</span>
+                        {% endif %}
+                        <div>
+                            <p class="mb-0 fw-semibold text-truncate">{{ user.get_full_name|default:user.username|default:user.email }}</p>
+                            <p class="mb-0 text-secondary small text-truncate">{{ user.email }}</p>
+                        </div>
                     </div>
-                </form>
-            </div>
-        </section>
+                    <p class="small text-secondary mb-0">Use a clear headshot or logo-style image for the strongest team recognition.</p>
+                </div>
+            </aside>
+        </div>
     </div>
-</div>
+</section>
 {% endblock %}

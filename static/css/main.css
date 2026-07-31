@@ -296,6 +296,68 @@ header, main, footer {
     font-weight: 700;
 }
 
+.gh-notifications-shell {
+    max-width: 72rem;
+    margin: 0 auto;
+}
+
+.gh-notifications-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #e5dfd4;
+}
+
+.gh-notification-list .list-group-item {
+    border-color: #e5dfd4;
+}
+
+.gh-notification-unread {
+    border-left: .28rem solid var(--gh-brand-orange);
+    background: #fffaf2;
+}
+
+.gh-profile-shell {
+    max-width: 76rem;
+    margin: 0 auto;
+}
+
+.gh-profile-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #e5dfd4;
+}
+
+.gh-profile-sidecard {
+    position: sticky;
+    top: 6rem;
+    border-color: #dfd5c7;
+    background: linear-gradient(180deg, #fffefb 0%, #fff9f1 100%);
+}
+
+.gh-profile-initials {
+    width: 44px;
+    height: 44px;
+    background: var(--gh-brand-navy);
+    font-size: .95rem;
+    font-weight: 700;
+}
+
+@media (max-width: 991.98px) {
+    .gh-profile-sidecard {
+        position: static;
+    }
+}
+
 @media (max-width: 991.98px) {
     .gh-site-header .navbar-nav {
         gap: .25rem;
@@ -382,6 +444,31 @@ header, main, footer {
 
 .gh-dashboard-domain {
     color: #626a77;
+}
+
+.gh-dashboard-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .8rem;
+}
+
+.gh-dashboard-quicklinks {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .75rem;
+}
+
+.gh-dashboard-quicklinks a {
+    color: #4e5664;
+    font-size: .85rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.gh-dashboard-quicklinks a:hover {
+    color: var(--gh-dashboard-orange);
 }
 
 .gh-role-label,
@@ -879,6 +966,14 @@ header, main, footer {
     .gh-dashboard-head > div:last-child,
     .gh-dashboard-head .btn {
         width: 100%;
+    }
+
+    .gh-dashboard-actions {
+        align-items: stretch;
+    }
+
+    .gh-dashboard-quicklinks {
+        justify-content: flex-start;
     }
 
     .gh-setup-panel {

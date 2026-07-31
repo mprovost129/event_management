@@ -102,3 +102,20 @@ def test_authenticated_navbar_notification_dropdown_shows_actions(client):
     assert "View all" in content
     assert "Billing reminder" in content
     assert "Robin Lane" in content
+
+
+@pytest.mark.django_db
+def test_profile_page_shows_identity_and_mailing_sections(client):
+    user = User.objects.create_user(
+        email="member@example.com",
+        password="Strong-Test-Pass-2026!",
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("users:profile"))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Identity" in content
+    assert "Mailing address" in content
+    assert "Menu preview" in content

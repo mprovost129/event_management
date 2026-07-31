@@ -183,6 +183,28 @@ def test_account_dashboard_shows_visit_site_for_published_public_organization(cl
 
 
 @pytest.mark.django_db
+def test_site_dashboard_shows_quick_links_cluster(client):
+    owner = verified_user("owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Quick Links Organization",
+        slug="quick-links-organization",
+        timezone_name="America/New_York",
+    )
+    client.force_login(owner)
+
+    response = client.get(reverse("sites:dashboard", kwargs={"site_id": site.id}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Quick links" in content
+    assert "Reports" in content
+    assert "Tasks" in content
+    assert "People" in content
+    assert "Campaigns" in content
+
+
+@pytest.mark.django_db
 def test_manager_roles_do_not_prevent_a_first_owned_site(client):
     subscriber = verified_user("subscriber@example.com")
     manager = verified_user("manager@example.com")
