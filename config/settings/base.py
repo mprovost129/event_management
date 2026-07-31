@@ -1,5 +1,3 @@
-# ruff: noqa: F401, F403
-from config.settings.base import *
 from pathlib import Path
 
 from dotenv import load_dotenv

@@ -319,9 +319,10 @@ class EventPhotoUploadForm(forms.Form):
         if self.album is None:
             return "Event photo"
         occurrence = self.album.occurrence
-        date_text = timezone.localtime(
+        local_start = timezone.localtime(
             occurrence.starts_at, ZoneInfo(self.album.site.timezone)
-        ).strftime("%B %-d, %Y")
+        )
+        date_text = f"{local_start:%B} {local_start.day}, {local_start:%Y}"
         return f"Photo from {occurrence.event.title} on {date_text}"[:180]
 
 

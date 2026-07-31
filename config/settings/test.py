@@ -1,5 +1,3 @@
-# ruff: noqa: F401, F403
-from config.settings.test import *
 # ruff: noqa: F403, F405
 from config.env import env
 
