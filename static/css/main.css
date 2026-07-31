@@ -758,6 +758,18 @@ header, main, footer {
     font-weight: 700;
 }
 
+.gh-admin-meta {
+    color: #4e5664;
+}
+
+.gh-manager-form input {
+    max-width: 34rem;
+}
+
+.gh-manager-list .list-group-item {
+    border-color: #dfd8cf;
+}
+
 .gh-recovery-panel {
     max-width: 50rem;
     margin: 3rem auto;

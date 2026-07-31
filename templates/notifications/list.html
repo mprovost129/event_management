@@ -45,7 +45,9 @@
                 <div>
                     <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                         <strong>{{ item.title }}</strong>
-                        {% if not item.is_read %}<span class="badge text-bg-warning">Unread</span>{% endif %}
+                        {% if not item.is_read %}
+                        <span class="badge text-bg-warning">Unread</span>
+                        {% endif %}
                     </div>
                     <div class="small text-secondary">{{ item.site.display_name }} · {{ item.created_at|timesince }} ago</div>
                     <p class="mb-0 mt-2">{{ item.message }}</p>

@@ -9,12 +9,23 @@
         <h1>Your organizations</h1>
         <p class="text-secondary mb-0">Manage the groups where you are a subscriber or site manager.</p>
     </div>
-    {% if can_create_site %}<a class="btn btn-primary" href="{% url 'sites:onboarding' %}">{% if roles %}Create another organization{% else %}Create an organization{% endif %}</a>{% endif %}
+    {% if can_create_site %}
+    <a class="btn btn-primary" href="{% url 'sites:onboarding' %}">
+        {% if roles %}
+        Create another organization
+        {% else %}
+        Create an organization
+        {% endif %}
+    </a>
+    {% endif %}
 </header>
 
 {% if not can_create_site %}
 <div class="alert alert-info" role="status">
-    {{ site_creation_reason }} Each organization has its own subscription.{% if support_email %} <a href="mailto:{{ support_email }}">Contact support</a> if you need help adding another organization.{% endif %}
+    {{ site_creation_reason }} Each organization has its own subscription.
+    {% if support_email %}
+    <a href="mailto:{{ support_email }}">Contact support</a> if you need help adding another organization.
+    {% endif %}
 </div>
 {% elif roles %}
 <p class="text-secondary mb-4">Each additional organization starts its own trial and requires a separate subscription.</p>
