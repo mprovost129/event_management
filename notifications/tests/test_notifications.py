@@ -1,7 +1,9 @@
 import pytest
+from django.db import DatabaseError
 from django.urls import reverse
 from django.utils import timezone
 
+from notifications.context_processors import notifications
 from notifications.models import Notification
 from notifications.services import notify_site_staff
 from sites.services import create_subscriber_site
@@ -133,3 +135,38 @@ def test_notifications_page_shows_mark_all_read_for_unread_items(client):
     assert response.status_code == 200
     assert "Action required" in content
     assert "Mark all read" in content
+
+
+def test_notifications_context_processor_fails_closed_when_auth_user_lookup_errors():
+    class BrokenUser:
+        @property
+        def is_authenticated(self):
+            raise DatabaseError("users_user.username missing")
+
+    request = type("Request", (), {"user": BrokenUser()})()
+
+    context = notifications(request)
+
+    assert context == {
+        "unread_notification_count": 0,
+        "recent_notifications": [],
+    }
+
+
+def test_notifications_context_processor_fails_closed_when_unread_query_errors():
+    class BrokenNotifications:
+        def filter(self, **kwargs):
+            raise DatabaseError("table is unavailable")
+
+    class AuthenticatedUser:
+        is_authenticated = True
+        notifications = BrokenNotifications()
+
+    request = type("Request", (), {"user": AuthenticatedUser()})()
+
+    context = notifications(request)
+
+    assert context == {
+        "unread_notification_count": 0,
+        "recent_notifications": [],
+    }
