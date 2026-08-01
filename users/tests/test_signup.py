@@ -31,6 +31,19 @@ def test_account_access_and_recovery_pages_share_clear_form_layout(client):
 
 
 @pytest.mark.django_db
+def test_already_authenticated_user_visiting_login_is_redirected_to_dashboard(client):
+    user = User.objects.create_user(
+        email="member@example.com", password="Strong-Test-Pass-2026!"
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("users:login"))
+
+    assert response.status_code == 302
+    assert response.url == reverse("sites:account_dashboard")
+
+
+@pytest.mark.django_db
 def test_password_reset_email_uses_public_gather_hqs_route(client):
     User.objects.create_user(
         email="leader@example.com", password="Strong-Test-Pass-2026!"

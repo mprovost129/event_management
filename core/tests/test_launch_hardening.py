@@ -12,6 +12,7 @@ from core.checks import deployment_product_check, product_configuration_check
 from core.logging import JsonFormatter, RequestContextFilter
 from ops.models import SystemHeartbeat
 from ops.tasks import record_background_heartbeat
+from users.models import User
 
 
 def test_data_tables_and_images_keep_baseline_accessibility_markup():
@@ -192,6 +193,21 @@ def test_platform_home_explains_trial_pricing_and_social_preview(client):
     assert "deducted from your group's proceeds" in content
     assert 'property="og:image"' in content
     assert "/static/img/gather-hqs-social.png" in content
+
+
+@pytest.mark.django_db
+def test_already_authenticated_user_visiting_platform_home_is_sent_to_dashboard(
+    client,
+):
+    user = User.objects.create_user(
+        email="member@example.com", password="Strong-Test-Pass-2026!"
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("core:home"))
+
+    assert response.status_code == 302
+    assert response.url == reverse("sites:account_dashboard")
 
 
 def test_help_center_page_is_available_with_feature_guidance(client):

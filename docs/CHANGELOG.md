@@ -42,6 +42,9 @@ All notable changes should be recorded here. Until the project adopts a formal r
 
 ### Fixed
 
+- Signed-in users landing on the marketing home page or the login page are now
+  redirected to their dashboard instead of seeing marketing/auth content behind
+  an already-authenticated navbar.
 - Removed hardcoded Stripe price ID fallbacks from settings. Unset price IDs now
   stay blank and surface as `platform.W002` rather than silently billing against
   a stale identifier. A blank price ID can no longer match a webhook payload.

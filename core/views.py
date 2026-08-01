@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.http import JsonResponse
+from django.shortcuts import redirect
 from django.templatetags.static import static
 from django.utils import timezone
 from django.views.generic import TemplateView
@@ -92,6 +93,12 @@ def health_ready(request):
 
 class HomeView(TemplateView):
     template_name = "core/home.html"
+
+    def get(self, request, *args, **kwargs):
+        site = getattr(request, "site", None)
+        if site is None and request.user.is_authenticated:
+            return redirect("sites:account_dashboard")
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
