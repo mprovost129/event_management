@@ -123,7 +123,6 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "core.middleware.SecurityHeadersMiddleware",
     "core.middleware.RequestContextMiddleware",
-    "sites.middleware.SiteResolutionMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -131,6 +130,14 @@ MIDDLEWARE = [
     "axes.middleware.AxesMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Site resolution can raise Http404 for an unrecognized tenant host (see
+    # sites.middleware.SiteResolutionMiddleware). Django's middleware chain
+    # only lets an *earlier* entry's process_response/exception-conversion
+    # wrap a *later* one, never the reverse - so this middleware must be last
+    # (innermost) for every other middleware's response processing, this
+    # one's clickjacking protection included, to still apply to that 404
+    # instead of the exception skipping straight past it.
+    "sites.middleware.SiteResolutionMiddleware",
 ]
 
 AXES_FAILURE_LIMIT = 5

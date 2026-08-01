@@ -9,12 +9,17 @@ from .models import BlogPost, PublishingStatus, SitePage
 class PublishingFormMixin:
     def clean(self):
         cleaned_data = super().clean()
-        if cleaned_data.get(
-            "status"
-        ) == PublishingStatus.SCHEDULED and not cleaned_data.get("publish_at"):
+        status = cleaned_data.get("status")
+        if status == PublishingStatus.SCHEDULED and not cleaned_data.get("publish_at"):
             self.add_error(
                 "publish_at", "Choose a publication time for scheduled content."
             )
+        elif status != PublishingStatus.SCHEDULED:
+            # publish_at only means anything for Scheduled content. Carrying
+            # a stale future timestamp forward onto Published content is
+            # exactly what makes the CMS say "Published" while the public
+            # site keeps it hidden until that stale date arrives.
+            cleaned_data["publish_at"] = None
         return cleaned_data
 
 

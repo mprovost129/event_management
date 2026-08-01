@@ -30,6 +30,7 @@ def public_page(site, page_type):
         .filter(page_type=page_type)
         .filter(
             Q(status=PublishingStatus.PUBLISHED)
+            & (Q(publish_at__isnull=True) | Q(publish_at__lte=now))
             | Q(status=PublishingStatus.SCHEDULED, publish_at__lte=now)
         )
         .first()

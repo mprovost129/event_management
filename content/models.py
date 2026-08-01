@@ -42,7 +42,7 @@ class SitePage(SiteOwnedModel):
     @property
     def is_public(self):
         if self.status == PublishingStatus.PUBLISHED:
-            return True
+            return self.publish_at is None or self.publish_at <= timezone.now()
         return (
             self.status == PublishingStatus.SCHEDULED
             and self.publish_at is not None

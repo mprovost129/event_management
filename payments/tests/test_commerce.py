@@ -783,6 +783,108 @@ def test_dispute_is_visible_and_updates_order_financial_history():
     assert order.financial_history.filter(event_type="charge.dispute.created").exists()
 
 
+def _dispute_closed_event(*, dispute_status):
+    return {
+        "id": f"evt_dispute_closed_{dispute_status}",
+        "type": "charge.dispute.closed",
+        "account": "acct_site",
+        "livemode": False,
+        "data": {
+            "object": {
+                "id": "dp_123",
+                "object": "dispute",
+                "charge": "ch_paid",
+                "payment_intent": "pi_paid",
+                "amount": 3000,
+                "status": dispute_status,
+                "reason": "fraudulent",
+                "evidence_details": {},
+            }
+        },
+    }
+
+
+def _disputed_order():
+    _, _, _, _, ticket_type, registration = commerce_fixture()
+    order, _ = reserve_ticket_order(registration=registration, ticket_type=ticket_type)
+    mark_order_paid(
+        order.id,
+        stripe_object={
+            "object": "payment_intent",
+            "id": "pi_paid",
+            "latest_charge": "ch_paid",
+        },
+    )
+    process_connect_event(
+        {
+            "id": "evt_dispute_created",
+            "type": "charge.dispute.created",
+            "account": "acct_site",
+            "livemode": False,
+            "data": {
+                "object": {
+                    "id": "dp_123",
+                    "object": "dispute",
+                    "charge": "ch_paid",
+                    "payment_intent": "pi_paid",
+                    "amount": 3000,
+                    "status": "needs_response",
+                    "reason": "fraudulent",
+                    "evidence_details": {},
+                }
+            },
+        }
+    )
+    order.refresh_from_db()
+    assert order.status == Order.Status.DISPUTED
+    return order
+
+
+@pytest.mark.django_db
+def test_dispute_closed_won_reinstates_the_order_as_paid():
+    order = _disputed_order()
+
+    process_connect_event(_dispute_closed_event(dispute_status="won"))
+
+    order.refresh_from_db()
+    assert order.status == Order.Status.PAID
+
+
+@pytest.mark.django_db
+def test_dispute_closed_warning_closed_reinstates_the_order_as_paid():
+    # Stripe closes some disputes as "warning_closed" without a formal
+    # chargeback ever occurring - the charge stands, same as "won".
+    order = _disputed_order()
+
+    process_connect_event(_dispute_closed_event(dispute_status="warning_closed"))
+
+    order.refresh_from_db()
+    assert order.status == Order.Status.PAID
+
+
+@pytest.mark.django_db
+def test_dispute_closed_with_an_unrecognized_status_fails_closed_not_silent():
+    order = _disputed_order()
+
+    process_connect_event(_dispute_closed_event(dispute_status="some_future_status"))
+
+    order.refresh_from_db()
+    # Not silently left at whatever it was before - explicitly DISPUTED,
+    # the safe default for a closure outcome this integration doesn't
+    # recognize as "no chargeback occurred".
+    assert order.status == Order.Status.DISPUTED
+
+
+@pytest.mark.django_db
+def test_dispute_closed_lost_keeps_the_order_disputed():
+    order = _disputed_order()
+
+    process_connect_event(_dispute_closed_event(dispute_status="lost"))
+
+    order.refresh_from_db()
+    assert order.status == Order.Status.DISPUTED
+
+
 @pytest.mark.django_db
 def test_charge_webhook_records_provider_fee_details_when_available():
     _, _, _, _, ticket_type, registration = commerce_fixture()

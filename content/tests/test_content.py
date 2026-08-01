@@ -9,6 +9,7 @@ from PIL import Image
 from contacts.models import ConsentRecord, ConsentStatus, Contact
 from content.images import prepare_image
 from content.models import BlogPost, PublishingStatus, SitePage
+from content.services import public_page
 from sites.services import create_subscriber_site
 from users.models import User
 
@@ -63,6 +64,100 @@ def test_published_blog_is_visible_only_on_its_site(client):
     assert response.status_code == 200
     assert "Dance night update" in response.content.decode()
     assert control_host.status_code == 404
+
+
+@pytest.mark.django_db
+def test_publishing_a_scheduled_blog_post_clears_the_stale_publish_at(client):
+    owner, site = create_site()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    future = timezone.now() + timezone.timedelta(days=7)
+    post = BlogPost.objects.create(
+        site=site,
+        title="Dance night update",
+        slug="dance-night-update",
+        excerpt="New details",
+        body="Bring your dancing shoes.",
+        status=PublishingStatus.SCHEDULED,
+        publish_at=future,
+    )
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("content:blog_edit", args=(site.id, post.id)),
+        {
+            "title": post.title,
+            "slug": post.slug,
+            "excerpt": post.excerpt,
+            "body": post.body,
+            "author_display_name": "",
+            "status": PublishingStatus.PUBLISHED,
+            "publish_at": future.strftime("%Y-%m-%dT%H:%M"),
+            "meta_description": "",
+        },
+    )
+
+    assert response.status_code == 302
+    post.refresh_from_db()
+    assert post.status == PublishingStatus.PUBLISHED
+    assert post.publish_at is None
+
+    public_page = client.get(
+        reverse("content:blog_index"), headers={"host": f"{site.slug}.localhost"}
+    )
+    assert "Dance night update" in public_page.content.decode()
+
+
+@pytest.mark.django_db
+def test_publishing_a_scheduled_site_page_clears_the_stale_publish_at(client):
+    owner, site = create_site()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    future = timezone.now() + timezone.timedelta(days=7)
+    page = SitePage.objects.get(site=site, page_type=SitePage.PageType.ABOUT)
+    page.status = PublishingStatus.SCHEDULED
+    page.publish_at = future
+    page.save(update_fields=("status", "publish_at", "updated_at"))
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("content:page_edit", args=(site.id, SitePage.PageType.ABOUT)),
+        {
+            "title": page.title,
+            "navigation_label": page.navigation_label,
+            "body": "Our group has been dancing since 2019.",
+            "status": PublishingStatus.PUBLISHED,
+            "publish_at": future.strftime("%Y-%m-%dT%H:%M"),
+            "meta_title": "",
+            "meta_description": "",
+        },
+    )
+
+    assert response.status_code == 302
+    page.refresh_from_db()
+    assert page.status == PublishingStatus.PUBLISHED
+    assert page.publish_at is None
+    assert page.is_public is True
+
+
+@pytest.mark.django_db
+def test_public_page_hides_a_published_page_with_a_stray_future_publish_at():
+    _, site = create_site()
+    future = timezone.now() + timezone.timedelta(days=7)
+    page = SitePage.objects.get(site=site, page_type=SitePage.PageType.ABOUT)
+    # A leftover future publish_at from before this bug was fixed - the
+    # query must not treat "published" as an unconditional override.
+    page.status = PublishingStatus.PUBLISHED
+    page.publish_at = future
+    page.save(update_fields=("status", "publish_at", "updated_at"))
+
+    assert public_page(site, SitePage.PageType.ABOUT) is None
+    assert page.is_public is False
+
+    page.publish_at = timezone.now() - timezone.timedelta(minutes=1)
+    page.save(update_fields=("publish_at", "updated_at"))
+    assert public_page(site, SitePage.PageType.ABOUT) == page
+    assert page.is_public is True
 
 
 @pytest.mark.django_db

@@ -579,6 +579,49 @@ def test_suspended_site_exposes_only_owner_recovery_routes(client):
 
 
 @pytest.mark.django_db
+def test_account_overview_does_not_dead_end_a_manager_on_a_suspended_site(client):
+    owner = verified_user("owner@example.com")
+    other_owner = verified_user("other-owner@example.com")
+    manager = verified_user("manager@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+    active_site = create_subscriber_site(
+        owner=other_owner,
+        display_name="Active Dancers",
+        slug="active-dancers",
+        timezone_name="America/New_York",
+    )
+    SiteRole.objects.create(site=site, user=manager, role=SiteRole.Role.SITE_MANAGER)
+    SiteRole.objects.create(
+        site=active_site, user=manager, role=SiteRole.Role.SITE_MANAGER
+    )
+    site.status = Site.Status.SUSPENDED
+    site.save(update_fields=("status", "updated_at"))
+
+    client.force_login(manager)
+    response = client.get(reverse("sites:account_dashboard"))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "This organization is suspended" in content
+    dashboard_url = reverse("sites:dashboard", kwargs={"site_id": site.id})
+    assert f'href="{dashboard_url}"' not in content
+    active_dashboard_url = reverse(
+        "sites:dashboard", kwargs={"site_id": active_site.id}
+    )
+    assert f'href="{active_dashboard_url}"' in content
+
+    # The owner still gets the clickable recovery link on the same site.
+    client.force_login(owner)
+    owner_response = client.get(reverse("sites:account_dashboard"))
+    assert f'href="{dashboard_url}"' in owner_response.content.decode()
+
+
+@pytest.mark.django_db
 def test_dashboard_prompts_for_photos_after_an_event_finishes(client):
     owner = verified_user("owner@example.com")
     site = create_subscriber_site(

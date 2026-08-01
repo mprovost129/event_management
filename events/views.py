@@ -569,9 +569,23 @@ def album_photo_delete(request, site_id, album_id, photo_id):
         request=request,
     )
     photo.delete()
+    update_fields = []
     if was_cover:
         album.cover_photo = album.photos.first()
-        album.save(update_fields=("cover_photo", "updated_at"))
+        update_fields.append("cover_photo")
+    emptied_a_published_album = (
+        album.status == EventAlbum.Status.PUBLISHED and not album.photos.exists()
+    )
+    if emptied_a_published_album:
+        # EventAlbumEditForm already refuses to publish an album with no
+        # photos - deleting the last one must enforce the same rule instead
+        # of leaving "Published" showing in the admin while the album
+        # silently vanishes from the public gallery and 404s nowhere but
+        # renders empty at its own direct URL.
+        album.status = EventAlbum.Status.DRAFT
+        update_fields.append("status")
+    if update_fields:
+        album.save(update_fields=(*update_fields, "updated_at"))
 
     def _remove_files():
         for name in stored_names:
@@ -579,6 +593,11 @@ def album_photo_delete(request, site_id, album_id, photo_id):
 
     transaction.on_commit(_remove_files, robust=True)
     messages.success(request, "Photo deleted.")
+    if emptied_a_published_album:
+        messages.warning(
+            request,
+            "This album had no photos left, so it was moved back to Draft.",
+        )
     return redirect("events:album_edit", site_id=site.id, album_id=album.id)
 
 
@@ -713,6 +732,7 @@ def public_event_image(request, slug):
         Event.objects.for_site(site),
         slug=slug,
         status=Event.Status.PUBLISHED,
+        visibility__in=(Event.Visibility.PUBLIC, Event.Visibility.UNLISTED),
     )
     if not event.featured_image:
         raise Http404("Event image not found.")
@@ -753,6 +773,8 @@ def photo_album_detail(request, slug):
             status=EventAlbum.Status.PUBLISHED,
             occurrence__ends_at__lte=timezone.now(),
         )
+        .annotate(photo_count=Count("photos"))
+        .filter(photo_count__gt=0)
         .select_related("occurrence__event")
         .prefetch_related("photos"),
         slug=slug,

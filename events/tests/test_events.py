@@ -297,6 +297,43 @@ def test_owner_uploads_event_promotional_image_for_public_page_and_email_url(cli
 
 
 @pytest.mark.django_db
+def test_invite_only_event_image_is_not_publicly_fetchable(client):
+    owner, site = create_site()
+    event = create_series(site, owner, visibility=Event.Visibility.INVITE_ONLY)
+    client.force_login(owner)
+    client.post(
+        reverse("events:edit", args=(site.id, event.id)),
+        {
+            "title": event.title,
+            "slug": event.slug,
+            "description": event.description,
+            "featured_image": image_upload(),
+            "host_name": event.host_name,
+            "visibility": event.visibility,
+            "status": event.status,
+            "max_guests": event.max_guests,
+        },
+    )
+    event.refresh_from_db()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    client.logout()
+
+    detail_response = client.get(
+        reverse("events:detail", kwargs={"slug": event.slug}),
+        headers={"host": "boot-scooters.localhost"},
+    )
+    image_response = client.get(
+        reverse("events:event_image", kwargs={"slug": event.slug}),
+        headers={"host": "boot-scooters.localhost"},
+    )
+
+    assert event.featured_image
+    assert detail_response.status_code == 404
+    assert image_response.status_code == 404
+
+
+@pytest.mark.django_db
 def test_owner_builds_and_publishes_album_for_completed_event(client):
     owner, site = create_site()
     past_start = timezone.now() - timedelta(days=2)
@@ -426,6 +463,86 @@ def test_owner_builds_and_publishes_album_for_completed_event(client):
     assert "Opening dance with everyone together" in public_detail.content.decode()
     assert "A large group dancing together" in public_detail.content.decode()
     assert cross_tenant.status_code == 404
+
+
+@pytest.mark.django_db
+def test_deleting_the_last_photo_reverts_a_published_album_to_draft(client):
+    owner, site = create_site()
+    past_start = timezone.now() - timedelta(days=2)
+    event = create_event_series(
+        site=site,
+        creator=owner,
+        event_values={
+            "title": "Summer social",
+            "slug": "summer-social",
+            "description": "A joyful night with friends.",
+            "host_name": "Pat",
+            "visibility": Event.Visibility.PUBLIC,
+            "status": Event.Status.PUBLISHED,
+            "recurrence": Event.Recurrence.NONE,
+            "recurrence_interval": 1,
+            "recurrence_until": None,
+            "max_guests": 2,
+        },
+        first_start=past_start,
+        first_end=past_start + timedelta(hours=2),
+        venue_name="Town Hall",
+    )
+    occurrence = event.occurrences.get()
+    client.force_login(owner)
+    client.post(
+        reverse("events:album_create", args=(site.id,)),
+        {
+            "occurrence": str(occurrence.id),
+            "title": "Summer Social Highlights",
+            "slug": "summer-social-highlights",
+            "description": "Favorite moments from the dance floor.",
+        },
+    )
+    album = EventAlbum.objects.get(site=site)
+    client.post(
+        reverse("events:album_photo_upload", args=(site.id, album.id)),
+        {
+            "images": image_upload("dance-floor.jpg"),
+            "alt_text": "A group of dancers smiling under blue lights",
+        },
+    )
+    photo = EventPhoto.objects.get(album=album)
+    client.post(
+        reverse("events:album_edit", args=(site.id, album.id)),
+        {
+            "title": album.title,
+            "slug": album.slug,
+            "description": album.description,
+            "status": EventAlbum.Status.PUBLISHED,
+        },
+    )
+    album.refresh_from_db()
+    assert album.status == EventAlbum.Status.PUBLISHED
+
+    delete_response = client.post(
+        reverse("events:album_photo_delete", args=(site.id, album.id, photo.id)),
+        follow=True,
+    )
+
+    album.refresh_from_db()
+    assert delete_response.status_code == 200
+    assert "moved back to Draft" in delete_response.content.decode()
+    assert album.status == EventAlbum.Status.DRAFT
+    assert album.photos.count() == 0
+
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    public_list = client.get(
+        reverse("events:photo_album_list"),
+        headers={"host": "boot-scooters.localhost"},
+    )
+    public_detail = client.get(
+        reverse("events:photo_album_detail", args=(album.slug,)),
+        headers={"host": "boot-scooters.localhost"},
+    )
+    assert "Summer Social Highlights" not in public_list.content.decode()
+    assert public_detail.status_code == 404
 
 
 @pytest.mark.django_db

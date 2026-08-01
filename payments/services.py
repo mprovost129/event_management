@@ -34,6 +34,9 @@ logger = logging.getLogger(__name__)
 
 CHECKOUT_HOLD_MINUTES = 30
 REGISTRATION_TOKEN_SALT = "payments.registration-checkout"
+# Stripe dispute statuses a "charge.dispute.closed" event can report where no
+# chargeback actually happened, so the charge should stand.
+RESOLVED_WITHOUT_CHARGEBACK_DISPUTE_STATUSES = frozenset({"won", "warning_closed"})
 
 
 class CommerceUnavailable(ValidationError):
@@ -956,10 +959,18 @@ def apply_dispute(stripe_object, *, event_type, account_id=""):
         },
     )
     previous = order.status
-    if event_type != "charge.dispute.closed" or dispute.status == "lost":
-        order.status = Order.Status.DISPUTED
-    elif dispute.status == "won":
+    # Stripe closes a dispute as "won" or "warning_closed" when no chargeback
+    # actually occurred - the charge stands. Anything else, including a
+    # status this integration doesn't recognize yet, fails closed to
+    # DISPUTED rather than silently leaving the order's prior status
+    # untouched (the previous behavior for any unrecognized closed status).
+    if (
+        event_type == "charge.dispute.closed"
+        and dispute.status in RESOLVED_WITHOUT_CHARGEBACK_DISPUTE_STATUSES
+    ):
         order.status = Order.Status.PAID
+    else:
+        order.status = Order.Status.DISPUTED
     order.save(update_fields=("status", "updated_at"))
     FinancialTransition.objects.create(
         site=order.site,

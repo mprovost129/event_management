@@ -373,6 +373,17 @@ def test_production_error_pages_are_safe_branded_and_traceable(client):
 
 
 @pytest.mark.django_db
+def test_unrecognized_tenant_subdomain_404_still_gets_clickjacking_protection(client):
+    response = client.get(
+        "/", headers={"host": "totally-unknown-tenant.localhost"}
+    )
+
+    assert response.status_code == 404
+    assert response["X-Frame-Options"] == "DENY"
+    assert response["Content-Security-Policy"].startswith("default-src 'self'")
+
+
+@pytest.mark.django_db
 @override_settings(SUPPORT_EMAIL="support@gatherhqs.com")
 def test_support_contact_is_published_in_policy_and_error_pages(client):
     privacy = client.get(reverse("core:privacy"))

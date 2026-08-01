@@ -25,6 +25,7 @@ from .campaigns import (
     campaign_metrics,
     campaign_preview,
     duplicate_campaign,
+    find_unsubscribe_capability,
     launch_campaign,
     missing_sender_requirement,
     queue_campaign_test,
@@ -305,10 +306,16 @@ def unsubscribe_view(request, token):
     site = getattr(request, "site", None)
     if site is None:
         raise Http404("Unsubscribe link not found.")
+    capability = find_unsubscribe_capability(site=site, token=token)
+    if capability is None:
+        raise Http404("Unsubscribe link not found.")
     if request.method == "POST":
-        capability = unsubscribe(site=site, token=token)
-        if capability is None:
-            raise Http404("Unsubscribe link not found or already used.")
+        # A one-click List-Unsubscribe-Post request, a double submit, or a
+        # visit to the link already used by one of those can all reach here
+        # after the capability is already spent - show the same completed
+        # page instead of a dead-end 404.
+        if capability.used_at is None:
+            capability = unsubscribe(site=site, token=token)
         return render(
             request,
             "communications/unsubscribed.html",
@@ -317,7 +324,12 @@ def unsubscribe_view(request, token):
     return render(
         request,
         "communications/unsubscribed.html",
-        {"site": site, "token": token, "completed": False},
+        {
+            "site": site,
+            "token": token,
+            "channel": capability.channel,
+            "completed": capability.used_at is not None,
+        },
     )
 
 

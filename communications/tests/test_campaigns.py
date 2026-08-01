@@ -195,6 +195,47 @@ def test_unsubscribe_immediately_blocks_queued_marketing():
 
 
 @pytest.mark.django_db
+def test_repeat_unsubscribe_click_shows_the_completed_page_not_a_dead_end(client):
+    owner, site = campaign_fixture()
+    contact_for(site, email_consent=True)
+    campaign = draft_campaign(site)
+    launch_campaign(campaign=campaign, actor=owner)
+    expand_campaign(campaign.id)
+    message = OutboundMessage.objects.get(campaign=campaign)
+    token = message.unsubscribe_url.rstrip("/").rsplit("/", 1)[-1]
+    url = reverse("communications:unsubscribe", kwargs={"token": token})
+
+    first_get = client.get(url, headers={"host": f"{site.slug}.localhost"})
+    first_post = client.post(url, headers={"host": f"{site.slug}.localhost"})
+    # A second visit after the link was already used - by that first POST,
+    # or by a mail client's one-click List-Unsubscribe-Post firing on its
+    # own - must not dead-end.
+    second_get = client.get(url, headers={"host": f"{site.slug}.localhost"})
+    second_post = client.post(url, headers={"host": f"{site.slug}.localhost"})
+
+    assert first_get.status_code == 200
+    assert "Stop marketing messages" in first_get.content.decode()
+    assert first_post.status_code == 200
+    assert "You have been unsubscribed" in first_post.content.decode()
+    assert second_get.status_code == 200
+    assert "You have been unsubscribed" in second_get.content.decode()
+    assert second_post.status_code == 200
+    assert "You have been unsubscribed" in second_post.content.decode()
+
+
+@pytest.mark.django_db
+def test_unknown_unsubscribe_token_still_404s(client):
+    _, site = campaign_fixture()
+
+    response = client.get(
+        reverse("communications:unsubscribe", kwargs={"token": "not-a-real-token"}),
+        headers={"host": f"{site.slug}.localhost"},
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
 def test_consent_is_rechecked_immediately_before_delivery():
     owner, site = campaign_fixture()
     contact = contact_for(site, email_consent=True)

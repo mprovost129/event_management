@@ -505,6 +505,16 @@ def consume_sms_for_message(message):
     )
 
 
+def find_unsubscribe_capability(*, site, token):
+    """Look up an unsubscribe link regardless of whether it's already been
+    used, so the view can tell "never existed" (404) apart from "already
+    processed" (show the same completed page, not a dead end)."""
+    return (
+        UnsubscribeCapability.objects.filter(site=site, token_hash=token_hash(token))
+        .first()
+    )
+
+
 @transaction.atomic
 def unsubscribe(*, site, token):
     capability = (

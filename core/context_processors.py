@@ -2,7 +2,10 @@ from django.conf import settings
 from django.urls import reverse
 
 
-def _control_host(request):
+def control_host(request):
+    """The platform's own host, for building an absolute URL to a control-app
+    route from anywhere - including a tenant subdomain's page, which must
+    never assume it can resolve a bare "core:xyz" path against itself."""
     hosts = list(getattr(settings, "PLATFORM_CONTROL_HOSTS", ()) or ())
     if hosts:
         return hosts[0]
@@ -13,8 +16,8 @@ def _control_host(request):
     return settings.PLATFORM_DOMAIN
 
 
-def _control_origin(request):
-    host = _control_host(request)
+def control_origin(request):
+    host = control_host(request)
     scheme = "https" if request.is_secure() else "http"
 
     # Preserve local development ports when targeting localhost-like hosts.
@@ -27,12 +30,12 @@ def _control_origin(request):
 
 
 def platform(request):
-    control_origin = _control_origin(request)
+    origin = control_origin(request)
     return {
         "platform_name": settings.PLATFORM_NAME,
         "platform_long_name": settings.PLATFORM_LONG_NAME,
         "platform_domain": settings.PLATFORM_DOMAIN,
         "support_email": settings.SUPPORT_EMAIL,
-        "platform_admin_url": f"{control_origin}{reverse('admin:index')}",
-        "platform_ops_url": f"{control_origin}{reverse('ops:dashboard')}",
+        "platform_admin_url": f"{origin}{reverse('admin:index')}",
+        "platform_ops_url": f"{origin}{reverse('ops:dashboard')}",
     }

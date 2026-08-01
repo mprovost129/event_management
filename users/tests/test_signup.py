@@ -7,6 +7,21 @@ from django.urls import reverse
 from users.models import User
 
 
+@pytest.mark.django_db
+def test_platform_help_url_tracks_the_real_help_route_and_is_live(client):
+    user = User.objects.create_user(
+        email="member@example.com", password="Strong-Test-Pass-2026!"
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("sites:account_dashboard"))
+    content = response.content.decode()
+
+    help_path = reverse("core:help")
+    assert f'href="http://localhost{help_path}"' in content
+    assert client.get(help_path).status_code == 200
+
+
 def test_signup_page_explains_trial_and_configured_pricing(client):
     response = client.get(reverse("users:signup"))
     content = response.content.decode()

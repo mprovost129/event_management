@@ -1,15 +1,11 @@
-from django.conf import settings
+from django.urls import reverse
 
+from core.context_processors import control_origin
 from sites.models import SiteRole
 
 
 def _request_scheme(request):
     return "https" if request.is_secure() else "http"
-
-
-def _control_host():
-    control_hosts = list(getattr(settings, "PLATFORM_CONTROL_HOSTS", ()) or ())
-    return control_hosts[0] if control_hosts else settings.PLATFORM_DOMAIN
 
 
 def _site_public_url(request, role):
@@ -21,7 +17,7 @@ def _site_public_url(request, role):
 
 def account_navigation(request):
     user = getattr(request, "user", None)
-    help_url = f"{_request_scheme(request)}://{_control_host()}/help/"
+    help_url = f"{control_origin(request)}{reverse('core:help')}"
     if user is None or not user.is_authenticated:
         return {
             "nav_primary_site_url": None,
