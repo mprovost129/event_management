@@ -46,7 +46,11 @@ from .registration import (
     save_response,
 )
 from .reporting import occurrence_metrics
-from .services import create_event_series, update_occurrences_from
+from .services import (
+    create_event_series,
+    public_occurrence_url,
+    update_occurrences_from,
+)
 
 
 def _public_site(request):
@@ -223,8 +227,31 @@ def event_edit(request, site_id, event_id):
                 status=EventOccurrence.Status.CANCELED
             ):
                 occurrence.status = EventOccurrence.Status.CANCELED
-                occurrence.save(update_fields=("status", "updated_at"))
+                occurrence.canceled_by_event = True
+                occurrence.save(
+                    update_fields=("status", "canceled_by_event", "updated_at")
+                )
                 queue_occurrence_notice(occurrence, cancellation=True)
+        elif (
+            event.status == Event.Status.PUBLISHED
+            and previous["status"] == Event.Status.CANCELED
+        ):
+            # Only restore dates this cancellation took down, not ones a
+            # manager had already canceled individually beforehand, and never
+            # a date that has since passed.
+            for occurrence in event.occurrences.filter(
+                status=EventOccurrence.Status.CANCELED,
+                canceled_by_event=True,
+                ends_at__gte=timezone.now(),
+            ):
+                occurrence.status = EventOccurrence.Status.SCHEDULED
+                occurrence.canceled_by_event = False
+                occurrence.save(
+                    update_fields=("status", "canceled_by_event", "updated_at")
+                )
+                queue_occurrence_notice(
+                    occurrence, revision_key=event.updated_at.isoformat()
+                )
         elif changed and event.status == Event.Status.PUBLISHED:
             for occurrence in event.occurrences.filter(
                 status=EventOccurrence.Status.SCHEDULED,
@@ -660,7 +687,10 @@ def cancel_event(request, site_id, event_id):
     )
     for occurrence in occurrences:
         occurrence.status = EventOccurrence.Status.CANCELED
-        occurrence.save(update_fields=("status", "updated_at"))
+        occurrence.canceled_by_event = True
+        occurrence.save(
+            update_fields=("status", "canceled_by_event", "updated_at")
+        )
         queue_occurrence_notice(occurrence, cancellation=True)
     record_audit_event(
         action="event.canceled",
@@ -855,6 +885,7 @@ def public_response_manage(request, slug, occurrence_id, token):
                 {
                     "site": site,
                     "registration": registration,
+                    "event_url": public_occurrence_url(registration.occurrence),
                     "checkout_token": (
                         registration_checkout_token(registration)
                         if registration.payment_status
@@ -925,6 +956,7 @@ def public_response(request, slug, occurrence_id):
                 {
                     "site": site,
                     "registration": registration,
+                    "event_url": public_occurrence_url(registration.occurrence),
                     "checkout_token": (
                         registration_checkout_token(registration)
                         if registration.payment_status
@@ -973,6 +1005,7 @@ def invitation_response(request, token):
                 {
                     "site": site,
                     "registration": registration,
+                    "event_url": public_occurrence_url(registration.occurrence),
                     "checkout_token": (
                         registration_checkout_token(registration)
                         if registration.payment_status

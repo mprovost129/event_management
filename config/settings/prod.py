@@ -71,7 +71,14 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_DOMAIN = env("SESSION_COOKIE_DOMAIN", f".{PLATFORM_DOMAIN}")
+# Host-only by default: the session/CSRF cookies must NOT be shared with
+# self-serve tenant subdomains (every self-serve site gets an instantly
+# trusted *.PLATFORM_DOMAIN host, see sites.services.create_subscriber_site),
+# or a future XSS on any one tenant page could ride the ambient platform
+# session across every other tenant. SiteResolutionMiddleware redirects the
+# "www." alias onto the canonical PLATFORM_DOMAIN host so a host-only cookie
+# still survives normal browser navigation between the two.
+SESSION_COOKIE_DOMAIN = env("SESSION_COOKIE_DOMAIN", None)
 CSRF_COOKIE_DOMAIN = env("CSRF_COOKIE_DOMAIN", SESSION_COOKIE_DOMAIN)
 
 if env_bool("TRUST_X_FORWARDED_PROTO", True):

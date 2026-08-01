@@ -11,7 +11,7 @@ from django.utils import timezone
 from communications.models import OutboundMessage
 from contacts.models import Contact
 from events.messaging import queue_confirmation
-from events.models import Event, Invitation, Participant, Registration
+from events.models import Event, EventOccurrence, Invitation, Participant, Registration
 from events.registration import (
     CapacityExceeded,
     RegistrationUnavailable,
@@ -230,8 +230,14 @@ def test_public_response_creates_contact_participants_and_confirmation(client):
         occurrence=occurrence, contact__normalized_email="alex@example.com"
     )
     assert response.status_code == 200
-    assert "A confirmation email is being sent" in response.content.decode()
-    assert "queued" not in response.content.decode().lower()
+    content = response.content.decode()
+    assert "A confirmation email is being sent" in content
+    assert "queued" not in content.lower()
+    occurrence_path = reverse(
+        "events:occurrence_detail",
+        kwargs={"slug": event.slug, "occurrence_id": occurrence.id},
+    )
+    assert f'href="{occurrence_path}"' in content
     assert (
         registration.participants.filter(status=Participant.Status.ACTIVE).count() == 2
     )
@@ -476,6 +482,34 @@ def test_manager_invitation_queues_secure_link_for_invite_only_event(client):
 
 
 @pytest.mark.django_db
+def test_invite_only_rsvp_confirmation_has_no_dead_link_back_to_the_event(client):
+    owner, site, event, occurrence = phase_three_fixture(
+        visibility=Event.Visibility.INVITE_ONLY
+    )
+    contact = Contact.objects.create(
+        site=site, first_name="Alex", last_name="Dancer", email="alex@example.com"
+    )
+    invitation, token = create_invitations(
+        site=site, occurrence=occurrence, contacts=[contact], actor=owner
+    )[0]
+
+    response = client.post(
+        reverse("events:invitation_response", kwargs={"token": token}),
+        {"response": "going", "guest_count": "0"},
+        headers={"host": "boot-scooters.localhost"},
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Back to event details" not in content
+    occurrence_path = reverse(
+        "events:occurrence_detail",
+        kwargs={"slug": event.slug, "occurrence_id": occurrence.id},
+    )
+    assert occurrence_path not in content
+
+
+@pytest.mark.django_db
 def test_event_cancellation_sends_notices_for_affected_responses(client):
     owner, site, event, occurrence = phase_three_fixture()
     going = Contact.objects.create(
@@ -517,6 +551,105 @@ def test_event_cancellation_sends_notices_for_affected_responses(client):
     assert list(cancellation_messages.values_list("recipient_email", flat=True)) == [
         "going@example.com"
     ]
+
+
+@pytest.mark.django_db
+def test_uncanceling_an_event_restores_the_dates_it_took_down(client):
+    owner, site, event, occurrence = phase_three_fixture()
+    going = Contact.objects.create(
+        site=site, first_name="Alex", last_name="Going", email="going@example.com"
+    )
+    save_response(
+        occurrence=occurrence,
+        contact=going,
+        response=Registration.Response.GOING,
+        guests=[],
+        source=Registration.Source.MANAGER,
+    )
+    # A second date a manager canceled individually before the whole event
+    # was ever canceled. Un-canceling the event must not resurrect it.
+    individually_canceled = EventOccurrence.objects.create(
+        site=site,
+        event=event,
+        starts_at=occurrence.starts_at + timedelta(days=7),
+        ends_at=occurrence.ends_at + timedelta(days=7),
+        timezone=site.timezone,
+        capacity=occurrence.capacity,
+        status=EventOccurrence.Status.CANCELED,
+    )
+    client.force_login(owner)
+    client.post(
+        reverse("events:cancel", kwargs={"site_id": site.id, "event_id": event.id})
+    )
+    occurrence.refresh_from_db()
+    individually_canceled.refresh_from_db()
+    assert occurrence.status == EventOccurrence.Status.CANCELED
+    assert occurrence.canceled_by_event is True
+    assert individually_canceled.canceled_by_event is False
+
+    response = client.post(
+        reverse("events:edit", args=(site.id, event.id)),
+        {
+            "title": event.title,
+            "slug": event.slug,
+            "description": event.description,
+            "host_name": event.host_name,
+            "visibility": event.visibility,
+            "status": Event.Status.PUBLISHED,
+            "max_guests": event.max_guests,
+        },
+    )
+
+    assert response.status_code == 302
+    event.refresh_from_db()
+    occurrence.refresh_from_db()
+    individually_canceled.refresh_from_db()
+    assert event.status == Event.Status.PUBLISHED
+    assert occurrence.status == EventOccurrence.Status.SCHEDULED
+    assert occurrence.canceled_by_event is False
+    # The individually-canceled date stays canceled - that decision was
+    # unrelated to the whole-event cancellation.
+    assert individually_canceled.status == EventOccurrence.Status.CANCELED
+    assert OutboundMessage.objects.filter(
+        kind=OutboundMessage.Kind.EVENT_UPDATE, occurrence=occurrence
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_uncanceling_an_event_does_not_resurrect_an_occurrence_that_has_already_ended(
+    client,
+):
+    owner, site, event, occurrence = phase_three_fixture()
+    past_occurrence = EventOccurrence.objects.create(
+        site=site,
+        event=event,
+        starts_at=timezone.now() - timedelta(days=7),
+        ends_at=timezone.now() - timedelta(days=7) + timedelta(hours=2),
+        timezone=site.timezone,
+        capacity=occurrence.capacity,
+    )
+    client.force_login(owner)
+    client.post(
+        reverse("events:cancel", kwargs={"site_id": site.id, "event_id": event.id})
+    )
+    past_occurrence.refresh_from_db()
+    assert past_occurrence.canceled_by_event is True
+
+    client.post(
+        reverse("events:edit", args=(site.id, event.id)),
+        {
+            "title": event.title,
+            "slug": event.slug,
+            "description": event.description,
+            "host_name": event.host_name,
+            "visibility": event.visibility,
+            "status": Event.Status.PUBLISHED,
+            "max_guests": event.max_guests,
+        },
+    )
+
+    past_occurrence.refresh_from_db()
+    assert past_occurrence.status == EventOccurrence.Status.CANCELED
 
 
 @pytest.mark.django_db(transaction=True)

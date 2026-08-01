@@ -1,3 +1,4 @@
+import time
 from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -30,6 +31,7 @@ from payments.models import (
     TicketType,
 )
 from payments.services import (
+    CommerceUnavailable,
     apply_refund_object,
     attach_member_checkout,
     commerce_summary,
@@ -40,6 +42,7 @@ from payments.services import (
     registration_checkout_token,
     reserve_ticket_order,
     start_member_subscription,
+    submit_refund,
     synchronize_connected_account,
     ticket_inventory,
     ticket_inventory_map,
@@ -251,6 +254,44 @@ def test_payment_webhook_converts_hold_creates_one_ticket_per_participant_and_de
 
 
 @pytest.mark.django_db
+def test_retrying_checkout_supersedes_the_earlier_pending_order_instead_of_stacking():
+    _, _, _, _, ticket_type, registration = commerce_fixture()
+
+    first_order, _ = reserve_ticket_order(
+        registration=registration, ticket_type=ticket_type
+    )
+    second_order, _ = reserve_ticket_order(
+        registration=registration, ticket_type=ticket_type
+    )
+
+    first_order.refresh_from_db()
+    assert first_order.status == Order.Status.EXPIRED
+    assert (
+        InventoryHold.objects.get(order=first_order).status
+        == InventoryHold.Status.RELEASED
+    )
+    assert second_order.status == Order.Status.PENDING
+    assert (
+        Order.objects.filter(
+            registration=registration, status=Order.Status.PENDING
+        ).count()
+        == 1
+    )
+
+    # A late completion of the superseded checkout session must still be
+    # honored rather than losing the buyer's money.
+    mark_order_paid(
+        first_order.id,
+        stripe_object={"object": "payment_intent", "id": "pi_stale_but_paid"},
+    )
+    first_order.refresh_from_db()
+    registration.refresh_from_db()
+    assert first_order.status == Order.Status.PAID
+    assert registration.payment_status == Registration.PaymentStatus.PAID
+    assert Ticket.objects.filter(order_line__order=first_order).count() == 2
+
+
+@pytest.mark.django_db
 def test_webhook_rejects_mismatched_connected_account_context():
     _, _, _, _, ticket_type, registration = commerce_fixture()
     order, _ = reserve_ticket_order(registration=registration, ticket_type=ticket_type)
@@ -316,6 +357,77 @@ def test_full_refund_is_idempotent_and_preserves_financial_history():
         order_line__order=order, status=Ticket.Status.VALID
     ).exists()
     assert order.financial_history.count() >= 3
+
+
+@pytest.mark.django_db
+@override_settings(STRIPE_SECRET_KEY="sk_test_example")
+@patch("payments.gateway.stripe.Refund.create")
+def test_submit_refund_marks_a_rejected_refund_failed_instead_of_stuck_pending(
+    mock_create,
+):
+    owner, _, _, _, ticket_type, registration = commerce_fixture()
+    order, _ = reserve_ticket_order(registration=registration, ticket_type=ticket_type)
+    mark_order_paid(
+        order.id,
+        stripe_object={"object": "payment_intent", "id": "pi_paid"},
+    )
+    order.refresh_from_db()
+    refund = prepare_refund(
+        order=order,
+        amount_cents=order.total_cents,
+        reason="Event canceled",
+        actor=owner,
+    )
+    mock_create.side_effect = stripe.InvalidRequestError(
+        "Charge has already been refunded.", param=None
+    )
+
+    with pytest.raises(stripe.InvalidRequestError):
+        submit_refund(refund)
+
+    refund.refresh_from_db()
+    order.refresh_from_db()
+    assert refund.status == Refund.Status.FAILED
+    assert "already been refunded" in refund.failure_reason
+    assert order.financial_history.filter(
+        event_type="refund.submission_failed"
+    ).exists()
+    # The dead refund attempt doesn't block a genuine retry.
+    retry = prepare_refund(
+        order=order, amount_cents=order.total_cents, reason="Retry", actor=owner
+    )
+    assert retry.pk != refund.pk
+    assert retry.status == Refund.Status.PENDING
+
+
+@pytest.mark.django_db
+def test_refund_form_shows_a_prior_failed_attempt(client):
+    owner, site, _, _, ticket_type, registration = commerce_fixture()
+    order, _ = reserve_ticket_order(registration=registration, ticket_type=ticket_type)
+    mark_order_paid(
+        order.id,
+        stripe_object={"object": "payment_intent", "id": "pi_paid"},
+    )
+    order.refresh_from_db()
+    refund = prepare_refund(
+        order=order,
+        amount_cents=order.total_cents,
+        reason="Event canceled",
+        actor=owner,
+    )
+    refund.status = Refund.Status.FAILED
+    refund.failure_reason = "Charge has already been refunded."
+    refund.save(update_fields=("status", "failure_reason", "updated_at"))
+    client.force_login(owner)
+
+    response = client.get(
+        reverse("payments:refund_order", kwargs={"site_id": site.id, "order_id": order.id})
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Previous refund attempts" in content
+    assert "Charge has already been refunded." in content
 
 
 @pytest.mark.django_db
@@ -421,6 +533,77 @@ def test_member_dues_checkout_and_webhooks_stay_in_connected_account(
     payment = MembershipPayment.objects.get(stripe_invoice_id="in_member")
     assert payment.status == MembershipPayment.Status.PAID
     assert payment.amount_paid_cents == 2000
+
+
+@pytest.mark.django_db
+def test_retrying_membership_join_supersedes_an_incomplete_checkout():
+    _, site, _, _, _, _ = commerce_fixture()
+    plan = MembershipPlan.objects.create(
+        site=site,
+        name="Dance club",
+        amount_cents=2000,
+        currency="usd",
+        interval=MembershipPlan.Interval.MONTHLY,
+    )
+
+    first = start_member_subscription(
+        site=site,
+        plan=plan,
+        first_name="Jo",
+        last_name="Member",
+        email="jo@example.com",
+        account_id="acct_site",
+    )
+    second = start_member_subscription(
+        site=site,
+        plan=plan,
+        first_name="Jo",
+        last_name="Member",
+        email="jo@example.com",
+        account_id="acct_site",
+    )
+
+    first.refresh_from_db()
+    assert first.status == MemberSubscription.Status.CANCELED
+    assert second.status == MemberSubscription.Status.INCOMPLETE
+    assert (
+        MemberSubscription.objects.filter(member=second.member, plan=plan)
+        .exclude(status=MemberSubscription.Status.CANCELED)
+        .count()
+        == 1
+    )
+
+
+@pytest.mark.django_db
+def test_membership_join_refuses_a_second_subscription_once_active():
+    _, site, _, _, _, _ = commerce_fixture()
+    plan = MembershipPlan.objects.create(
+        site=site,
+        name="Dance club",
+        amount_cents=2000,
+        currency="usd",
+        interval=MembershipPlan.Interval.MONTHLY,
+    )
+    active = start_member_subscription(
+        site=site,
+        plan=plan,
+        first_name="Jo",
+        last_name="Member",
+        email="jo@example.com",
+        account_id="acct_site",
+    )
+    active.status = MemberSubscription.Status.ACTIVE
+    active.save(update_fields=("status", "updated_at"))
+
+    with pytest.raises(CommerceUnavailable, match="already have an active membership"):
+        start_member_subscription(
+            site=site,
+            plan=plan,
+            first_name="Jo",
+            last_name="Member",
+            email="jo@example.com",
+            account_id="acct_site",
+        )
 
 
 @pytest.mark.django_db
@@ -829,6 +1012,45 @@ def test_ticket_checkout_only_shows_options_that_cover_the_whole_party(client):
     assert "$30.00 total" in content
     assert "2 tickets" in content
     assert "Payment handled by Stripe" in content
+
+
+@pytest.mark.django_db
+def test_expired_checkout_link_offers_a_way_back_to_the_event_instead_of_a_dead_end(
+    client,
+):
+    _, site, _, occurrence, _, registration = commerce_fixture()
+    real_now = time.time()
+    with patch("django.core.signing.time.time", return_value=real_now - 3600):
+        token = registration_checkout_token(registration)
+
+    response = client.get(
+        reverse("payments:ticket_checkout", kwargs={"token": token}),
+        headers={"host": "boot-scooters.localhost"},
+    )
+
+    assert response.status_code == 404
+    content = response.content.decode()
+    assert "expired" in content.lower()
+    occurrence_path = reverse(
+        "events:occurrence_detail",
+        kwargs={"slug": occurrence.event.slug, "occurrence_id": occurrence.id},
+    )
+    assert f'href="{occurrence_path}"' in content
+    assert "Return to event" in content
+
+
+@pytest.mark.django_db
+def test_invalid_checkout_token_falls_back_to_the_site_home_link(client):
+    _, site, _, _, _, _ = commerce_fixture()
+
+    response = client.get(
+        reverse("payments:ticket_checkout", kwargs={"token": "not-a-real-token"}),
+        headers={"host": "boot-scooters.localhost"},
+    )
+
+    assert response.status_code == 404
+    content = response.content.decode()
+    assert "Return to Boot Scooters" in content
 
 
 @pytest.mark.django_db

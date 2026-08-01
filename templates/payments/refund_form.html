@@ -5,5 +5,20 @@
 <h1 class="mt-3">Refund order</h1>
 <p>{{ order.occurrence.event.title }} · {{ order.purchaser }} · ${{ total|floatformat:2 }} {{ order.currency|upper }}</p>
 <div class="alert alert-warning">Refunds are submitted in the subscriber's connected Stripe account. The Gather HQs application fee is returned proportionally, while Stripe processing fees may not be returned. Financial history is retained.</div>
+{% if refund_history %}
+<section class="card mb-3"><div class="card-body">
+    <h2 class="h6">Previous refund attempts</h2>
+    <ul class="list-unstyled mb-0">
+        {% for refund in refund_history %}
+        <li class="mb-1">
+            ${{ refund.amount_display|floatformat:2 }} &middot;
+            <span class="gh-content-status gh-content-status-{{ refund.status }}">{{ refund.get_status_display }}</span>
+            &middot; {{ refund.created_at }}
+            {% if refund.status == 'failed' and refund.failure_reason %}<br><small class="text-danger">{{ refund.failure_reason }}</small>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div></section>
+{% endif %}
 <form method="post" class="card"><div class="card-body">{% csrf_token %}{{ form.as_p }}<button class="btn btn-danger" type="submit">Submit refund</button></div></form>
 {% endblock %}

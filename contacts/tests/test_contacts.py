@@ -178,3 +178,5 @@ def test_member_with_subscription_history_cannot_be_changed_to_contact_only(clie
     assert response.status_code == 200
     assert "Mark them inactive instead" in response.content.decode()
     assert Member.objects.filter(pk=member.pk).exists()
+    assert 'id="archive-contact-form"' in response.content.decode()
+    assert 'data-confirm="Archive this contact?' in response.content.decode()

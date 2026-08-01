@@ -45,6 +45,22 @@ def test_data_tables_and_images_keep_baseline_accessibility_markup():
     assert not failures
 
 
+def test_no_template_relies_on_an_inline_event_handler_the_csp_blocks():
+    # SecurityHeadersMiddleware sends script-src 'self' with no 'unsafe-inline',
+    # so a browser silently drops onclick=/onsubmit=/etc. attributes rather than
+    # running them - the form still submits, just with no confirmation.
+    # Destructive actions must use the data-confirm attribute main.js listens for.
+    failures = []
+    for template in (settings.BASE_DIR / "templates").rglob("*.html"):
+        source = template.read_text(encoding="utf-8")
+        failures.extend(
+            f"{template.relative_to(settings.BASE_DIR)}: {match}"
+            for match in re.findall(r'\bon[a-z]+\s*=\s*"[^"]*"', source, flags=re.IGNORECASE)
+        )
+
+    assert not failures
+
+
 @override_settings(RELEASE_VERSION="release-abc123")
 def test_structured_logs_include_the_release_identifier():
     record = logging.LogRecord(
@@ -319,10 +335,10 @@ def test_production_cloudmersive_scanning_requires_api_key():
 @override_settings(
     DEBUG=False,
     PLATFORM_DOMAIN="gatherhqs.com",
-    SESSION_COOKIE_DOMAIN=None,
-    CSRF_COOKIE_DOMAIN=None,
+    SESSION_COOKIE_DOMAIN=".gatherhqs.com",
+    CSRF_COOKIE_DOMAIN=".gatherhqs.com",
 )
-def test_production_deployment_requires_cross_subdomain_auth_cookies():
+def test_production_deployment_rejects_cross_subdomain_auth_cookies():
     issue_ids = {issue.id for issue in deployment_product_check(None)}
 
     assert "platform.E034" in issue_ids
@@ -332,10 +348,10 @@ def test_production_deployment_requires_cross_subdomain_auth_cookies():
 @override_settings(
     DEBUG=False,
     PLATFORM_DOMAIN="gatherhqs.com",
-    SESSION_COOKIE_DOMAIN=".gatherhqs.com",
-    CSRF_COOKIE_DOMAIN=".gatherhqs.com",
+    SESSION_COOKIE_DOMAIN=None,
+    CSRF_COOKIE_DOMAIN=None,
 )
-def test_production_deployment_accepts_cross_subdomain_auth_cookies():
+def test_production_deployment_accepts_host_only_auth_cookies():
     issue_ids = {issue.id for issue in deployment_product_check(None)}
 
     assert "platform.E034" not in issue_ids

@@ -125,12 +125,22 @@ def _recipient_update(message, status, *, error=""):
     CampaignRecipient.objects.filter(pk=message.campaign_recipient_id).update(**values)
 
 
-def _marketing_is_still_allowed(message):
-    if not message.is_marketing or not message.contact_id:
+def _recipient_is_still_reachable(message):
+    if not message.contact_id:
         return True
-    from .campaigns import contact_eligibility
+    if message.is_marketing:
+        from .campaigns import contact_eligibility
 
-    allowed, _ = contact_eligibility(message.contact, message.channel)
+        allowed, _ = contact_eligibility(message.contact, message.channel)
+        return allowed
+    # Transactional mail (invitations, RSVP confirmations, reminders, review
+    # requests) doesn't need marketing consent, but must not keep going to a
+    # contact this platform already knows is archived or hard-suppressed
+    # (bounced/complained) - checked here, at send time, so a contact who
+    # became suppressed after the message was queued is still caught.
+    from .campaigns import transactional_eligibility
+
+    allowed, _ = transactional_eligibility(message.contact, message.channel)
     return allowed
 
 
@@ -166,11 +176,19 @@ def deliver_message(message_id):
         )
         if message.status in TERMINAL_MESSAGE_STATUSES:
             return message
+        if message.status == OutboundMessage.Status.PROCESSING:
+            # A redelivered task (CELERY_TASK_ACKS_LATE, e.g. after a worker
+            # is killed mid-send) can reach a message a prior, possibly still
+            # in-flight attempt already claimed - the lock guarding that
+            # write is released before the network call. Never send twice
+            # from here; only the stale-PROCESSING reclaim in
+            # queued_message_ids() may requeue a genuinely abandoned message.
+            return message
         if message.attempts >= MAX_DELIVERY_ATTEMPTS:
             return message
         if message.available_at > timezone.now():
             return message
-        if not _marketing_is_still_allowed(message):
+        if not _recipient_is_still_reachable(message):
             message.status = OutboundMessage.Status.SUPPRESSED
             message.body = ""
             message.html_body = ""

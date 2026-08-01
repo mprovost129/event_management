@@ -1,0 +1,17 @@
+{% extends 'public/site_base.html' %}
+{% block title %}Checkout link expired | {{ site.display_name }}{% endblock %}
+{% block content %}
+<section class="site-theme gh-public-checkout">
+    <div class="gh-checkout-head"><p>Secure ticket checkout</p><h1>This checkout link has expired.</h1></div>
+    <div class="gh-ticket-unavailable">
+        <p>Ticket checkout links are only valid for a limited time after you RSVP. Yours has expired, but your RSVP itself is safe.</p>
+        {% if event_url %}
+        <p>Return to the event page and use "Choose tickets and pay" to start a fresh checkout.</p>
+        <a href="{{ event_url }}">Return to event</a>
+        {% else %}
+        <p>Return to {{ site.display_name }} to find the event and start a fresh checkout.</p>
+        <a href="/">Return to {{ site.display_name }}</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

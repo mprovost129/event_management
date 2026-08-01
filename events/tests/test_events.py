@@ -110,6 +110,9 @@ def test_event_manager_filters_without_per_occurrence_metric_queries(client):
     assert len(queries) < 20
     assert "Welcome dance" in filtered.content.decode()
     assert "Archived dance" not in filtered.content.decode()
+    assert 'data-confirm="Cancel this event and notify affected participants?"' in (
+        filtered.content.decode()
+    )
 
 
 @pytest.mark.django_db

@@ -326,5 +326,6 @@ def test_platform_operations_controls_have_labels_and_confirmations(client):
     assert 'for="operations-search"' in content
     assert f'for="suspension-reason-{site.id}"' in content
     assert f'for="deletion-reason-{site.id}"' in content
-    assert "return confirm(" in content
+    assert "data-confirm=" in content
+    assert "onsubmit=" not in content
     assert 'role="region"' in content

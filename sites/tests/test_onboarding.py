@@ -482,8 +482,36 @@ def test_gather_hqs_root_and_www_hosts_remain_control_hosts(client):
     www = client.get("/", headers={"host": "www.gatherhqs.com"})
 
     assert root.status_code == 200
-    assert www.status_code == 200
     assert "Gather HQs" in root.content.decode()
+    # The session/CSRF cookies are host-only (platform.E034/E035), so the
+    # "www." alias must funnel onto the canonical host rather than serving
+    # the page directly, or a login on one alias is invisible on the other.
+    assert www.status_code == 302
+    assert www.url == "http://gatherhqs.com/"
+
+
+@pytest.mark.django_db
+@override_settings(
+    PLATFORM_DOMAIN="gatherhqs.com",
+    PLATFORM_CONTROL_HOSTS=("gatherhqs.com", "www.gatherhqs.com"),
+    ALLOWED_HOSTS=("gatherhqs.com", ".gatherhqs.com"),
+)
+def test_www_redirect_preserves_path_and_leaves_non_get_requests_alone():
+    from django.test import Client
+
+    client = Client()
+    redirected = client.get(
+        "/accounts/login/?next=/dashboard/", headers={"host": "www.gatherhqs.com"}
+    )
+    posted = client.post(
+        "/accounts/login/", headers={"host": "www.gatherhqs.com"}
+    )
+
+    assert redirected.status_code == 302
+    assert redirected.url == "http://gatherhqs.com/accounts/login/?next=/dashboard/"
+    # A server-to-server call (e.g. a webhook) against the alias host must be
+    # served directly, never redirected.
+    assert posted.status_code != 302
 
 
 @pytest.mark.django_db

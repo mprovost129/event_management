@@ -27,6 +27,11 @@ urlpatterns = [
         name="campaign_duplicate",
     ),
     path(
+        "sites/<uuid:site_id>/campaigns/<uuid:campaign_id>/cancel/",
+        views.campaign_cancel,
+        name="campaign_cancel",
+    ),
+    path(
         "communications/unsubscribe/<str:token>/",
         views.unsubscribe_view,
         name="unsubscribe",

@@ -31,6 +31,45 @@ def test_account_access_and_recovery_pages_share_clear_form_layout(client):
 
 
 @pytest.mark.django_db
+def test_password_change_uses_the_branded_templates_not_django_admin(client):
+    user = User.objects.create_user(
+        email="member@example.com", password="Strong-Test-Pass-2026!"
+    )
+    client.force_login(user)
+
+    form_page = client.get(reverse("users:password_change"))
+    assert form_page.status_code == 200
+    used_templates = {template.name for template in form_page.templates if template.name}
+    assert "registration/password_change_form.html" in used_templates
+    assert not any(name.startswith("admin/") for name in used_templates)
+    content = form_page.content.decode()
+    assert "gh-auth-card" in content
+    assert "admin/base_site.html" not in content
+
+    response = client.post(
+        reverse("users:password_change"),
+        {
+            "old_password": "Strong-Test-Pass-2026!",
+            "new_password1": "Even-Stronger-Pass-2026!",
+            "new_password2": "Even-Stronger-Pass-2026!",
+        },
+    )
+    assert response.status_code == 302
+    assert response.url == reverse("users:password_change_done")
+
+    done_page = client.get(response.url)
+    assert done_page.status_code == 200
+    assert "gh-auth-card" in done_page.content.decode()
+
+    user.refresh_from_db()
+    assert user.check_password("Even-Stronger-Pass-2026!")
+    # PasswordChangeView.form_valid() must rotate the session auth hash so the
+    # user isn't logged out by their own password change.
+    profile_page = client.get(reverse("users:profile"))
+    assert profile_page.status_code == 200
+
+
+@pytest.mark.django_db
 def test_already_authenticated_user_visiting_login_is_redirected_to_dashboard(client):
     user = User.objects.create_user(
         email="member@example.com", password="Strong-Test-Pass-2026!"

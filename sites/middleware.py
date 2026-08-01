@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 from django.utils.deprecation import MiddlewareMixin
 
 from core.request_context import set_site_id, site_id_var
@@ -22,6 +22,19 @@ class SiteResolutionMiddleware(MiddlewareMixin):
             "testserver",
         }
         if host in control_hosts:
+            # The session/CSRF cookies are host-only (not shared across tenant
+            # subdomains, see platform.E034/E035), so every alias of the control
+            # app (e.g. the "www." host) must funnel browser navigation onto one
+            # canonical host or a login on one alias won't be visible on another.
+            # Non-GET/HEAD requests (webhooks, API calls) are left alone so a
+            # server-to-server integration configured against an alias host never
+            # has its request silently redirected.
+            if (
+                host != platform_domain
+                and host in settings.PLATFORM_CONTROL_HOSTS
+                and request.method in ("GET", "HEAD")
+            ):
+                return self._redirect_to_canonical_host(request, platform_domain)
             return None
 
         domain = (
@@ -42,6 +55,15 @@ class SiteResolutionMiddleware(MiddlewareMixin):
         request.site = domain.site
         request._site_context_token = set_site_id(domain.site_id)
         return None
+
+    @staticmethod
+    def _redirect_to_canonical_host(request, canonical_host):
+        original_host = request.get_host()
+        target_host = canonical_host
+        if ":" in original_host:
+            target_host = f"{canonical_host}:{original_host.split(':', 1)[1]}"
+        url = f"{request.scheme}://{target_host}{request.get_full_path()}"
+        return HttpResponseRedirect(url)
 
     def process_response(self, request, response):
         token = getattr(request, "_site_context_token", None)

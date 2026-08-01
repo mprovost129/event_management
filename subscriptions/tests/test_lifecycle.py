@@ -2,7 +2,9 @@ from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
-from django.test import override_settings
+import stripe
+from django.test import Client, override_settings
+from django.urls import reverse
 from django.utils import timezone
 
 from sites.models import Site
@@ -269,6 +271,51 @@ def test_checkout_webhook_persists_selected_billing_cadence():
     assert subscription.stripe_subscription_id == "sub_123"
     assert subscription.stripe_price_id == "price_yearly"
     assert subscription.billing_interval == PlatformSubscription.BillingInterval.YEARLY
+
+
+@pytest.mark.django_db
+@override_settings(STRIPE_SECRET_KEY="sk_test_example")
+@patch("subscriptions.views.create_checkout_session")
+def test_checkout_view_refuses_to_start_a_second_subscription(mock_create_session):
+    owner, site, subscription = create_subscription_fixture()
+    subscription.stripe_customer_id = "cus_existing"
+    subscription.stripe_subscription_id = "sub_existing"
+    subscription.save(
+        update_fields=("stripe_customer_id", "stripe_subscription_id", "updated_at")
+    )
+    client = Client()
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("subscriptions:checkout", kwargs={"site_id": site.id}),
+        {"billing_interval": "monthly"},
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("sites:dashboard", kwargs={"site_id": site.id})
+    mock_create_session.assert_not_called()
+
+
+@pytest.mark.django_db
+@override_settings(STRIPE_SECRET_KEY="sk_test_example")
+@patch("subscriptions.views.create_checkout_session")
+def test_checkout_view_shows_a_friendly_message_on_transient_stripe_errors(
+    mock_create_session,
+):
+    owner, site, _ = create_subscription_fixture()
+    mock_create_session.side_effect = stripe.APIConnectionError("network blip")
+    client = Client()
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("subscriptions:checkout", kwargs={"site_id": site.id}),
+        {"billing_interval": "monthly"},
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("sites:dashboard", kwargs={"site_id": site.id})
+    dashboard = client.get(response.url)
+    assert b"temporarily unavailable" in dashboard.content
 
 
 @pytest.mark.django_db

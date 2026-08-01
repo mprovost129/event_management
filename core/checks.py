@@ -378,20 +378,25 @@ def deployment_product_check(app_configs, **kwargs):
                 id="platform.E019",
             )
         )
-    expected_cookie_domain = settings.PLATFORM_DOMAIN.lstrip(".")
-    if (settings.SESSION_COOKIE_DOMAIN or "").lstrip(".") != expected_cookie_domain:
+    # Every self-serve site gets an instantly-verified *.PLATFORM_DOMAIN host
+    # (see sites.services.create_subscriber_site), so a cookie domain scoped
+    # to the platform's parent domain would hand every tenant subdomain the
+    # platform session/CSRF cookies of every other tenant. Cookies must stay
+    # host-only; SiteResolutionMiddleware canonicalizes control-host aliases
+    # (e.g. "www.") so this doesn't break login continuity.
+    if settings.SESSION_COOKIE_DOMAIN:
         issues.append(
             Error(
-                "The production session cookie must be shared with tenant subdomains.",
-                hint=f"Set SESSION_COOKIE_DOMAIN=.{expected_cookie_domain}.",
+                "The production session cookie must not be shared with tenant subdomains.",
+                hint="Unset SESSION_COOKIE_DOMAIN (or set it to the empty string).",
                 id="platform.E034",
             )
         )
-    if (settings.CSRF_COOKIE_DOMAIN or "").lstrip(".") != expected_cookie_domain:
+    if settings.CSRF_COOKIE_DOMAIN:
         issues.append(
             Error(
-                "The production CSRF cookie must be shared with tenant subdomains.",
-                hint=f"Set CSRF_COOKIE_DOMAIN=.{expected_cookie_domain}.",
+                "The production CSRF cookie must not be shared with tenant subdomains.",
+                hint="Unset CSRF_COOKIE_DOMAIN (or set it to the empty string).",
                 id="platform.E035",
             )
         )

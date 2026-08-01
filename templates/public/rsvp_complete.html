@@ -15,6 +15,6 @@
         <h2>Complete payment to confirm your spots.</h2>
         <p>Your RSVP is waiting for payment. Tickets are not confirmed until Stripe reports a successful checkout.</p>
     </div><a class="btn btn-primary btn-lg" href="{% url 'payments:ticket_checkout' checkout_token %}">Choose tickets and pay</a></div>{% else %}<div class="gh-confirmation-note"><strong>You're all set.</strong> A confirmation email is being sent to {{ registration.contact.email }}.</div>{% endif %}
-    <a class="gh-back-link" href="{% url 'events:occurrence_detail' registration.occurrence.event.slug registration.occurrence.id %}">&larr; Back to event details</a>
+    {% if event_url %}<a class="gh-back-link" href="{{ event_url }}">&larr; Back to event details</a>{% endif %}
 </section>
 {% endblock %}

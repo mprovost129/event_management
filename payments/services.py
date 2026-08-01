@@ -90,6 +90,27 @@ def registration_for_checkout_token(*, site, token):
     )
 
 
+def occurrence_for_expired_checkout_token(*, site, token):
+    """Best-effort recovery of the event behind an expired checkout link,
+    purely so the "link expired" page can send the buyer back to the event
+    instead of a dead end. The signature is still checked - only the
+    max_age freshness requirement is dropped - so this never trusts a
+    tampered token, just an old, genuinely-issued one."""
+    try:
+        payload = signing.loads(token, salt=REGISTRATION_TOKEN_SALT)
+    except signing.BadSignature:
+        return None
+    if payload.get("site_id") != str(site.id):
+        return None
+    registration = (
+        Registration.objects.for_site(site)
+        .select_related("occurrence__event")
+        .filter(pk=payload.get("registration_id"))
+        .first()
+    )
+    return registration.occurrence if registration else None
+
+
 def _account_status(account):
     charges_enabled = bool(_value(account, "charges_enabled", False))
     payouts_enabled = bool(_value(account, "payouts_enabled", False))
@@ -298,6 +319,15 @@ def reserve_ticket_order(*, registration, ticket_type):
     )
     if registration.payment_status != Registration.PaymentStatus.PENDING:
         raise CommerceUnavailable("This registration is not awaiting payment.")
+    superseded_order_id = (
+        Order.objects.filter(
+            registration=registration, status=Order.Status.PENDING
+        )
+        .values_list("id", flat=True)
+        .first()
+    )
+    if superseded_order_id:
+        fail_order(superseded_order_id, event_type="order.superseded", expired=True)
     participants = list(
         registration.participants.filter(status=Participant.Status.ACTIVE).order_by(
             "-is_primary", "created_at"
@@ -557,7 +587,30 @@ def prepare_refund(*, order, amount_cents, reason, actor):
 
 
 def submit_refund(refund):
-    provider_refund = gateway.create_refund(refund=refund)
+    try:
+        provider_refund = gateway.create_refund(refund=refund)
+    except (gateway.CommerceNotConfigured, stripe.StripeError) as exc:
+        # prepare_refund() already committed this row in its own
+        # transaction, before this network call - without this, a request
+        # Stripe rejects (e.g. an already-refunded charge) leaves it stuck at
+        # PENDING forever, with no operator-visible failure and no way to
+        # retell it apart from one still in flight.
+        with transaction.atomic():
+            Refund.objects.filter(pk=refund.pk).update(
+                status=Refund.Status.FAILED,
+                failure_reason=str(exc)[:1000],
+                updated_at=timezone.now(),
+            )
+            FinancialTransition.objects.create(
+                site=refund.order.site,
+                order=refund.order,
+                refund=refund,
+                event_type="refund.submission_failed",
+                previous_status=Refund.Status.PENDING,
+                new_status=Refund.Status.FAILED,
+                details={"error": str(exc)[:500]},
+            )
+        raise
     refund.stripe_refund_id = _value(provider_refund, "id", "")
     refund.save(update_fields=("stripe_refund_id", "updated_at"))
     apply_refund_object(provider_refund, event_type="refund.created")
@@ -659,6 +712,24 @@ def start_member_subscription(*, site, plan, first_name, last_name, email, accou
             site=site, first_name=first_name, last_name=last_name, email=email
         )
     member, _ = Member.objects.get_or_create(site=site, contact=contact)
+    existing = (
+        MemberSubscription.objects.select_for_update()
+        .filter(member=member, plan=plan)
+        .exclude(
+            status__in=(
+                MemberSubscription.Status.CANCELED,
+                MemberSubscription.Status.EXPIRED,
+            )
+        )
+        .first()
+    )
+    if existing is not None:
+        if existing.status != MemberSubscription.Status.INCOMPLETE:
+            raise CommerceUnavailable(
+                "You already have an active membership for this plan."
+            )
+        existing.status = MemberSubscription.Status.CANCELED
+        existing.save(update_fields=("status", "updated_at"))
     return MemberSubscription.objects.create(
         site=site,
         member=member,

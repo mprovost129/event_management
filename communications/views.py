@@ -21,6 +21,7 @@ from .callbacks import process_provider_callback
 from .campaigns import (
     CampaignUnavailable,
     SmsLimitExceeded,
+    cancel_campaign,
     campaign_metrics,
     campaign_preview,
     duplicate_campaign,
@@ -272,6 +273,29 @@ def campaign_duplicate(request, site_id, campaign_id):
     messages.success(request, "Campaign duplicated as a new draft.")
     return redirect(
         "communications:campaign_edit", site_id=site_id, campaign_id=campaign.id
+    )
+
+
+@require_POST
+@site_staff_required
+def campaign_cancel(request, site_id, campaign_id):
+    site = request.authorized_site
+    campaign = get_object_or_404(Campaign.objects.for_site(site), pk=campaign_id)
+    try:
+        cancel_campaign(campaign=campaign, actor=request.user)
+    except CampaignUnavailable as exc:
+        messages.error(request, str(exc))
+    else:
+        record_audit_event(
+            action="campaign.canceled",
+            actor=request.user,
+            site_id=site.id,
+            target=campaign,
+            request=request,
+        )
+        messages.success(request, "Campaign canceled. No further messages will send.")
+    return redirect(
+        "communications:campaign_preview", site_id=site_id, campaign_id=campaign_id
     )
 
 

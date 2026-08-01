@@ -1,5 +1,16 @@
 // Main JavaScript entry point
 
+// Confirmation prompts for destructive actions. The CSP forbids inline
+// event-handler attributes (no unsafe-inline in script-src), so this
+// delegated listener is the only thing standing between a click and an
+// irreversible POST - keep it registered before anything else can fail.
+document.addEventListener("submit", (event) => {
+    const form = event.target.closest("[data-confirm]");
+    if (form && !window.confirm(form.dataset.confirm)) {
+        event.preventDefault();
+    }
+});
+
 (() => {
     const form = document.querySelector("[data-site-builder-form]");
     const preview = document.querySelector("[data-site-preview]");

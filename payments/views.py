@@ -13,6 +13,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 from contacts.models import MembershipPlan, MemberSubscription
 from core.rate_limits import public_write_rate_limit
 from events.models import EventOccurrence
+from events.services import public_occurrence_url
 from ops.services import record_audit_event
 from sites.permissions import (
     site_staff_required,
@@ -41,6 +42,7 @@ from .services import (
     attach_checkout_session,
     attach_member_checkout,
     commerce_summary,
+    occurrence_for_expired_checkout_token,
     prepare_refund,
     process_connect_event,
     refresh_connected_account,
@@ -277,7 +279,16 @@ def ticket_checkout(request, token):
     site = _public_site(request)
     registration = registration_for_checkout_token(site=site, token=token)
     if registration is None:
-        raise Http404("This checkout link is invalid or expired.")
+        occurrence = occurrence_for_expired_checkout_token(site=site, token=token)
+        return render(
+            request,
+            "payments/ticket_checkout_expired.html",
+            {
+                "site": site,
+                "event_url": public_occurrence_url(occurrence) if occurrence else "",
+            },
+            status=404,
+        )
     participant_count = registration.participants.filter(status="active").count()
     form = TicketCheckoutForm(
         request.POST or None,
@@ -383,6 +394,9 @@ def refund_order(request, site_id, order_id):
                 "Refund submitted. Stripe will confirm its final status by webhook.",
             )
             return redirect("payments:manage", site_id=site.id)
+    refund_history = list(order.refunds.order_by("-created_at"))
+    for refund in refund_history:
+        refund.amount_display = _money(refund.amount_cents)
     return render(
         request,
         "payments/refund_form.html",
@@ -391,6 +405,7 @@ def refund_order(request, site_id, order_id):
             "order": order,
             "form": form,
             "total": _money(order.total_cents),
+            "refund_history": refund_history,
         },
     )
 

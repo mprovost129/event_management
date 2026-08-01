@@ -195,6 +195,7 @@ def queue_due_review_requests(*, limit=500, now=None):
             subject=f"How was {participant.registration.occurrence.event.title}?",
             body=f"Thanks for attending. Share your review:\n\nhttps://{hostname}{path}",
             dedupe_key=dedupe_key,
+            contact=participant.registration.contact,
         )
         if not already_queued:
             queued += 1

@@ -97,6 +97,22 @@ def contact_eligibility(contact, channel):
     return True, ""
 
 
+def transactional_eligibility(contact, channel):
+    """Looser than contact_eligibility: an invitation, RSVP confirmation,
+    reminder, or review request doesn't need prior marketing consent, but
+    must still respect an archived contact or a hard bounce/complaint
+    suppression recorded against them."""
+    if contact.archived_at is not None:
+        return False, "Contact is archived"
+    if channel == Campaign.Channel.EMAIL:
+        if contact.email_consent_status == ConsentStatus.SUPPRESSED:
+            return False, "Email is suppressed"
+        return True, ""
+    if contact.sms_consent_status == ConsentStatus.SUPPRESSED:
+        return False, "SMS is suppressed"
+    return True, ""
+
+
 def _unsubscribe_url_length(campaign):
     hostname = campaign.site.domains.get(is_canonical=True).hostname
     path = reverse(
@@ -210,6 +226,58 @@ def _dispatch_campaign(campaign_id):
     from .tasks import expand_campaign_task
 
     expand_campaign_task.delay(str(campaign_id))
+
+
+CANCELABLE_CAMPAIGN_STATUSES = (
+    Campaign.Status.DRAFT,
+    Campaign.Status.SCHEDULED,
+    Campaign.Status.EXPANDING,
+    Campaign.Status.SENDING,
+)
+
+
+@transaction.atomic
+def cancel_campaign(*, campaign, actor):
+    campaign = (
+        Campaign.objects.select_for_update().select_related("site").get(pk=campaign.pk)
+    )
+    if campaign.status not in CANCELABLE_CAMPAIGN_STATUSES:
+        raise CampaignUnavailable("This campaign can no longer be canceled.")
+
+    pending_statuses = (OutboundMessage.Status.QUEUED, OutboundMessage.Status.FAILED)
+    if campaign.channel == Campaign.Channel.SMS and campaign.sms_reserved_segments:
+        # Release whatever this campaign still holds in one shot rather than
+        # per message: the reservation is made in full at launch, before any
+        # OutboundMessage exists, so a campaign canceled pre-expansion has no
+        # per-message row to walk yet. consume_sms_for_message() already
+        # shrinks this same counter as each message actually sends, so
+        # whatever remains here is exactly the unused portion.
+        _release_sms_locked(
+            campaign=campaign, segments=campaign.sms_reserved_segments, recipient=None
+        )
+
+    now = timezone.now()
+    campaign.outbound_messages.filter(status__in=pending_statuses).update(
+        status=OutboundMessage.Status.SUPPRESSED,
+        body="",
+        html_body="",
+        unsubscribe_url="",
+        updated_at=now,
+    )
+    # Re-derive which recipients to flip from the outbound message's
+    # just-written state rather than a pre-update snapshot, so a message that
+    # a concurrent send completed in the meantime (and was therefore excluded
+    # from the update above) doesn't get its recipient marked suppressed too.
+    CampaignRecipient.objects.filter(
+        campaign=campaign,
+        status=CampaignRecipient.Status.QUEUED,
+        outbound_message__status=OutboundMessage.Status.SUPPRESSED,
+    ).update(status=CampaignRecipient.Status.SUPPRESSED, updated_at=now)
+
+    campaign.status = Campaign.Status.CANCELED
+    campaign.completed_at = now
+    campaign.save(update_fields=("status", "completed_at", "updated_at"))
+    return campaign
 
 
 def _new_unsubscribe_link(*, campaign, contact):

@@ -92,7 +92,7 @@
                     {% endif %}
                     <form method="post"
                           action="{% url 'events:album_photo_delete' site.id album.id photo.id %}"
-                          onsubmit="return confirm('Delete this photo permanently?')">
+                          data-confirm="Delete this photo permanently?">
                         {% csrf_token %}
                         <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
                     </form>

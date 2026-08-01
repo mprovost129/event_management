@@ -60,6 +60,12 @@
             <section class="gh-editor-card">
                 <p class="gh-step-label">Delivery report</p>
                 <h2>Campaign results</h2>
+                {% if campaign.status == 'scheduled' or campaign.status == 'expanding' or campaign.status == 'sending' %}
+                <form method="post" action="{% url 'communications:campaign_cancel' site.id campaign.id %}" data-confirm="Cancel this campaign? Messages not already sent will not go out.">
+                    {% csrf_token %}
+                    <button class="btn btn-outline-danger w-100 mb-3" type="submit">Cancel campaign</button>
+                </form>
+                {% endif %}
                 <dl class="gh-delivery-results">
                     <div>
                         <dt>Sent</dt>

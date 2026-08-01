@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from communications.models import OutboundMessage
 from communications.services import deliver_message, enqueue_message
-from contacts.models import Contact
+from contacts.models import ConsentStatus, Contact
 from events.messaging import queue_due_reminders
 from events.models import Event, Registration
 from events.registration import save_response
@@ -86,6 +86,102 @@ def test_outbound_delivery_is_idempotent():
     assert (
         "<strong>The time changed.</strong>" in mail.outbox[0].alternatives[0].content
     )
+
+
+@pytest.mark.django_db
+def test_redelivered_task_does_not_resend_a_message_still_marked_processing():
+    _, site, _ = reminder_fixture()
+    message = enqueue_message(
+        site=site,
+        kind=OutboundMessage.Kind.EVENT_UPDATE,
+        recipient_email="alex@example.com",
+        subject="Updated event",
+        body="The time changed.",
+        html_body="<p><strong>The time changed.</strong></p>",
+        dispatch=False,
+    )
+    # Simulate a worker that claimed the message (CELERY_TASK_ACKS_LATE) and
+    # was killed mid-send, before writing SENT/FAILED back. The broker
+    # redelivers the same task, so deliver_message runs again while status is
+    # still PROCESSING from the interrupted attempt.
+    message.status = OutboundMessage.Status.PROCESSING
+    message.attempts = 1
+    message.save(update_fields=("status", "attempts", "updated_at"))
+
+    deliver_message(message.id)
+
+    message.refresh_from_db()
+    assert message.status == OutboundMessage.Status.PROCESSING
+    assert message.attempts == 1
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_transactional_message_is_suppressed_for_a_hard_bounced_contact():
+    _, site, registration = reminder_fixture()
+    registration.contact.email_consent_status = ConsentStatus.SUPPRESSED
+    registration.contact.save(update_fields=("email_consent_status", "updated_at"))
+    message = enqueue_message(
+        site=site,
+        kind=OutboundMessage.Kind.REMINDER,
+        recipient_email=registration.contact.email,
+        subject="Reminder",
+        body="See you soon.",
+        contact=registration.contact,
+        registration=registration,
+        dispatch=False,
+    )
+
+    deliver_message(message.id)
+
+    message.refresh_from_db()
+    assert message.status == OutboundMessage.Status.SUPPRESSED
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_transactional_message_is_suppressed_for_an_archived_contact():
+    _, site, registration = reminder_fixture()
+    registration.contact.archived_at = timezone.now()
+    registration.contact.save(update_fields=("archived_at", "updated_at"))
+    message = enqueue_message(
+        site=site,
+        kind=OutboundMessage.Kind.INVITATION,
+        recipient_email=registration.contact.email,
+        subject="Invitation",
+        body="Join us.",
+        contact=registration.contact,
+        dispatch=False,
+    )
+
+    deliver_message(message.id)
+
+    message.refresh_from_db()
+    assert message.status == OutboundMessage.Status.SUPPRESSED
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_transactional_message_does_not_require_marketing_consent():
+    _, site, registration = reminder_fixture()
+    assert registration.contact.email_consent_status == ConsentStatus.UNKNOWN
+
+    message = enqueue_message(
+        site=site,
+        kind=OutboundMessage.Kind.CONFIRMATION,
+        recipient_email=registration.contact.email,
+        subject="RSVP",
+        body="You're going!",
+        contact=registration.contact,
+        registration=registration,
+        dispatch=False,
+    )
+
+    deliver_message(message.id)
+
+    message.refresh_from_db()
+    assert message.status == OutboundMessage.Status.SENT
+    assert len(mail.outbox) == 1
 
 
 @pytest.mark.django_db

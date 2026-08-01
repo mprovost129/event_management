@@ -21,6 +21,7 @@ from communications.campaigns import (
     audience_contacts,
     campaign_metrics,
     campaign_preview,
+    cancel_campaign,
     expand_campaign,
     launch_campaign,
     sms_segment_count,
@@ -210,6 +211,134 @@ def test_consent_is_rechecked_immediately_before_delivery():
     assert message.status == OutboundMessage.Status.SUPPRESSED
     assert message.body == ""
     assert mail.outbox == []
+
+
+@pytest.mark.django_db
+def test_canceling_a_draft_campaign_marks_it_canceled():
+    owner, site = campaign_fixture()
+    campaign = draft_campaign(site)
+
+    canceled = cancel_campaign(campaign=campaign, actor=owner)
+
+    assert canceled.status == Campaign.Status.CANCELED
+    assert canceled.completed_at is not None
+
+
+@pytest.mark.django_db
+def test_canceling_a_scheduled_campaign_stops_it_from_ever_expanding():
+    owner, site = campaign_fixture()
+    contact_for(site, email_consent=True)
+    campaign = draft_campaign(
+        site, scheduled_for=timezone.now() + timedelta(days=1)
+    )
+    launch_campaign(campaign=campaign, actor=owner)
+    campaign.refresh_from_db()
+    assert campaign.status == Campaign.Status.SCHEDULED
+
+    cancel_campaign(campaign=campaign, actor=owner)
+    expand_campaign(campaign.id)
+
+    campaign.refresh_from_db()
+    assert campaign.status == Campaign.Status.CANCELED
+    assert OutboundMessage.objects.filter(campaign=campaign).count() == 0
+
+
+@pytest.mark.django_db
+def test_canceling_a_sending_campaign_suppresses_unsent_messages_but_keeps_sent_ones():
+    owner, site = campaign_fixture()
+    sent_contact = contact_for(site, 1, email_consent=True)
+    queued_contact = contact_for(site, 2, email_consent=True)
+    campaign = draft_campaign(site)
+    launch_campaign(campaign=campaign, actor=owner)
+    expand_campaign(campaign.id)
+    sent_message = OutboundMessage.objects.get(contact=sent_contact)
+    queued_message = OutboundMessage.objects.get(contact=queued_contact)
+    deliver_message(sent_message.id)
+
+    cancel_campaign(campaign=campaign, actor=owner)
+
+    campaign.refresh_from_db()
+    sent_message.refresh_from_db()
+    queued_message.refresh_from_db()
+    assert campaign.status == Campaign.Status.CANCELED
+    assert sent_message.status == OutboundMessage.Status.SENT
+    assert queued_message.status == OutboundMessage.Status.SUPPRESSED
+    assert queued_message.body == ""
+    assert (
+        CampaignRecipient.objects.get(outbound_message=queued_message).status
+        == CampaignRecipient.Status.SUPPRESSED
+    )
+    assert (
+        CampaignRecipient.objects.get(outbound_message=sent_message).status
+        == CampaignRecipient.Status.SENT
+    )
+    # A no-op: the message is already terminal, so canceling must not resurrect it.
+    deliver_message(queued_message.id)
+    assert len(mail.outbox) == 1
+
+
+@pytest.mark.django_db
+@override_settings(SMS_DELIVERY_BACKEND="console", SMS_MONTHLY_SEGMENT_LIMIT=10)
+def test_canceling_an_sms_campaign_releases_its_unused_reserved_segments():
+    owner, site = campaign_fixture()
+    contact_for(site, sms_consent=True)
+    campaign = draft_campaign(
+        site,
+        channel=Campaign.Channel.SMS,
+        subject="",
+        body="Dance moved to 7 PM.",
+    )
+    launch_campaign(campaign=campaign, actor=owner, usage_confirmed=True)
+    campaign.refresh_from_db()
+    reserved_before_cancel = campaign.sms_reserved_segments
+    assert reserved_before_cancel > 0
+
+    cancel_campaign(campaign=campaign, actor=owner)
+
+    campaign.refresh_from_db()
+    allowance = SmsAllowance.objects.get(site=site)
+    assert campaign.sms_reserved_segments == 0
+    assert allowance.reserved_segments == 0
+
+
+@pytest.mark.django_db
+def test_cancel_campaign_rejects_a_campaign_that_already_finished():
+    owner, site = campaign_fixture()
+    contact_for(site, email_consent=True)
+    campaign = draft_campaign(site)
+    launch_campaign(campaign=campaign, actor=owner)
+    expand_campaign(campaign.id)
+    deliver_message(OutboundMessage.objects.get(campaign=campaign).id)
+    campaign.refresh_from_db()
+    assert campaign.status == Campaign.Status.SENT
+
+    with pytest.raises(CampaignUnavailable):
+        cancel_campaign(campaign=campaign, actor=owner)
+
+
+@pytest.mark.django_db
+def test_campaign_cancel_view_requires_staff_and_redirects_with_a_message():
+    owner, site = campaign_fixture()
+    contact_for(site, email_consent=True)
+    campaign = draft_campaign(
+        site, scheduled_for=timezone.now() + timedelta(days=1)
+    )
+    launch_campaign(campaign=campaign, actor=owner)
+    client = Client()
+    client.force_login(owner)
+
+    response = client.post(
+        reverse(
+            "communications:campaign_cancel",
+            kwargs={"site_id": site.id, "campaign_id": campaign.id},
+        )
+    )
+
+    assert response.status_code == 302
+    campaign.refresh_from_db()
+    assert campaign.status == Campaign.Status.CANCELED
+    preview = client.get(response.url)
+    assert "Campaign canceled" in preview.content.decode()
 
 
 @pytest.mark.django_db

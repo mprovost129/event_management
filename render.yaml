@@ -262,10 +262,9 @@ envVarGroups:
         value: gatherhqs.com,www.gatherhqs.com,.gatherhqs.com,gather-hqs-web.onrender.com
       - key: CSRF_TRUSTED_ORIGINS
         value: https://gatherhqs.com,https://www.gatherhqs.com,https://*.gatherhqs.com,https://gather-hqs-web.onrender.com
-      - key: SESSION_COOKIE_DOMAIN
-        value: .gatherhqs.com
-      - key: CSRF_COOKIE_DOMAIN
-        value: .gatherhqs.com
+      # SESSION_COOKIE_DOMAIN / CSRF_COOKIE_DOMAIN are intentionally not set here:
+      # they must stay host-only (see platform.E034/E035) so a self-serve tenant
+      # subdomain never shares the platform session/CSRF cookie.
       - key: SECURE_SSL_REDIRECT
         value: "true"
       - key: SECURE_HSTS_SECONDS

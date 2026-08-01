@@ -89,6 +89,11 @@ class EventOccurrence(SiteOwnedModel):
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.SCHEDULED
     )
+    # Set only when a whole-event cancellation cascaded this occurrence to
+    # CANCELED, never when a manager cancels this date on its own. Lets
+    # un-canceling the event restore exactly the dates it took down, without
+    # reviving a date someone deliberately canceled beforehand.
+    canceled_by_event = models.BooleanField(default=False)
 
     class Meta:
         ordering = ("starts_at",)

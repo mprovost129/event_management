@@ -178,6 +178,7 @@ def queue_invitation(*, invitation, token, response_url):
         dedupe_key=f"invitation:{invitation.id}:{invitation.token_hash[:16]}",
         occurrence=occurrence,
         invitation=invitation,
+        contact=invitation.contact,
     )
 
 
@@ -268,6 +269,7 @@ def queue_confirmation(registration, history):
         dedupe_key=f"confirmation:{history.id}",
         occurrence=occurrence,
         registration=registration,
+        contact=registration.contact,
     )
 
 
@@ -314,6 +316,7 @@ def queue_rsvp_manage_link(registration, *, now=None):
         dedupe_key=(f"rsvp-manage:{registration.id}:{now.strftime('%Y%m%d%H')}"),
         occurrence=occurrence,
         registration=registration,
+        contact=registration.contact,
     )
 
 
@@ -372,6 +375,7 @@ def queue_occurrence_notice(occurrence, *, cancellation=False, revision_key=None
             ),
             occurrence=occurrence,
             registration=registration,
+            contact=registration.contact,
         )
         count += 1
     return count
@@ -441,6 +445,7 @@ def queue_due_reminders(*, now=None):
                 "html_body": html_body,
                 "occurrence": occurrence,
                 "registration": registration,
+                "contact": registration.contact,
             },
         )
         count += int(created)

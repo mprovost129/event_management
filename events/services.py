@@ -3,11 +3,30 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from django.db import transaction
+from django.urls import reverse
 from django.utils import timezone
 
 from .models import Event, EventOccurrence
 
 MAX_MATERIALIZED_OCCURRENCES = 500
+
+
+def public_occurrence_url(occurrence):
+    """The occurrence_detail URL, or "" if that page would 404 for this
+    occurrence (e.g. an invite-only event, or one no longer public/scheduled).
+    Shared so nothing - a confirmation page, an expired-link recovery page -
+    ever links a visitor back to a page that will just 404 them."""
+    event = occurrence.event
+    if (
+        event.status != Event.Status.PUBLISHED
+        or event.visibility not in (Event.Visibility.PUBLIC, Event.Visibility.UNLISTED)
+        or occurrence.status != EventOccurrence.Status.SCHEDULED
+    ):
+        return ""
+    return reverse(
+        "events:occurrence_detail",
+        kwargs={"slug": event.slug, "occurrence_id": occurrence.id},
+    )
 
 
 def local_datetime(site, date_value, time_value):

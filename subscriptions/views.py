@@ -21,6 +21,11 @@ from .services import process_stripe_event
 @subscriber_recovery_required
 def checkout(request, site_id):
     subscription = request.authorized_site.platform_subscription
+    if subscription.stripe_customer_id:
+        messages.info(
+            request, "This organization already has an active subscription."
+        )
+        return redirect("sites:dashboard", site_id=site_id)
     try:
         session = create_checkout_session(
             subscription=subscription,
@@ -38,6 +43,11 @@ def checkout(request, site_id):
     except BillingNotConfigured as exc:
         messages.error(request, str(exc))
         return redirect("sites:dashboard", site_id=site_id)
+    except stripe.StripeError:
+        messages.error(
+            request, "Stripe Checkout is temporarily unavailable. Please try again."
+        )
+        return redirect("sites:dashboard", site_id=site_id)
     return redirect(session.url)
 
 
@@ -54,6 +64,11 @@ def portal(request, site_id):
         )
     except BillingNotConfigured as exc:
         messages.error(request, str(exc))
+        return redirect("sites:dashboard", site_id=site_id)
+    except stripe.StripeError:
+        messages.error(
+            request, "Stripe Checkout is temporarily unavailable. Please try again."
+        )
         return redirect("sites:dashboard", site_id=site_id)
     return redirect(session.url)
 
