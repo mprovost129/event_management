@@ -10,6 +10,7 @@ from PIL import Image
 from contacts.models import ConsentRecord, ConsentStatus, Contact
 from content.forms import BlogPostForm
 from content.images import prepare_image
+from content.sanitization import sanitize_rich_text
 from content.models import (
     BlogPost,
     PageSection,
@@ -546,6 +547,61 @@ def test_strip_section_image_requires_alt_text_and_limits_to_six(client):
     assert over_limit.status_code == 200
     assert "Strip sections can include up to 6 images" in over_limit.content.decode()
     assert strip.images.count() == 6
+
+
+def test_sanitize_rich_text_keeps_safe_markup_and_strips_unsafe_html():
+    source = (
+        "<h2>Welcome</h2><p><strong>Bold</strong> and <em>emphasis</em>.</p>"
+        "<script>alert(1)</script>"
+        '<a href="javascript:alert(1)" onclick="evil()">Bad link</a>'
+        '<a href="https://example.com">Good link</a>'
+    )
+
+    result = sanitize_rich_text(source)
+
+    assert "<h2>Welcome</h2>" in result
+    assert "<strong>Bold</strong>" in result
+    assert "<em>emphasis</em>" in result
+    assert "<script" not in result
+    assert "onclick=" not in result
+    assert "javascript:" not in result
+    assert 'href="https://example.com"' in result
+
+
+@pytest.mark.django_db
+def test_public_content_section_renders_sanitized_rich_text(client):
+    _, site = create_site()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    about = SitePage.objects.get(site=site, page_type=SitePage.PageType.ABOUT)
+    about.status = PublishingStatus.PUBLISHED
+    about.publish_at = timezone.now() - timezone.timedelta(minutes=1)
+    about.save(update_fields=("status", "publish_at", "updated_at"))
+
+    PageSection.objects.create(
+        site=site,
+        page=about,
+        section_type=PageSection.SectionType.CONTENT,
+        is_enabled=True,
+        position=1,
+        heading="About",
+        rich_text=(
+            "<p>Visit <a href='https://example.com'>our link</a>.</p>"
+            "<img src=x onerror=alert(1)>"
+            "<script>alert(2)</script>"
+        ),
+    )
+
+    response = client.get(
+        reverse("content:about"), headers={"host": "boot-scooters.localhost"}
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "our link" in content
+    assert "href=\"https://example.com\"" in content
+    assert "alert(2)" not in content
+    assert "onerror=" not in content
 
 
 @pytest.mark.django_db

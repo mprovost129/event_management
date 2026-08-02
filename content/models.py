@@ -2,9 +2,11 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.utils.safestring import mark_safe
 from django.utils import timezone
 
 from sites.models import SiteOwnedModel
+from .sanitization import sanitize_rich_text
 
 
 class PublishingStatus(models.TextChoices):
@@ -111,6 +113,10 @@ class PageSection(SiteOwnedModel):
 
     def __str__(self):
         return f"{self.page} [{self.get_section_type_display()} #{self.position}]"
+
+    @property
+    def rich_text_html(self):
+        return mark_safe(sanitize_rich_text(self.rich_text))
 
 
 class PageSectionImage(SiteOwnedModel):
