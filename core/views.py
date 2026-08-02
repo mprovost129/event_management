@@ -11,10 +11,9 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView
 
-from events.models import EventAlbum
 from content.models import SitePage
 from content.services import public_blog_posts, public_page
-from events.models import Event, EventOccurrence
+from events.models import Event, EventAlbum, EventOccurrence
 from subscriptions.gateway import billing_options
 
 from .health import readiness_status

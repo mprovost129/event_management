@@ -8,10 +8,8 @@ from django.utils import timezone
 from PIL import Image
 
 from contacts.models import ConsentRecord, ConsentStatus, Contact
-from ops.models import AuditEvent
 from content.forms import BlogPostForm
 from content.images import prepare_image
-from content.sanitization import sanitize_rich_text
 from content.models import (
     BlogPost,
     PageSection,
@@ -19,7 +17,9 @@ from content.models import (
     PublishingStatus,
     SitePage,
 )
+from content.sanitization import sanitize_rich_text
 from content.services import public_page
+from ops.models import AuditEvent
 from sites.services import create_subscriber_site
 from users.models import User
 

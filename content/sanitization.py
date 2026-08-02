@@ -1,5 +1,6 @@
-import bleach
 import re
+
+import bleach
 
 ALLOWED_TAGS = [
     "p",

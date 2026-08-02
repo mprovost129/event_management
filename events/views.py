@@ -9,9 +9,9 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
+from content.services import record_public_engagement
 from core.pagination import paginate
 from core.rate_limits import public_write_rate_limit
-from content.services import record_public_engagement
 from notifications.services import notify_registration_response
 from ops.services import record_audit_event
 from payments.services import registration_checkout_token, ticket_inventory

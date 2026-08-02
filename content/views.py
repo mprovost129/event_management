@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Count
 from django.http import Http404
@@ -6,21 +7,20 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods
-from django.core.exceptions import ValidationError
 
 from contacts.services import subscribe_to_newsletter
 from core.rate_limits import public_write_rate_limit
-from ops.services import record_audit_event
 from ops.models import AuditEvent
+from ops.services import record_audit_event
 from sites.permissions import site_staff_required
 
-from .images import prepare_image
 from .forms import (
     BlogPostForm,
     NewsletterSignupForm,
     SitePageForm,
     SitePresentationForm,
 )
+from .images import prepare_image
 from .models import BlogPost, PageSection, PageSectionImage, SitePage
 from .services import (
     initialize_site_content,

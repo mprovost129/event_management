@@ -14,12 +14,12 @@ from PIL import Image
 from contacts.models import Contact
 from events.forms import EventAlbumCreateForm, EventForm
 from events.models import Event, EventAlbum, EventOccurrence, EventPhoto
-from ops.models import AuditEvent
 from events.services import (
     create_event_series,
     occurrence_starts,
     update_occurrences_from,
 )
+from ops.models import AuditEvent
 from sites.services import create_subscriber_site
 from users.models import User
 
