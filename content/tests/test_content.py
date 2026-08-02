@@ -546,3 +546,43 @@ def test_strip_section_image_requires_alt_text_and_limits_to_six(client):
     assert over_limit.status_code == 200
     assert "Strip sections can include up to 6 images" in over_limit.content.decode()
     assert strip.images.count() == 6
+
+
+@pytest.mark.django_db
+def test_page_edit_preserves_legacy_body_when_custom_sections_exist(client):
+    owner, site = create_site()
+    client.force_login(owner)
+    page = SitePage.objects.get(site=site, page_type=SitePage.PageType.ABOUT)
+    page.body = "Legacy body should remain unchanged."
+    page.status = PublishingStatus.DRAFT
+    page.save(update_fields=("body", "status", "updated_at"))
+    PageSection.objects.create(
+        site=site,
+        page=page,
+        section_type=PageSection.SectionType.HERO,
+        position=1,
+        heading="New section content",
+        is_enabled=True,
+    )
+
+    edit_url = reverse("content:page_edit", args=(site.id, SitePage.PageType.ABOUT))
+    get_response = client.get(edit_url)
+    assert get_response.status_code == 200
+    assert "legacy body field is read-only fallback" in get_response.content.decode().lower()
+
+    post_response = client.post(
+        edit_url,
+        {
+            "title": "About",
+            "navigation_label": "About",
+            "status": PublishingStatus.PUBLISHED,
+            "publish_at": "",
+            "meta_title": "About Boot Scooters",
+            "meta_description": "Learn more about Boot Scooters.",
+        },
+    )
+
+    page.refresh_from_db()
+    assert post_response.status_code == 302
+    assert page.body == "Legacy body should remain unchanged."
+    assert page.status == PublishingStatus.PUBLISHED

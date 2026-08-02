@@ -20,6 +20,11 @@
                 <h2 id="page-content-heading">Page content</h2>
                 <div class="gh-form-field">{{ form.title.label_tag }}{{ form.title }}{% for error in form.title.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
                 <div class="gh-form-field">{{ form.navigation_label.label_tag }}{{ form.navigation_label }}<div class="gh-field-help">Keep this short so it fits comfortably in the website menu.</div>{% for error in form.navigation_label.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+                {% if has_custom_sections %}
+                <div class="alert alert-light border" role="status">
+                    Structured sections are active for this page. The legacy body field is read-only fallback content.
+                </div>
+                {% endif %}
                 <div class="gh-form-field">{{ form.body.label_tag }}{{ form.body }}{% for error in form.body.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
             </section>
 

@@ -133,6 +133,7 @@ def page_edit(request, site_id, page_type):
     site = request.authorized_site
     initialize_site_content(site)
     page = get_object_or_404(SitePage.objects.for_site(site), page_type=page_type)
+    has_custom_sections = page.sections.filter(is_legacy_body=False).exists()
 
     def _section_redirect():
         return redirect("content:page_edit", site_id=site.id, page_type=page.page_type)
@@ -286,6 +287,11 @@ def page_edit(request, site_id, page_type):
         return _section_redirect()
 
     form = SitePageForm(request.POST or None, instance=page)
+    if has_custom_sections:
+        form.fields["body"].disabled = True
+        form.fields["body"].help_text = (
+            "Legacy fallback only. Manage visible content using sections below."
+        )
     if request.method == "POST" and form.is_valid():
         page = form.save()
         sync_legacy_body_section(page)
@@ -308,6 +314,7 @@ def page_edit(request, site_id, page_type):
             "form": form,
             "sections": page.sections.order_by("position", "created_at").prefetch_related("images"),
             "section_types": PageSection.SectionType.choices,
+            "has_custom_sections": has_custom_sections,
         },
     )
 
