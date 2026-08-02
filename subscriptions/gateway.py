@@ -108,3 +108,13 @@ def create_portal_session(*, subscription, return_url):
     if settings.STRIPE_BILLING_PORTAL_CONFIGURATION_ID:
         params["configuration"] = settings.STRIPE_BILLING_PORTAL_CONFIGURATION_ID
     return stripe.billing_portal.Session.create(**params)
+
+
+def set_subscription_cancel_at_period_end(*, subscription, cancel_at_period_end):
+    if not subscription.stripe_subscription_id:
+        return None
+    _configure_stripe()
+    return stripe.Subscription.modify(
+        subscription.stripe_subscription_id,
+        cancel_at_period_end=cancel_at_period_end,
+    )

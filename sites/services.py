@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import NamedTuple
 
+import stripe
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -8,6 +9,10 @@ from django.utils import timezone
 
 from ops.models import SiteDeletionRequest
 from ops.services import record_audit_event
+from subscriptions.gateway import (
+    BillingNotConfigured,
+    set_subscription_cancel_at_period_end,
+)
 from subscriptions.models import PlatformSubscription
 
 from .models import Site, SiteDomain, SiteRole, SiteTheme
@@ -196,6 +201,23 @@ def _apply_site_and_subscription_status(*, site, subscription, status):
     }[status]
 
 
+def _sync_stripe_cancel_schedule(*, subscription, cancel_at_period_end):
+    if not subscription.stripe_subscription_id:
+        return False
+    try:
+        set_subscription_cancel_at_period_end(
+            subscription=subscription,
+            cancel_at_period_end=cancel_at_period_end,
+        )
+    except BillingNotConfigured:
+        return False
+    except stripe.StripeError as exc:
+        raise ValidationError(
+            "We could not update Stripe billing right now. Please try again."
+        ) from exc
+    return True
+
+
 @transaction.atomic
 def suspend_site_access(*, site, actor, reason, request=None):
     reason = (reason or "").strip()
@@ -280,6 +302,10 @@ def start_site_delete_hold(*, site, actor, reason, request=None):
     now = timezone.now()
     hold_days = site_deletion_hold_days()
     subscription = site.platform_subscription
+    stripe_synced = _sync_stripe_cancel_schedule(
+        subscription=subscription,
+        cancel_at_period_end=True,
+    )
     _apply_site_and_subscription_status(
         site=site,
         subscription=subscription,
@@ -341,7 +367,11 @@ def start_site_delete_hold(*, site, actor, reason, request=None):
         actor=actor,
         site_id=site.id,
         target=deletion,
-        summary={"hold_days": hold_days, "reason": reason[:200]},
+        summary={
+            "hold_days": hold_days,
+            "reason": reason[:200],
+            "stripe_synced": stripe_synced,
+        },
         request=request,
     )
     return deletion
@@ -363,6 +393,12 @@ def cancel_site_delete_hold(*, site, actor, reason, request=None):
     if deletion is None:
         raise ValidationError("No pending deletion hold is active for this site.")
 
+    subscription = site.platform_subscription
+    stripe_synced = _sync_stripe_cancel_schedule(
+        subscription=subscription,
+        cancel_at_period_end=False,
+    )
+
     deletion.status = SiteDeletionRequest.Status.CANCELED
     deletion.save(update_fields=("status",))
     resume_site_access(site=site, actor=actor, request=request)
@@ -371,7 +407,7 @@ def cancel_site_delete_hold(*, site, actor, reason, request=None):
         actor=actor,
         site_id=site.id,
         target=deletion,
-        summary={"reason": reason[:200]},
+        summary={"reason": reason[:200], "stripe_synced": stripe_synced},
         request=request,
     )
     return deletion

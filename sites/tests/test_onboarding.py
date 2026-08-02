@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from django.db import IntegrityError, transaction
@@ -713,6 +714,89 @@ def test_resume_requires_active_billing_or_valid_trial(client):
     assert response.status_code == 302
     assert site.status == Site.Status.SUSPENDED
     assert subscription.status == PlatformSubscription.Status.SUSPENDED
+
+
+@pytest.mark.django_db
+@override_settings(STRIPE_SECRET_KEY="sk_test_example")
+@patch("subscriptions.gateway.stripe.Subscription.modify")
+def test_delete_hold_start_schedules_stripe_cancellation(
+    mock_modify,
+    client,
+):
+    owner = verified_user("owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+    site.status = Site.Status.ACTIVE
+    site.save(update_fields=("status", "updated_at"))
+    subscription = site.platform_subscription
+    subscription.status = PlatformSubscription.Status.ACTIVE
+    subscription.stripe_customer_id = "cus_test"
+    subscription.stripe_subscription_id = "sub_test"
+    subscription.save(
+        update_fields=(
+            "status",
+            "stripe_customer_id",
+            "stripe_subscription_id",
+            "updated_at",
+        )
+    )
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("sites:delete_hold_start", kwargs={"site_id": site.id}),
+        {"reason": "Shutting down this chapter"},
+    )
+
+    assert response.status_code == 302
+    mock_modify.assert_called_once_with("sub_test", cancel_at_period_end=True)
+
+
+@pytest.mark.django_db
+@override_settings(STRIPE_SECRET_KEY="sk_test_example")
+@patch("subscriptions.gateway.stripe.Subscription.modify")
+def test_delete_hold_cancel_unschedules_stripe_cancellation(
+    mock_modify,
+    client,
+):
+    owner = verified_user("owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+    site.status = Site.Status.ACTIVE
+    site.save(update_fields=("status", "updated_at"))
+    subscription = site.platform_subscription
+    subscription.status = PlatformSubscription.Status.ACTIVE
+    subscription.stripe_customer_id = "cus_test"
+    subscription.stripe_subscription_id = "sub_test"
+    subscription.save(
+        update_fields=(
+            "status",
+            "stripe_customer_id",
+            "stripe_subscription_id",
+            "updated_at",
+        )
+    )
+    client.force_login(owner)
+
+    client.post(
+        reverse("sites:delete_hold_start", kwargs={"site_id": site.id}),
+        {"reason": "Shutting down this chapter"},
+    )
+    mock_modify.reset_mock()
+    response = client.post(
+        reverse("sites:delete_hold_cancel", kwargs={"site_id": site.id}),
+        {"reason": "We changed our mind"},
+    )
+
+    assert response.status_code == 302
+    mock_modify.assert_called_once_with("sub_test", cancel_at_period_end=False)
 
 
 @pytest.mark.django_db
