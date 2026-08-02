@@ -122,6 +122,8 @@ class SiteDomain(models.Model):
 class SiteTheme(models.Model):
     site = models.OneToOneField(Site, on_delete=models.CASCADE, related_name="theme")
     logo = models.ImageField(upload_to="site-logos/%Y/%m/", blank=True)
+    show_logo_in_header = models.BooleanField(default=True)
+    show_name_in_header = models.BooleanField(default=True)
     hero_image = models.ImageField(upload_to="site-heroes/%Y/%m/", blank=True)
     hero_heading = models.CharField(max_length=180, blank=True)
     hero_text = models.CharField(max_length=320, blank=True)

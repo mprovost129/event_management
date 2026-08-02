@@ -136,6 +136,14 @@ class SitePresentationForm(forms.Form):
         help_text="A square or wide PNG, JPG, or WebP works best.",
         widget=forms.ClearableFileInput(attrs={"accept": "image/*"}),
     )
+    show_logo_in_header = forms.BooleanField(
+        required=False,
+        label="Show logo in website header",
+    )
+    show_name_in_header = forms.BooleanField(
+        required=False,
+        label="Show group name in website header",
+    )
     hero_image = forms.FileField(
         required=False,
         help_text="Choose a wide image with room for readable text.",
@@ -212,8 +220,20 @@ class SitePresentationForm(forms.Form):
                     "primary_color": theme.primary_color,
                     "secondary_color": theme.secondary_color,
                     "typography_key": theme.typography_key,
+                    "show_logo_in_header": theme.show_logo_in_header,
+                    "show_name_in_header": theme.show_name_in_header,
                 }
             )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data.get("show_logo_in_header") and not cleaned_data.get(
+            "show_name_in_header"
+        ):
+            raise forms.ValidationError(
+                "Choose at least one header branding option: logo or group name."
+            )
+        return cleaned_data
 
     def save(self):
         site = self.site
@@ -239,6 +259,8 @@ class SitePresentationForm(forms.Form):
             "primary_color",
             "secondary_color",
             "typography_key",
+            "show_logo_in_header",
+            "show_name_in_header",
         ):
             setattr(theme, field, self.cleaned_data[field])
         if self.cleaned_data.get("logo"):

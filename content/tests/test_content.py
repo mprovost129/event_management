@@ -1,3 +1,4 @@
+import re
 from io import BytesIO
 from unittest import mock
 
@@ -457,6 +458,8 @@ def test_owner_can_design_and_publish_site_from_guided_builder(client):
             "primary_color": "#234567",
             "secondary_color": "#567890",
             "typography_key": "rounded",
+            "show_logo_in_header": "on",
+            "show_name_in_header": "on",
         },
     )
 
@@ -469,6 +472,62 @@ def test_owner_can_design_and_publish_site_from_guided_builder(client):
     assert site.is_published is True
     assert site.theme.hero_heading == "Dance with us"
     assert site.theme.primary_color == "#234567"
+    assert site.theme.show_logo_in_header is True
+    assert site.theme.show_name_in_header is True
+
+
+@pytest.mark.django_db
+def test_presentation_requires_logo_or_name_in_header(client):
+    owner, site = create_site()
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("content:presentation", args=(site.id,)),
+        {
+            "display_name": "Boot Scooters Dance Club",
+            "template_key": "social",
+            "is_published": "on",
+            "hero_heading": "Dance with us",
+            "hero_text": "Friendly lessons and social dances every week.",
+            "primary_color": "#234567",
+            "secondary_color": "#567890",
+            "typography_key": "rounded",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Choose at least one header branding option" in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_public_navbar_can_show_logo_without_site_name(client):
+    _, site = create_site()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    site.theme.logo = section_image_upload("logo.jpg", width=400, height=400)
+    site.theme.show_logo_in_header = True
+    site.theme.show_name_in_header = False
+    site.theme.save(
+        update_fields=(
+            "logo",
+            "show_logo_in_header",
+            "show_name_in_header",
+            "updated_at",
+        )
+    )
+
+    response = client.get(reverse("core:home"), headers={"host": "boot-scooters.localhost"})
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    match = re.search(
+        r'<a class="navbar-brand[^>]*>(.*?)</a>', content, flags=re.DOTALL
+    )
+    assert match is not None
+    brand_html = match.group(1)
+    assert '<img src="' in brand_html
+    assert 'height="64"' in brand_html
+    assert "Boot Scooters" not in brand_html
 
 
 @pytest.mark.django_db

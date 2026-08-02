@@ -75,6 +75,20 @@
                         {{ form.logo }}<div class="gh-field-help">{{ form.logo.help_text }}</div>
                         {% for error in form.logo.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                     </div>
+                    <div class="gh-form-field">
+                        <label class="form-label mb-1">Header branding</label>
+                        <div class="form-check">
+                            {{ form.show_logo_in_header }}
+                            <label class="form-check-label" for="{{ form.show_logo_in_header.id_for_label }}">{{ form.show_logo_in_header.label }}</label>
+                        </div>
+                        <div class="form-check">
+                            {{ form.show_name_in_header }}
+                            <label class="form-check-label" for="{{ form.show_name_in_header.id_for_label }}">{{ form.show_name_in_header.label }}</label>
+                        </div>
+                        <div class="gh-field-help">Choose logo only, name only, or both.</div>
+                        {% for error in form.show_logo_in_header.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        {% for error in form.show_name_in_header.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
                 </div>
             </section>
 
