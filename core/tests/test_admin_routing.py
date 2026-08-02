@@ -1,7 +1,8 @@
 import pytest
-from django.test import override_settings
+from django.test import RequestFactory, override_settings
 from django.urls import reverse
 
+from core.context_processors import platform
 from sites.services import create_subscriber_site
 from users.models import User
 
@@ -27,7 +28,7 @@ def test_superuser_can_open_admin_and_sees_navigation_link(client):
 
     assert admin_response.status_code == 200
     assert "Site administration" in admin_response.content.decode()
-    assert "http://localhost/platform-admin/" in dashboard_response.content.decode()
+    assert "http://localhost/admin/" in dashboard_response.content.decode()
     assert "http://localhost/platform-ops/" in dashboard_response.content.decode()
     assert ">Admin</a>" in dashboard_response.content.decode()
     assert ">Platform operations</a>" in dashboard_response.content.decode()
@@ -69,6 +70,7 @@ def test_platform_admin_routes_are_not_exposed_on_tenant_subdomains(client):
 
 @pytest.mark.django_db
 @override_settings(
+    DEBUG=False,
     PLATFORM_DOMAIN="gatherhqs.com",
     PLATFORM_CONTROL_HOSTS=("gatherhqs.com", "www.gatherhqs.com"),
     ALLOWED_HOSTS=("gatherhqs.com", "www.gatherhqs.com"),
@@ -92,5 +94,25 @@ def test_control_links_preserve_current_control_host_and_dev_port(client):
     assert redirected.status_code == 302
     assert redirected.url == "http://gatherhqs.com:8000/dashboard/"
     assert response.status_code == 200
-    assert "http://gatherhqs.com:8000/platform-admin/" in content
+    assert "http://gatherhqs.com:8000/admin/" in content
     assert "http://gatherhqs.com:8000/platform-ops/" in content
+
+
+@pytest.mark.django_db
+@override_settings(
+    DEBUG=True,
+    PLATFORM_DOMAIN="localhost",
+    PLATFORM_CONTROL_HOSTS=("localhost", "www.localhost"),
+    ALLOWED_HOSTS=("localhost", "www.localhost"),
+)
+def test_debug_mode_prefers_local_loopback_control_links(client):
+    admin = User.objects.create_superuser(
+        email="admin@example.com", password="Strong-Test-Pass-2026!"
+    )
+    request = RequestFactory().get("/dashboard/", HTTP_HOST="localhost:8000")
+    request.user = admin
+
+    context = platform(request)
+
+    assert context["platform_admin_url"] == "http://127.0.0.1:8000/admin/"
+    assert context["platform_ops_url"] == "http://127.0.0.1:8000/platform-ops/"

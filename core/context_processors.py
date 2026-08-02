@@ -19,6 +19,20 @@ def control_host(request):
 
 
 def control_origin(request):
+    if settings.DEBUG:
+        request_authority = request.get_host().rstrip(".")
+        port = ""
+        if ":" in request_authority:
+            candidate = request_authority.rsplit(":", 1)[1]
+            if candidate.isdigit():
+                port = candidate
+        if not port:
+            port = request.get_port()
+        host = "127.0.0.1"
+        if port and port not in {"80", "443"}:
+            host = f"{host}:{port}"
+        return f"http://{host}"
+
     host = control_host(request)
     request_authority = request.get_host().rstrip(".")
     request_host = request_authority.split(":", 1)[0].lower()
@@ -45,11 +59,12 @@ def control_origin(request):
 
 def platform(request):
     origin = control_origin(request)
+    admin_path = reverse("admin_alias")
     return {
         "platform_name": settings.PLATFORM_NAME,
         "platform_long_name": settings.PLATFORM_LONG_NAME,
         "platform_domain": settings.PLATFORM_DOMAIN,
         "support_email": settings.SUPPORT_EMAIL,
-        "platform_admin_url": f"{origin}{reverse('admin:index')}",
+        "platform_admin_url": f"{origin}{admin_path}",
         "platform_ops_url": f"{origin}{reverse('ops:dashboard')}",
     }
