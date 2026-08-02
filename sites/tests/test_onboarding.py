@@ -116,6 +116,49 @@ def test_subscriber_cannot_start_another_site_while_a_trial_exists(client):
 
 
 @pytest.mark.django_db
+def test_subscription_exempt_subscriber_can_create_multiple_sites(client):
+    owner = verified_user("owner@example.com")
+    owner.is_subscription_exempt = True
+    owner.save(update_fields=("is_subscription_exempt",))
+    client.force_login(owner)
+
+    first_site = client.post(
+        reverse("sites:onboarding"),
+        {
+            "display_name": "First Organization",
+            "slug": "first-organization",
+            "timezone": "America/New_York",
+            "template_key": "classic",
+        },
+    )
+    second_site = client.post(
+        reverse("sites:onboarding"),
+        {
+            "display_name": "Second Organization",
+            "slug": "second-organization",
+            "timezone": "America/New_York",
+            "template_key": "classic",
+        },
+    )
+    third_site = client.post(
+        reverse("sites:onboarding"),
+        {
+            "display_name": "Third Organization",
+            "slug": "third-organization",
+            "timezone": "America/New_York",
+            "template_key": "classic",
+        },
+    )
+
+    assert first_site.status_code == 302
+    assert second_site.status_code == 302
+    assert third_site.status_code == 302
+    assert Site.objects.filter(slug="first-organization", status=Site.Status.ACTIVE).exists()
+    assert Site.objects.filter(slug="second-organization", status=Site.Status.ACTIVE).exists()
+    assert Site.objects.filter(slug="third-organization", status=Site.Status.ACTIVE).exists()
+
+
+@pytest.mark.django_db
 def test_active_subscriber_can_start_one_additional_trial_but_not_a_third(client):
     owner = verified_user("owner@example.com")
     paid_site = create_subscriber_site(
@@ -373,6 +416,26 @@ def test_setup_progress_tracks_pilot_launch_essentials():
     assert progress["completed"] == progress["total"] == 5
     assert progress["percent"] == 100
     assert progress["next"] is None
+
+
+@pytest.mark.django_db
+def test_setup_progress_marks_subscription_complete_for_exempt_owner():
+    owner = verified_user("owner@example.com")
+    owner.is_subscription_exempt = True
+    owner.save(update_fields=("is_subscription_exempt",))
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+
+    progress = site_setup_progress(site)
+    subscription_check = next(
+        check for check in progress["checks"] if check["key"] == "subscription"
+    )
+
+    assert subscription_check["complete"] is True
 
 
 @pytest.mark.django_db

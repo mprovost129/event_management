@@ -20,6 +20,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     mailing_country = models.CharField(max_length=80, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    is_subscription_exempt = models.BooleanField(
+        default=False,
+        help_text=(
+            "When enabled, this user can manage organizations without an active paid "
+            "platform subscription."
+        ),
+    )
     date_joined = models.DateTimeField(default=timezone.now)
     email_verified_at = models.DateTimeField(null=True, blank=True)
 

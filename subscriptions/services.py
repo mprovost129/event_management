@@ -91,6 +91,12 @@ def synchronize_access(subscription_id, *, now=None):
         .select_related("site")
         .get(pk=subscription_id)
     )
+    if subscription.site.roles.filter(
+        role="subscriber_admin",
+        is_active=True,
+        user__is_subscription_exempt=True,
+    ).exists():
+        return subscription
     if (
         subscription.status == PlatformSubscription.Status.TRIALING
         and subscription.trial_ends_at <= now

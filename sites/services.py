@@ -30,7 +30,18 @@ class SiteCreationNotAllowed(Exception):
 DEFAULT_SITE_DELETION_HOLD_DAYS = 3
 
 
+def site_has_subscription_exemption(site):
+    return SiteRole.objects.filter(
+        site=site,
+        role=SiteRole.Role.SUBSCRIBER_ADMIN,
+        is_active=True,
+        user__is_subscription_exempt=True,
+    ).exists()
+
+
 def subscriber_site_creation_decision(user):
+    if user.is_subscription_exempt:
+        return SiteCreationDecision(True)
     owned_subscriptions = PlatformSubscription.objects.filter(
         site__roles__user=user,
         site__roles__role=SiteRole.Role.SUBSCRIBER_ADMIN,
@@ -71,10 +82,11 @@ def create_subscriber_site(
         raise SiteCreationNotAllowed(decision.reason)
 
     now = timezone.now()
+    is_exempt = locked_owner.is_subscription_exempt
     site = Site.objects.create(
         display_name=display_name,
         slug=slug,
-        status=Site.Status.TRIALING,
+        status=Site.Status.ACTIVE if is_exempt else Site.Status.TRIALING,
         timezone=timezone_name,
         currency=currency or settings.PLATFORM_DEFAULT_CURRENCY,
         template_key=template_key,
@@ -95,7 +107,11 @@ def create_subscriber_site(
     )
     PlatformSubscription.objects.create(
         site=site,
-        status=PlatformSubscription.Status.TRIALING,
+        status=(
+            PlatformSubscription.Status.ACTIVE
+            if is_exempt
+            else PlatformSubscription.Status.TRIALING
+        ),
         trial_started_at=now,
         trial_ends_at=now + timedelta(days=settings.SUBSCRIPTION_TRIAL_DAYS),
         stripe_price_id="",
@@ -163,9 +179,12 @@ def site_setup_progress(site):
             "label": "Choose monthly or yearly billing",
             "description": "Subscribe before the 14-day trial ends to keep the site active.",
             "complete": bool(
+                site_has_subscription_exemption(site)
+                or (
                 subscription.stripe_customer_id
                 and subscription.stripe_subscription_id
                 and subscription.billing_interval
+                )
             ),
         },
     ]
@@ -180,6 +199,8 @@ def site_setup_progress(site):
 
 
 def _resume_subscription_status(subscription, *, now):
+    if site_has_subscription_exemption(subscription.site):
+        return PlatformSubscription.Status.ACTIVE
     if subscription.stripe_customer_id and subscription.stripe_subscription_id:
         return PlatformSubscription.Status.ACTIVE
     if subscription.trial_ends_at > now:

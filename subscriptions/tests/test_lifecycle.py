@@ -48,6 +48,29 @@ def test_expired_trial_suspends_site_access():
 
 
 @pytest.mark.django_db
+def test_expired_trial_does_not_suspend_subscription_exempt_owner():
+    owner, site, subscription = create_subscription_fixture()
+    owner.is_subscription_exempt = True
+    owner.save(update_fields=("is_subscription_exempt",))
+    now = timezone.now()
+    subscription.status = PlatformSubscription.Status.TRIALING
+    subscription.trial_started_at = now - timedelta(days=15)
+    subscription.trial_ends_at = now - timedelta(seconds=1)
+    subscription.save(
+        update_fields=("status", "trial_started_at", "trial_ends_at", "updated_at")
+    )
+    site.status = Site.Status.TRIALING
+    site.save(update_fields=("status", "updated_at"))
+
+    synchronize_access(subscription.id)
+
+    subscription.refresh_from_db()
+    site.refresh_from_db()
+    assert subscription.status == PlatformSubscription.Status.TRIALING
+    assert site.status == Site.Status.TRIALING
+
+
+@pytest.mark.django_db
 def test_payment_failure_enters_grace_and_duplicate_webhook_is_idempotent():
     _, site, subscription = create_subscription_fixture()
     subscription.stripe_subscription_id = "sub_123"
