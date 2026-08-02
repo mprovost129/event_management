@@ -10,7 +10,13 @@ from PIL import Image
 from contacts.models import ConsentRecord, ConsentStatus, Contact
 from content.forms import BlogPostForm
 from content.images import prepare_image
-from content.models import BlogPost, PageSection, PublishingStatus, SitePage
+from content.models import (
+    BlogPost,
+    PageSection,
+    PageSectionImage,
+    PublishingStatus,
+    SitePage,
+)
 from content.services import public_page
 from sites.services import create_subscriber_site
 from users.models import User
@@ -353,6 +359,12 @@ def test_uploaded_images_are_validated_and_resized():
     assert resized.format == "JPEG"
 
 
+def section_image_upload(name="section.jpg", *, width=1200, height=900):
+    source = BytesIO()
+    Image.new("RGB", (width, height), color="navy").save(source, format="JPEG")
+    return SimpleUploadedFile(name, source.getvalue(), content_type="image/jpeg")
+
+
 @pytest.mark.django_db
 def test_website_hub_guides_owner_through_three_setup_steps(client):
     owner, site = create_site()
@@ -426,3 +438,111 @@ def test_blog_editor_explains_publish_then_newsletter_workflow(client):
     assert "data-blog-editor" in content
     assert "Write once, share twice" in content
     assert "/blog/" in content
+
+
+@pytest.mark.django_db
+def test_page_editor_section_actions_add_move_and_delete(client):
+    owner, site = create_site()
+    client.force_login(owner)
+
+    edit_url = reverse("content:page_edit", args=(site.id, SitePage.PageType.ABOUT))
+
+    add_hero = client.post(
+        edit_url,
+        {"section_action": "add", "section_type": PageSection.SectionType.HERO},
+    )
+    add_content = client.post(
+        edit_url,
+        {"section_action": "add", "section_type": PageSection.SectionType.CONTENT},
+    )
+
+    sections = list(PageSection.objects.for_site(site).order_by("position"))
+    assert add_hero.status_code == 302
+    assert add_content.status_code == 302
+    assert [section.section_type for section in sections] == [
+        PageSection.SectionType.HERO,
+        PageSection.SectionType.CONTENT,
+    ]
+
+    move_up = client.post(
+        edit_url,
+        {
+            "section_action": "move",
+            "section_id": str(sections[1].id),
+            "direction": "up",
+        },
+    )
+    reordered = list(PageSection.objects.for_site(site).order_by("position"))
+    assert move_up.status_code == 302
+    assert [section.section_type for section in reordered] == [
+        PageSection.SectionType.CONTENT,
+        PageSection.SectionType.HERO,
+    ]
+
+    delete = client.post(
+        edit_url,
+        {
+            "section_action": "delete",
+            "section_id": str(reordered[1].id),
+        },
+    )
+    remaining = list(PageSection.objects.for_site(site).order_by("position"))
+    assert delete.status_code == 302
+    assert len(remaining) == 1
+    assert remaining[0].position == 1
+
+
+@pytest.mark.django_db
+def test_strip_section_image_requires_alt_text_and_limits_to_six(client):
+    owner, site = create_site()
+    client.force_login(owner)
+    page = SitePage.objects.get(site=site, page_type=SitePage.PageType.ABOUT)
+    strip = PageSection.objects.create(
+        site=site,
+        page=page,
+        section_type=PageSection.SectionType.STRIP,
+        position=1,
+    )
+    edit_url = reverse("content:page_edit", args=(site.id, SitePage.PageType.ABOUT))
+
+    missing_alt = client.post(
+        edit_url,
+        {
+            "section_action": "add_strip_image",
+            "section_id": str(strip.id),
+            "alt_text": "",
+            "image": section_image_upload("one.jpg"),
+        },
+        follow=True,
+    )
+    assert missing_alt.status_code == 200
+    assert "Alt text is required for each strip image" in missing_alt.content.decode()
+    assert strip.images.count() == 0
+
+    for index in range(6):
+        response = client.post(
+            edit_url,
+            {
+                "section_action": "add_strip_image",
+                "section_id": str(strip.id),
+                "alt_text": f"Logo {index + 1}",
+                "image": section_image_upload(f"logo-{index + 1}.jpg"),
+            },
+        )
+        assert response.status_code == 302
+    assert strip.images.count() == 6
+    assert PageSectionImage.objects.for_site(site).filter(section=strip).count() == 6
+
+    over_limit = client.post(
+        edit_url,
+        {
+            "section_action": "add_strip_image",
+            "section_id": str(strip.id),
+            "alt_text": "Logo 7",
+            "image": section_image_upload("logo-7.jpg"),
+        },
+        follow=True,
+    )
+    assert over_limit.status_code == 200
+    assert "Strip sections can include up to 6 images" in over_limit.content.decode()
+    assert strip.images.count() == 6

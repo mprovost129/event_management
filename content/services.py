@@ -101,3 +101,25 @@ def page_has_content(page):
     if page.body.strip():
         return True
     return page.sections.filter(is_enabled=True).exists()
+
+
+def resequence_sections(page):
+    sections = list(page.sections.order_by("position", "created_at"))
+    changed = []
+    for index, section in enumerate(sections, start=1):
+        if section.position != index:
+            section.position = index
+            changed.append(section)
+    if changed:
+        PageSection.objects.bulk_update(changed, ["position"])
+
+
+def resequence_section_images(section):
+    images = list(section.images.order_by("position", "created_at"))
+    changed = []
+    for index, image in enumerate(images, start=1):
+        if image.position != index:
+            image.position = index
+            changed.append(image)
+    if changed:
+        section.images.model.objects.bulk_update(changed, ["position"])

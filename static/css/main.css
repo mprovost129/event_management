@@ -2437,6 +2437,43 @@ textarea {
     color: #0b1d39;
 }
 
+.gh-section-editor-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.gh-section-editor-card {
+    padding: 1rem;
+    border: 1px solid #e6e0d8;
+    border-radius: .75rem;
+    background: #fcfbf9;
+}
+
+.gh-section-strip-images {
+    display: grid;
+    gap: .65rem;
+}
+
+.gh-section-strip-image-row {
+    display: grid;
+    grid-template-columns: 4rem minmax(0, 1fr) auto;
+    gap: .75rem;
+    align-items: center;
+}
+
+.gh-section-strip-image-row img {
+    width: 4rem;
+    height: 4rem;
+    border: 1px solid #ddd6ca;
+    border-radius: .4rem;
+    object-fit: cover;
+}
+
+.gh-section-strip-upload {
+    padding-top: .75rem;
+    border-top: 1px dashed #d8d1c6;
+}
+
 @media (max-width: 991.98px) {
     .gh-builder-layout,
     .gh-editor-layout {
@@ -2502,6 +2539,10 @@ textarea {
     .gh-builder-actions {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .gh-section-strip-image-row {
+        grid-template-columns: 1fr;
     }
 }
 
