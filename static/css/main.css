@@ -2298,6 +2298,17 @@ textarea {
     text-decoration: none;
 }
 
+.gh-page-grid > article {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    align-items: center;
+    padding: 1.15rem;
+    border: 1px solid #e3ded8;
+    border-radius: .85rem;
+    background: #fff;
+}
+
 .gh-page-grid > a:hover {
     border-color: rgba(219, 92, 28, .55);
     box-shadow: 0 .75rem 1.75rem rgba(11, 29, 57, .07);

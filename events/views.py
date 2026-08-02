@@ -11,6 +11,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 
 from core.pagination import paginate
 from core.rate_limits import public_write_rate_limit
+from content.services import record_public_engagement
 from notifications.services import notify_registration_response
 from ops.services import record_audit_event
 from payments.services import registration_checkout_token, ticket_inventory
@@ -846,6 +847,12 @@ def calendar(request):
             ends_at__gte=timezone.now(),
         )
         .select_related("event")
+    )
+    record_public_engagement(
+        action="public.calendar_view",
+        site=site,
+        summary={"occurrence_count": occurrences.count()},
+        request=request,
     )
     return render(
         request,

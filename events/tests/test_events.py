@@ -14,6 +14,7 @@ from PIL import Image
 from contacts.models import Contact
 from events.forms import EventAlbumCreateForm, EventForm
 from events.models import Event, EventAlbum, EventOccurrence, EventPhoto
+from ops.models import AuditEvent
 from events.services import (
     create_event_series,
     occurrence_starts,
@@ -200,6 +201,10 @@ def test_calendar_lists_public_events_but_direct_unlisted_links_work(client):
     assert invite_only.title not in calendar_content
     assert unlisted_response.status_code == 200
     assert private_response.status_code == 404
+    assert AuditEvent.objects.filter(
+        site_id=site.id,
+        action="public.calendar_view",
+    ).exists()
 
 
 @pytest.mark.django_db

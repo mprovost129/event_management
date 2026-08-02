@@ -1,6 +1,8 @@
 from django.db.models import Q
 from django.utils import timezone
 
+from ops.services import record_audit_event
+
 from .models import BlogPost, PageSection, PublishingStatus, SitePage
 
 DEFAULT_PAGES = {
@@ -123,3 +125,13 @@ def resequence_section_images(section):
             changed.append(image)
     if changed:
         section.images.model.objects.bulk_update(changed, ["position"])
+
+
+def record_public_engagement(*, action, site, request=None, summary=None, target=None):
+    return record_audit_event(
+        action=action,
+        site_id=site.id,
+        target=target,
+        summary=summary or {},
+        request=request,
+    )

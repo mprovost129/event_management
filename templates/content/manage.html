@@ -57,6 +57,26 @@
         </div>
     </section>
 
+    <section class="gh-page-section" aria-labelledby="engagement-title">
+        <div class="gh-section-row">
+            <div>
+                <p class="gh-step-label mb-1">What visitors are doing</p>
+                <h2 id="engagement-title">Public engagement (last {{ engagement_period_days }} days)</h2>
+            </div>
+        </div>
+        <div class="gh-page-grid">
+            {% for item in engagement %}
+            <article>
+                <div class="gh-page-icon" aria-hidden="true">{{ item.count }}</div>
+                <div>
+                    <h3>{{ item.label }}</h3>
+                    <p>Recorded from live public pages.</p>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
     <section class="gh-blog-section" aria-labelledby="blog-title">
         <div class="gh-section-row">
             <div><p class="gh-step-label mb-1">Keep people informed</p><h2 id="blog-title">Blog and news</h2></div>

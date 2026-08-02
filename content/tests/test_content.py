@@ -8,6 +8,7 @@ from django.utils import timezone
 from PIL import Image
 
 from contacts.models import ConsentRecord, ConsentStatus, Contact
+from ops.models import AuditEvent
 from content.forms import BlogPostForm
 from content.images import prepare_image
 from content.sanitization import sanitize_rich_text
@@ -256,6 +257,65 @@ def test_newsletter_signup_creates_contact_and_consent_history(client):
         status=ConsentStatus.GRANTED,
         source="public_newsletter_form",
     ).exists()
+    assert AuditEvent.objects.filter(
+        site_id=site.id,
+        action="public.newsletter_signup",
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_hero_section_cta_redirect_tracks_click(client):
+    _, site = create_site()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    about = SitePage.objects.get(site=site, page_type=SitePage.PageType.ABOUT)
+    about.status = PublishingStatus.PUBLISHED
+    about.publish_at = timezone.now() - timezone.timedelta(minutes=1)
+    about.save(update_fields=("status", "publish_at", "updated_at"))
+    section = PageSection.objects.create(
+        site=site,
+        page=about,
+        section_type=PageSection.SectionType.HERO,
+        is_enabled=True,
+        position=1,
+        heading="Join us",
+        button_text="Register",
+        button_url="https://example.com/register",
+    )
+
+    response = client.get(
+        reverse("content:section_cta", args=(section.id,)),
+        headers={"host": "boot-scooters.localhost"},
+    )
+
+    assert response.status_code == 302
+    assert response.url == "https://example.com/register"
+    assert AuditEvent.objects.filter(
+        site_id=site.id,
+        action="public.section_cta_click",
+        target_type="content.pagesection",
+        target_id=str(section.id),
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_content_dashboard_shows_recent_public_engagement_metrics(client):
+    owner, site = create_site()
+    client.force_login(owner)
+    AuditEvent.objects.create(site_id=site.id, action="public.page_view")
+    AuditEvent.objects.create(site_id=site.id, action="public.page_view")
+    AuditEvent.objects.create(site_id=site.id, action="public.calendar_view")
+    AuditEvent.objects.create(site_id=site.id, action="public.newsletter_signup")
+
+    response = client.get(reverse("content:manage", args=(site.id,)))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Public engagement (last 30 days)" in content
+    assert "Page views" in content
+    assert "Calendar views" in content
+    assert "Newsletter signups" in content
+    assert "Section CTA clicks" in content
 
 
 @pytest.mark.django_db

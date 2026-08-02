@@ -30,6 +30,7 @@ urlpatterns = [
         views.blog_edit,
         name="blog_edit",
     ),
+    path("go/<uuid:section_id>/", views.section_cta_redirect, name="section_cta"),
     path(
         "about/",
         views.page_detail,

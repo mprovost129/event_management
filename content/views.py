@@ -1,14 +1,17 @@
 from django.contrib import messages
 from django.db import IntegrityError, transaction
+from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods
 from django.core.exceptions import ValidationError
 
 from contacts.services import subscribe_to_newsletter
 from core.rate_limits import public_write_rate_limit
 from ops.services import record_audit_event
+from ops.models import AuditEvent
 from sites.permissions import site_staff_required
 
 from .images import prepare_image
@@ -24,6 +27,7 @@ from .services import (
     page_has_content,
     public_blog_posts,
     public_page,
+    record_public_engagement,
     resequence_section_images,
     resequence_sections,
     sync_legacy_body_section,
@@ -79,6 +83,30 @@ def manage_content(request, site_id):
         },
     )
     completed_checks = sum(check["complete"] for check in website_checks)
+    since = timezone.now() - timezone.timedelta(days=30)
+    public_actions = {
+        "public.page_view": "Page views",
+        "public.calendar_view": "Calendar views",
+        "public.newsletter_signup": "Newsletter signups",
+        "public.section_cta_click": "Section CTA clicks",
+    }
+    engagement_counts = {
+        item["action"]: item["count"]
+        for item in AuditEvent.objects.filter(
+            site_id=site.id,
+            action__in=public_actions,
+            created_at__gte=since,
+        )
+        .values("action")
+        .annotate(count=Count("id"))
+    }
+    engagement = [
+        {
+            "label": label,
+            "count": engagement_counts.get(action, 0),
+        }
+        for action, label in public_actions.items()
+    ]
     return render(
         request,
         "content/manage.html",
@@ -93,6 +121,8 @@ def manage_content(request, site_id):
                 "total": len(website_checks),
                 "percent": round(completed_checks / len(website_checks) * 100),
             },
+            "engagement": engagement,
+            "engagement_period_days": 30,
         },
     )
 
@@ -393,11 +423,38 @@ def page_detail(request, page_type):
     if page is None:
         raise Http404("Page not found.")
     sections = page.renderable_sections()
+    record_public_engagement(
+        action="public.page_view",
+        site=site,
+        target=page,
+        summary={"page_type": page.page_type},
+        request=request,
+    )
     return render(
         request,
         "public/page.html",
         {"site": site, "page": page, "sections": sections},
     )
+
+
+def section_cta_redirect(request, section_id):
+    site = _public_site(request)
+    section = get_object_or_404(
+        PageSection.objects.for_site(site).select_related("page"),
+        pk=section_id,
+        section_type=PageSection.SectionType.HERO,
+        is_enabled=True,
+    )
+    if not section.button_url:
+        raise Http404("CTA destination not found.")
+    record_public_engagement(
+        action="public.section_cta_click",
+        site=site,
+        target=section,
+        summary={"page_type": section.page.page_type, "section_type": section.section_type},
+        request=request,
+    )
+    return redirect(section.button_url)
 
 
 def blog_index(request):
@@ -428,6 +485,12 @@ def newsletter_signup(request):
             first_name=form.cleaned_data["first_name"],
             last_name=form.cleaned_data["last_name"],
             source="public_newsletter_form",
+        )
+        record_public_engagement(
+            action="public.newsletter_signup",
+            site=site,
+            summary={"source": "public_newsletter_form"},
+            request=request,
         )
         messages.success(request, "You're subscribed to email updates.")
         return redirect(reverse("content:newsletter"))

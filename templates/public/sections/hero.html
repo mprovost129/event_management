@@ -2,6 +2,6 @@
     {% if section.heading %}<h1 class="display-5">{{ section.heading }}</h1>{% endif %}
     {% if section.subheading %}<p class="lead">{{ section.subheading }}</p>{% endif %}
     {% if section.button_text and section.button_url %}
-    <a class="btn btn-primary btn-lg" href="{{ section.button_url }}">{{ section.button_text }}</a>
+    <a class="btn btn-primary btn-lg" href="{% url 'content:section_cta' section.id %}">{{ section.button_text }}</a>
     {% endif %}
 </section>
