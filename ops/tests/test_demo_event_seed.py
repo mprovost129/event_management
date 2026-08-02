@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.utils import timezone
 
 from events.models import Event, EventOccurrence
@@ -75,3 +76,42 @@ def test_seed_demo_event_with_paid_ticket_is_idempotent():
     ticket = tickets.get()
     assert ticket.amount_cents == 500
     assert ticket.quantity == 50
+
+
+@pytest.mark.django_db
+def test_seed_demo_event_rematerializes_missing_future_occurrences():
+    _, site = create_site("rematerialize-site")
+
+    call_command("seed_demo_event", site.slug, months=3)
+    event = Event.objects.get(site=site, slug="getting-started-gather-hqs")
+    event.occurrences.all().delete()
+
+    call_command("seed_demo_event", site.slug, months=6)
+    event.refresh_from_db()
+
+    future_occurrence_count = event.occurrences.filter(
+        status=EventOccurrence.Status.SCHEDULED,
+        ends_at__gte=timezone.now(),
+    ).count()
+    assert future_occurrence_count >= 6
+
+
+@pytest.mark.django_db
+def test_seed_demo_event_rejects_invalid_paid_ticket_inputs():
+    _, site = create_site("invalid-ticket-site")
+
+    with pytest.raises(CommandError, match="--ticket-amount-cents must be at least 50"):
+        call_command(
+            "seed_demo_event",
+            site.slug,
+            with_paid_ticket=True,
+            ticket_amount_cents=10,
+        )
+
+    with pytest.raises(CommandError, match="--ticket-quantity must be at least 1"):
+        call_command(
+            "seed_demo_event",
+            site.slug,
+            with_paid_ticket=True,
+            ticket_quantity=0,
+        )

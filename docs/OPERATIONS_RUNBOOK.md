@@ -44,6 +44,23 @@ python manage.py queue_review_requests --limit 500
 
 5. Re-run `alert_summary`, reconcile affected money totals, and record the incident timeline.
 
+## Demo and training event seeding
+
+Use this command to keep at least one public recurring onboarding/demo event available on subscriber calendars and optionally verify paid ticket checkout in low-risk environments.
+
+```text
+python manage.py seed_demo_event <site-slug>
+python manage.py seed_demo_event <site-slug> --with-paid-ticket
+```
+
+Recommended defaults:
+
+- Keep `--months` between 6 and 12 so the calendar remains populated.
+- Leave the default paid ticket at `$5` (`--ticket-amount-cents 500`) unless product experiments require a different price.
+- Run the command again after timezone or schedule policy changes; the command is idempotent and will update the existing seeded event.
+
+If the command fails, do not hand-edit recurring occurrences in production during an incident. Capture the error output, verify site slug/timezone values, and rerun once inputs are corrected.
+
 ## Backup and restore drill
 
 The production database provider must take encrypted daily backups and retain enough history to recover an unnoticed issue. Enable point-in-time recovery when its cost is acceptable. Object-storage media needs versioning or an equivalent independent retention policy.

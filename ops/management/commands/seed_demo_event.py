@@ -1,5 +1,5 @@
 import calendar
-from datetime import datetime, timedelta
+from datetime import timedelta
 from zoneinfo import ZoneInfo
 
 from django.core.management.base import BaseCommand, CommandError
@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from events.models import Event, EventOccurrence
-from events.services import create_event_series
+from events.services import create_event_series, occurrence_starts
 from ops.services import record_audit_event
 from payments.models import TicketType
 from sites.models import Site
@@ -22,6 +22,7 @@ DEMO_EVENT_HOST = "Gather HQs"
 DEMO_EVENT_VENUE = "Live online session"
 DEMO_EVENT_ADDRESS = "Hosted virtually"
 DEMO_TICKET_NAME = "Paid demo ticket"
+MIN_TICKET_AMOUNT_CENTS = 50
 
 
 def add_months(value, months):
@@ -38,6 +39,45 @@ def next_demo_start(site_timezone, hour, minute):
     while candidate <= now_local + timedelta(days=2):
         candidate += timedelta(days=7)
     return candidate
+
+
+def materialize_missing_occurrences(event, start_local, end_local):
+    existing_starts = set(event.occurrences.values_list("starts_at", flat=True))
+    anchor = (
+        event.occurrences.order_by("starts_at").values_list("starts_at", flat=True).first()
+        or start_local
+    )
+    duration = (
+        event.occurrences.order_by("starts_at")
+        .values_list("ends_at", "starts_at")
+        .first()
+    )
+    if duration:
+        event_duration = duration[0] - duration[1]
+    else:
+        event_duration = end_local - start_local
+
+    created_count = 0
+    for starts_at in occurrence_starts(
+        anchor,
+        event.recurrence,
+        event.recurrence_interval,
+        event.recurrence_until,
+    ):
+        if starts_at in existing_starts:
+            continue
+        EventOccurrence.objects.create(
+            site=event.site,
+            event=event,
+            starts_at=starts_at,
+            ends_at=starts_at + event_duration,
+            timezone=event.site.timezone,
+            venue_name=DEMO_EVENT_VENUE,
+            venue_address=DEMO_EVENT_ADDRESS,
+            status=EventOccurrence.Status.SCHEDULED,
+        )
+        created_count += 1
+    return created_count
 
 
 class Command(BaseCommand):
@@ -69,6 +109,12 @@ class Command(BaseCommand):
             raise CommandError("--start-minute must be between 0 and 59.")
         if options["duration_minutes"] < 15:
             raise CommandError("--duration-minutes must be at least 15.")
+        if options["with_paid_ticket"] and options["ticket_amount_cents"] < MIN_TICKET_AMOUNT_CENTS:
+            raise CommandError(
+                f"--ticket-amount-cents must be at least {MIN_TICKET_AMOUNT_CENTS}."
+            )
+        if options["with_paid_ticket"] and options["ticket_quantity"] < 1:
+            raise CommandError("--ticket-quantity must be at least 1.")
 
         start_local = next_demo_start(
             site.timezone,
@@ -126,22 +172,7 @@ class Command(BaseCommand):
                     "updated_at",
                 )
             )
-
-            has_future = event.occurrences.filter(
-                status=EventOccurrence.Status.SCHEDULED,
-                ends_at__gte=timezone.now(),
-            ).exists()
-            if not has_future:
-                EventOccurrence.objects.create(
-                    site=site,
-                    event=event,
-                    starts_at=start_local,
-                    ends_at=end_local,
-                    timezone=site.timezone,
-                    venue_name=DEMO_EVENT_VENUE,
-                    venue_address=DEMO_EVENT_ADDRESS,
-                    status=EventOccurrence.Status.SCHEDULED,
-                )
+            materialize_missing_occurrences(event, start_local, end_local)
 
         if not site.is_published:
             site.is_published = True
