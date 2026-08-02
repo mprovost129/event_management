@@ -1,0 +1,7 @@
+User-agent: *
+{% if allow_indexing %}Allow: /
+{% else %}Disallow: /
+{% endif %}Disallow: /platform-admin/
+Disallow: /platform-ops/
+Disallow: /admin/
+Sitemap: {{ sitemap_url }}

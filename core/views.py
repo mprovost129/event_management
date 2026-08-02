@@ -1,12 +1,17 @@
 from decimal import Decimal
 
 from django.conf import settings
-from django.http import JsonResponse
+from django.db.models import Count
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect
+from django.template.response import TemplateResponse
 from django.templatetags.static import static
+from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView
 
+from events.models import EventAlbum
 from content.models import SitePage
 from content.services import public_blog_posts, public_page
 from events.models import Event, EventOccurrence
@@ -89,6 +94,187 @@ def health_live(request):
 def health_ready(request):
     status = readiness_status()
     return JsonResponse(status, status=200 if status["ok"] else 503)
+
+
+def _add_sitemap_entry(entries, loc, lastmod):
+    entries.append(
+        {
+            "loc": loc,
+            "lastmod": lastmod,
+        }
+    )
+
+
+def _public_sitemap_entries(request, site):
+    now = timezone.now()
+    entries = []
+    _add_sitemap_entry(
+        entries,
+        request.build_absolute_uri(reverse("core:home")),
+        site.updated_at,
+    )
+
+    for page_type, route_name in (
+        (SitePage.PageType.ABOUT, "content:about"),
+        (SitePage.PageType.CONTACT, "content:contact"),
+        (SitePage.PageType.NEWSLETTER, "content:newsletter"),
+    ):
+        if page := public_page(site, page_type):
+            _add_sitemap_entry(
+                entries,
+                request.build_absolute_uri(reverse(route_name)),
+                page.updated_at,
+            )
+
+    posts = public_blog_posts(site)
+    if posts.exists():
+        newest_post = posts.first()
+        _add_sitemap_entry(
+            entries,
+            request.build_absolute_uri(reverse("content:blog_index")),
+            newest_post.updated_at,
+        )
+        for post in posts:
+            _add_sitemap_entry(
+                entries,
+                request.build_absolute_uri(
+                    reverse("content:blog_detail", kwargs={"slug": post.slug})
+                ),
+                post.updated_at,
+            )
+
+    _add_sitemap_entry(
+        entries,
+        request.build_absolute_uri(reverse("events:calendar")),
+        site.updated_at,
+    )
+
+    events = (
+        Event.objects.for_site(site)
+        .filter(
+            status=Event.Status.PUBLISHED,
+            visibility=Event.Visibility.PUBLIC,
+            occurrences__status=EventOccurrence.Status.SCHEDULED,
+            occurrences__ends_at__gte=now,
+        )
+        .distinct()
+    )
+    for event in events:
+        _add_sitemap_entry(
+            entries,
+            request.build_absolute_uri(
+                reverse("events:detail", kwargs={"slug": event.slug})
+            ),
+            event.updated_at,
+        )
+
+    occurrences = (
+        EventOccurrence.objects.for_site(site)
+        .filter(
+            event__status=Event.Status.PUBLISHED,
+            event__visibility=Event.Visibility.PUBLIC,
+            status=EventOccurrence.Status.SCHEDULED,
+            ends_at__gte=now,
+        )
+        .select_related("event")
+    )
+    for occurrence in occurrences:
+        _add_sitemap_entry(
+            entries,
+            request.build_absolute_uri(
+                reverse(
+                    "events:occurrence_detail",
+                    kwargs={
+                        "slug": occurrence.event.slug,
+                        "occurrence_id": occurrence.id,
+                    },
+                )
+            ),
+            occurrence.updated_at,
+        )
+
+    albums = (
+        EventAlbum.objects.for_site(site)
+        .filter(status=EventAlbum.Status.PUBLISHED, occurrence__ends_at__lte=now)
+        .annotate(photo_count=Count("photos"))
+        .filter(photo_count__gt=0)
+    )
+    if albums.exists():
+        _add_sitemap_entry(
+            entries,
+            request.build_absolute_uri(reverse("events:photo_album_list")),
+            max(album.updated_at for album in albums),
+        )
+        for album in albums:
+            _add_sitemap_entry(
+                entries,
+                request.build_absolute_uri(
+                    reverse("events:photo_album_detail", kwargs={"slug": album.slug})
+                ),
+                album.updated_at,
+            )
+
+    return entries
+
+
+def _control_sitemap_entries(request):
+    entries = []
+    for route_name in (
+        "core:home",
+        "core:help",
+        "core:legal",
+        "core:privacy",
+        "core:terms",
+        "core:cookies",
+        "core:refunds",
+        "core:acceptable_use",
+        "core:retention",
+        "core:security",
+        "core:review_guidelines",
+        "users:signup",
+        "users:login",
+    ):
+        _add_sitemap_entry(
+            entries,
+            request.build_absolute_uri(reverse(route_name)),
+            timezone.now(),
+        )
+    return entries
+
+
+@require_GET
+def robots_txt(request):
+    site = getattr(request, "site", None)
+    allow_indexing = bool(
+        site is None or (site.accepts_public_traffic and site.is_published)
+    )
+    return TemplateResponse(
+        request,
+        "core/robots.txt",
+        {
+            "allow_indexing": allow_indexing,
+            "sitemap_url": request.build_absolute_uri(reverse("core:sitemap")),
+        },
+        content_type="text/plain",
+    )
+
+
+@require_GET
+def sitemap_xml(request):
+    site = getattr(request, "site", None)
+    if site is not None and (not site.accepts_public_traffic or not site.is_published):
+        raise Http404("Site not found.")
+    entries = (
+        _public_sitemap_entries(request, site)
+        if site
+        else _control_sitemap_entries(request)
+    )
+    return TemplateResponse(
+        request,
+        "core/sitemap.xml",
+        {"entries": entries},
+        content_type="application/xml",
+    )
 
 
 class HomeView(TemplateView):

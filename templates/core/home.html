@@ -50,7 +50,7 @@
                         <p>{{ occurrence.venue_name }}</p>
                     </div>
                 </article>
-            </div>{% empty %}<p>No upcoming events yet.</p>{% endfor %}</div>
+            </div>{% empty %}<p>No upcoming events yet. <a href="{% url 'content:newsletter' %}">Subscribe for updates</a>.</p>{% endfor %}</div>
         </section>{% endtimezone %}
         {% if recent_posts %}<section class="py-4">
         <div class="d-flex justify-content-between">

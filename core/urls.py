@@ -7,6 +7,8 @@ app_name = "core"
 urlpatterns = [
     path("health/live/", views.health_live, name="health_live"),
     path("health/ready/", views.health_ready, name="health_ready"),
+    path("robots.txt", views.robots_txt, name="robots"),
+    path("sitemap.xml", views.sitemap_xml, name="sitemap"),
     path("help/", views.HelpView.as_view(), name="help"),
     path("legal/", views.LegalCenterView.as_view(), name="legal"),
     path(

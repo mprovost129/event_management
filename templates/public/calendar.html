@@ -1,13 +1,34 @@
 {% extends 'public/site_base.html' %}
 {% load tz %}
 {% block title %}Events · {{ site.display_name }}{% endblock %}
-{% block content %}<section class="site-theme">
-<h1>Upcoming events</h1>{% timezone site.timezone %}<div class="row g-3 mt-2">{% for occurrence in occurrences %}<div class="col-md-6">
-<article class="card h-100">
-    <div class="card-body">
-        <p class="site-accent fw-semibold">{{ occurrence.starts_at|date:"l, F j · g:i A" }}</p>
-        <h2 class="h4"><a href="{% url 'events:occurrence_detail' occurrence.event.slug occurrence.id %}">{{ occurrence.event.title }}</a></h2>
-        <p>{{ occurrence.venue_name|default:"Venue to be announced" }}</p>
+{% block content %}
+<section class="site-theme">
+    <h1>Upcoming events</h1>
+    {% timezone site.timezone %}
+    <div class="row g-3 mt-2">
+        {% for occurrence in occurrences %}
+        <div class="col-md-6">
+            <article class="card h-100">
+                <div class="card-body">
+                    <p class="site-accent fw-semibold">{{ occurrence.starts_at|date:"l, F j · g:i A" }}</p>
+                    <h2 class="h4"><a href="{% url 'events:occurrence_detail' occurrence.event.slug occurrence.id %}">{{ occurrence.event.title }}</a></h2>
+                    <p>{{ occurrence.venue_name|default:"Venue to be announced" }}</p>
+                </div>
+            </article>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-light border" role="status">
+                <p class="mb-2">No public events are scheduled right now.</p>
+                <p class="mb-0">
+                    <a href="{% url 'content:newsletter' %}">Join the newsletter</a>
+                    to hear about new dates, or check
+                    <a href="{% url 'content:blog_index' %}">latest updates</a>.
+                </p>
+            </div>
+        </div>
+        {% endfor %}
     </div>
-</article>
-</div>{% empty %}<p>No upcoming public events.</p>{% endfor %}</div>{% endtimezone %}</section>{% endblock %}
+    {% endtimezone %}
+</section>
+{% endblock %}
