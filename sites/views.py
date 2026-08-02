@@ -496,7 +496,9 @@ def suspend(request, site_id):
     except ValidationError as exc:
         messages.error(request, str(exc))
     else:
-        messages.success(request, "Site is now suspended and hidden from the public web.")
+        messages.success(
+            request, "Site is now suspended and hidden from the public web."
+        )
     return redirect("sites:dashboard", site_id=site_id)
 
 

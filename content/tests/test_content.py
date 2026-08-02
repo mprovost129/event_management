@@ -659,7 +659,7 @@ def test_public_content_section_renders_sanitized_rich_text(client):
     assert response.status_code == 200
     content = response.content.decode()
     assert "our link" in content
-    assert "href=\"https://example.com\"" in content
+    assert 'href="https://example.com"' in content
     assert "alert(2)" not in content
     assert "onerror=" not in content
 
@@ -684,7 +684,10 @@ def test_page_edit_preserves_legacy_body_when_custom_sections_exist(client):
     edit_url = reverse("content:page_edit", args=(site.id, SitePage.PageType.ABOUT))
     get_response = client.get(edit_url)
     assert get_response.status_code == 200
-    assert "legacy body field is read-only fallback" in get_response.content.decode().lower()
+    assert (
+        "legacy body field is read-only fallback"
+        in get_response.content.decode().lower()
+    )
 
     post_response = client.post(
         edit_url,

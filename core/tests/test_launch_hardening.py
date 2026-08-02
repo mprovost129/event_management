@@ -55,7 +55,9 @@ def test_no_template_relies_on_an_inline_event_handler_the_csp_blocks():
         source = template.read_text(encoding="utf-8")
         failures.extend(
             f"{template.relative_to(settings.BASE_DIR)}: {match}"
-            for match in re.findall(r'\bon[a-z]+\s*=\s*"[^"]*"', source, flags=re.IGNORECASE)
+            for match in re.findall(
+                r'\bon[a-z]+\s*=\s*"[^"]*"', source, flags=re.IGNORECASE
+            )
         )
 
     assert not failures
@@ -374,9 +376,7 @@ def test_production_error_pages_are_safe_branded_and_traceable(client):
 
 @pytest.mark.django_db
 def test_unrecognized_tenant_subdomain_404_still_gets_clickjacking_protection(client):
-    response = client.get(
-        "/", headers={"host": "totally-unknown-tenant.localhost"}
-    )
+    response = client.get("/", headers={"host": "totally-unknown-tenant.localhost"})
 
     assert response.status_code == 404
     assert response["X-Frame-Options"] == "DENY"

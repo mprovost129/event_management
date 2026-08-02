@@ -54,7 +54,9 @@ def test_password_change_uses_the_branded_templates_not_django_admin(client):
 
     form_page = client.get(reverse("users:password_change"))
     assert form_page.status_code == 200
-    used_templates = {template.name for template in form_page.templates if template.name}
+    used_templates = {
+        template.name for template in form_page.templates if template.name
+    }
     assert "registration/password_change_form.html" in used_templates
     assert not any(name.startswith("admin/") for name in used_templates)
     content = form_page.content.decode()

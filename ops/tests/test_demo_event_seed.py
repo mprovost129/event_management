@@ -59,12 +59,18 @@ def test_seed_demo_event_with_paid_ticket_is_idempotent():
     call_command("seed_demo_event", site.slug, with_paid_ticket=True)
 
     event = Event.objects.get(site=site, slug="getting-started-gather-hqs")
-    assert Event.objects.filter(site=site, slug="getting-started-gather-hqs").count() == 1
+    assert (
+        Event.objects.filter(site=site, slug="getting-started-gather-hqs").count() == 1
+    )
 
-    future_occurrence = event.occurrences.filter(
-        status=EventOccurrence.Status.SCHEDULED,
-        ends_at__gte=timezone.now() - timedelta(minutes=1),
-    ).order_by("starts_at").first()
+    future_occurrence = (
+        event.occurrences.filter(
+            status=EventOccurrence.Status.SCHEDULED,
+            ends_at__gte=timezone.now() - timedelta(minutes=1),
+        )
+        .order_by("starts_at")
+        .first()
+    )
     assert future_occurrence is not None
 
     tickets = TicketType.objects.filter(

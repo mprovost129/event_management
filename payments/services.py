@@ -323,9 +323,7 @@ def reserve_ticket_order(*, registration, ticket_type):
     if registration.payment_status != Registration.PaymentStatus.PENDING:
         raise CommerceUnavailable("This registration is not awaiting payment.")
     superseded_order_id = (
-        Order.objects.filter(
-            registration=registration, status=Order.Status.PENDING
-        )
+        Order.objects.filter(registration=registration, status=Order.Status.PENDING)
         .values_list("id", flat=True)
         .first()
     )

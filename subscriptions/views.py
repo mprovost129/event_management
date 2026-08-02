@@ -22,9 +22,7 @@ from .services import process_stripe_event
 def checkout(request, site_id):
     subscription = request.authorized_site.platform_subscription
     if subscription.stripe_customer_id:
-        messages.info(
-            request, "This organization already has an active subscription."
-        )
+        messages.info(request, "This organization already has an active subscription.")
         return redirect("sites:dashboard", site_id=site_id)
     try:
         session = create_checkout_session(

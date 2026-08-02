@@ -170,7 +170,9 @@ def page_edit(request, site_id, page_type):
 
     def _section_for_request():
         section_id = request.POST.get("section_id", "").strip()
-        return get_object_or_404(PageSection.objects.for_site(site), pk=section_id, page=page)
+        return get_object_or_404(
+            PageSection.objects.for_site(site), pk=section_id, page=page
+        )
 
     section_action = request.POST.get("section_action", "").strip()
     if request.method == "POST" and section_action:
@@ -180,7 +182,9 @@ def page_edit(request, site_id, page_type):
                 messages.error(request, "Choose a valid section type.")
                 return _section_redirect()
             position = page.sections.count() + 1
-            heading_default = page.title if section_type == PageSection.SectionType.CONTENT else ""
+            heading_default = (
+                page.title if section_type == PageSection.SectionType.CONTENT else ""
+            )
             section = PageSection.objects.create(
                 site=site,
                 page=page,
@@ -234,10 +238,9 @@ def page_edit(request, site_id, page_type):
             except ValidationError as exc:
                 messages.error(request, "; ".join(exc.messages))
                 return _section_redirect()
-            if (
-                section.section_type == PageSection.SectionType.HERO
-                and bool(section.button_text) != bool(section.button_url)
-            ):
+            if section.section_type == PageSection.SectionType.HERO and bool(
+                section.button_text
+            ) != bool(section.button_url):
                 messages.error(
                     request,
                     "Hero buttons need both button text and a URL.",
@@ -319,7 +322,9 @@ def page_edit(request, site_id, page_type):
     form = SitePageForm(request.POST or None, instance=page)
     if has_custom_sections:
         form.fields["body"].disabled = True
-        form.fields["body"].help_text = (
+        form.fields[
+            "body"
+        ].help_text = (
             "Legacy fallback only. Manage visible content using sections below."
         )
     if request.method == "POST" and form.is_valid():
@@ -342,7 +347,9 @@ def page_edit(request, site_id, page_type):
             "site": site,
             "page": page,
             "form": form,
-            "sections": page.sections.order_by("position", "created_at").prefetch_related("images"),
+            "sections": page.sections.order_by(
+                "position", "created_at"
+            ).prefetch_related("images"),
             "section_types": PageSection.SectionType.choices,
             "has_custom_sections": has_custom_sections,
         },
@@ -451,7 +458,10 @@ def section_cta_redirect(request, section_id):
         action="public.section_cta_click",
         site=site,
         target=section,
-        summary={"page_type": section.page.page_type, "section_type": section.section_type},
+        summary={
+            "page_type": section.page.page_type,
+            "section_type": section.section_type,
+        },
         request=request,
     )
     return redirect(section.button_url)

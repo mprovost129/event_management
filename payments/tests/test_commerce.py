@@ -421,7 +421,9 @@ def test_refund_form_shows_a_prior_failed_attempt(client):
     client.force_login(owner)
 
     response = client.get(
-        reverse("payments:refund_order", kwargs={"site_id": site.id, "order_id": order.id})
+        reverse(
+            "payments:refund_order", kwargs={"site_id": site.id, "order_id": order.id}
+        )
     )
 
     assert response.status_code == 200

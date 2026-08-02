@@ -78,7 +78,9 @@ class PageSection(SiteOwnedModel):
         LEFT = "left", "Image left"
         RIGHT = "right", "Image right"
 
-    page = models.ForeignKey(SitePage, on_delete=models.CASCADE, related_name="sections")
+    page = models.ForeignKey(
+        SitePage, on_delete=models.CASCADE, related_name="sections"
+    )
     section_type = models.CharField(max_length=20, choices=SectionType.choices)
     position = models.PositiveIntegerField(default=1)
     is_enabled = models.BooleanField(default=True)
@@ -108,9 +110,7 @@ class PageSection(SiteOwnedModel):
     def clean(self):
         super().clean()
         if self.page_id and self.site_id != self.page.site_id:
-            raise ValidationError(
-                "A section must belong to the same site as its page."
-            )
+            raise ValidationError("A section must belong to the same site as its page.")
 
     def __str__(self):
         return f"{self.page} [{self.get_section_type_display()} #{self.position}]"

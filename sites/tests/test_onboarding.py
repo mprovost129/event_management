@@ -504,9 +504,7 @@ def test_www_redirect_preserves_path_and_leaves_non_get_requests_alone():
     redirected = client.get(
         "/accounts/login/?next=/dashboard/", headers={"host": "www.gatherhqs.com"}
     )
-    posted = client.post(
-        "/accounts/login/", headers={"host": "www.gatherhqs.com"}
-    )
+    posted = client.post("/accounts/login/", headers={"host": "www.gatherhqs.com"})
 
     assert redirected.status_code == 302
     assert redirected.url == "http://gatherhqs.com/accounts/login/?next=/dashboard/"

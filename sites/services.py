@@ -256,7 +256,9 @@ def resume_site_access(*, site, actor, request=None):
     now = timezone.now()
     was_canceled = subscription.status == PlatformSubscription.Status.CANCELED
     status = _resume_subscription_status(subscription, now=now)
-    _apply_site_and_subscription_status(site=site, subscription=subscription, status=status)
+    _apply_site_and_subscription_status(
+        site=site, subscription=subscription, status=status
+    )
     subscription.suspended_at = None
     if was_canceled:
         subscription.canceled_at = None

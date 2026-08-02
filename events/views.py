@@ -757,9 +757,7 @@ def cancel_event(request, site_id, event_id):
     for occurrence in occurrences:
         occurrence.status = EventOccurrence.Status.CANCELED
         occurrence.canceled_by_event = True
-        occurrence.save(
-            update_fields=("status", "canceled_by_event", "updated_at")
-        )
+        occurrence.save(update_fields=("status", "canceled_by_event", "updated_at"))
         queue_occurrence_notice(occurrence, cancellation=True)
     record_audit_event(
         action="event.canceled",

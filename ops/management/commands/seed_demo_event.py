@@ -44,7 +44,9 @@ def next_demo_start(site_timezone, hour, minute):
 def materialize_missing_occurrences(event, start_local, end_local):
     existing_starts = set(event.occurrences.values_list("starts_at", flat=True))
     anchor = (
-        event.occurrences.order_by("starts_at").values_list("starts_at", flat=True).first()
+        event.occurrences.order_by("starts_at")
+        .values_list("starts_at", flat=True)
+        .first()
         or start_local
     )
     duration = (
@@ -109,7 +111,10 @@ class Command(BaseCommand):
             raise CommandError("--start-minute must be between 0 and 59.")
         if options["duration_minutes"] < 15:
             raise CommandError("--duration-minutes must be at least 15.")
-        if options["with_paid_ticket"] and options["ticket_amount_cents"] < MIN_TICKET_AMOUNT_CENTS:
+        if (
+            options["with_paid_ticket"]
+            and options["ticket_amount_cents"] < MIN_TICKET_AMOUNT_CENTS
+        ):
             raise CommandError(
                 f"--ticket-amount-cents must be at least {MIN_TICKET_AMOUNT_CENTS}."
             )
@@ -180,12 +185,18 @@ class Command(BaseCommand):
 
         paid_ticket_created = False
         if options["with_paid_ticket"]:
-            paid_occurrence = event.occurrences.filter(
-                status=EventOccurrence.Status.SCHEDULED,
-                ends_at__gte=timezone.now(),
-            ).order_by("starts_at").first()
+            paid_occurrence = (
+                event.occurrences.filter(
+                    status=EventOccurrence.Status.SCHEDULED,
+                    ends_at__gte=timezone.now(),
+                )
+                .order_by("starts_at")
+                .first()
+            )
             if paid_occurrence is None:
-                raise CommandError("No future occurrence is available for a paid ticket.")
+                raise CommandError(
+                    "No future occurrence is available for a paid ticket."
+                )
             ticket, paid_ticket_created = TicketType.objects.update_or_create(
                 site=site,
                 occurrence=paid_occurrence,

@@ -273,9 +273,7 @@ def test_canceling_a_draft_campaign_marks_it_canceled():
 def test_canceling_a_scheduled_campaign_stops_it_from_ever_expanding():
     owner, site = campaign_fixture()
     contact_for(site, email_consent=True)
-    campaign = draft_campaign(
-        site, scheduled_for=timezone.now() + timedelta(days=1)
-    )
+    campaign = draft_campaign(site, scheduled_for=timezone.now() + timedelta(days=1))
     launch_campaign(campaign=campaign, actor=owner)
     campaign.refresh_from_db()
     assert campaign.status == Campaign.Status.SCHEDULED
@@ -365,9 +363,7 @@ def test_cancel_campaign_rejects_a_campaign_that_already_finished():
 def test_campaign_cancel_view_requires_staff_and_redirects_with_a_message():
     owner, site = campaign_fixture()
     contact_for(site, email_consent=True)
-    campaign = draft_campaign(
-        site, scheduled_for=timezone.now() + timedelta(days=1)
-    )
+    campaign = draft_campaign(site, scheduled_for=timezone.now() + timedelta(days=1))
     launch_campaign(campaign=campaign, actor=owner)
     client = Client()
     client.force_login(owner)
