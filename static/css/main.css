@@ -356,14 +356,20 @@ header, main, footer {
     align-items: center;
     gap: .5rem;
 }
-.gh-builder-form .gh-form-field .form-check .form-check-input {
+.gh-builder-form input.form-check-input[name="show_logo_in_header"],
+.gh-builder-form input.form-check-input[name="show_name_in_header"] {
+    appearance: auto !important;
+    -webkit-appearance: checkbox !important;
     width: 1rem !important;
     height: 1rem !important;
-    min-height: 1rem;
+    min-height: 1rem !important;
+    max-width: 1rem !important;
     margin: 0 !important;
     padding: 0 !important;
+    display: inline-block !important;
+    background: initial !important;
+    border-radius: .2rem !important;
     flex: 0 0 auto;
-    border-radius: .2rem;
     vertical-align: middle;
 }
 
