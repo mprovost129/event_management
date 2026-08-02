@@ -1,4 +1,5 @@
 import pytest
+from django.test import override_settings
 from django.urls import reverse
 
 from sites.services import create_subscriber_site
@@ -64,3 +65,32 @@ def test_platform_admin_routes_are_not_exposed_on_tenant_subdomains(client):
     for path in ("/admin/", "/platform-admin/", "/platform-ops/"):
         response = client.get(path, headers={"host": "boot-scooters.localhost"})
         assert response.status_code == 404, path
+
+
+@pytest.mark.django_db
+@override_settings(
+    PLATFORM_DOMAIN="gatherhqs.com",
+    PLATFORM_CONTROL_HOSTS=("gatherhqs.com", "www.gatherhqs.com"),
+    ALLOWED_HOSTS=("gatherhqs.com", "www.gatherhqs.com"),
+)
+def test_control_links_preserve_current_control_host_and_dev_port(client):
+    admin = User.objects.create_superuser(
+        email="admin@example.com", password="Strong-Test-Pass-2026!"
+    )
+    client.force_login(admin)
+
+    redirected = client.get(
+        reverse("sites:account_dashboard"),
+        headers={"host": "www.gatherhqs.com:8000"},
+    )
+    response = client.get(
+        reverse("sites:account_dashboard"),
+        headers={"host": "gatherhqs.com:8000"},
+    )
+    content = response.content.decode()
+
+    assert redirected.status_code == 302
+    assert redirected.url == "http://gatherhqs.com:8000/dashboard/"
+    assert response.status_code == 200
+    assert "http://gatherhqs.com:8000/platform-admin/" in content
+    assert "http://gatherhqs.com:8000/platform-ops/" in content

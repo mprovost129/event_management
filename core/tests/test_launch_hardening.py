@@ -114,9 +114,13 @@ def test_structured_logs_include_request_diagnostics_for_404_records():
     assert payload["client_ip"] == "10.20.30.40"
     assert payload["forwarded_for"] == "198.51.100.20"
     assert payload["platform_route_on_non_control_host"] is True
+    assert payload["platform_control_origin"] == "http://localhost"
 
 
-@override_settings(PLATFORM_CONTROL_HOSTS=("control.gatherhqs.com",))
+@override_settings(
+    PLATFORM_CONTROL_HOSTS=("control.gatherhqs.com",),
+    ALLOWED_HOSTS=("control.gatherhqs.com",),
+)
 def test_structured_logs_mark_platform_route_as_control_host_when_expected():
     request = RequestFactory().get(
         "/platform-ops/",
@@ -138,6 +142,7 @@ def test_structured_logs_mark_platform_route_as_control_host_when_expected():
     payload = json.loads(JsonFormatter().format(record))
 
     assert payload["platform_route_on_non_control_host"] is False
+    assert payload["platform_control_origin"] == "http://control.gatherhqs.com"
 
 
 @pytest.mark.django_db

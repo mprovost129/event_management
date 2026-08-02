@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 from django.conf import settings
 
+from .context_processors import control_origin
 from .request_context import request_id_var, site_id_var
 
 
@@ -29,6 +30,7 @@ class JsonFormatter(logging.Formatter):
         client_ip = "-"
         forwarded_for = "-"
         platform_route_on_non_control_host = False
+        platform_control_origin = "-"
         if request is not None:
             request_path = getattr(request, "path", "-")
             request_method = getattr(request, "method", "-")
@@ -63,6 +65,10 @@ class JsonFormatter(logging.Formatter):
                     platform_route_on_non_control_host = (
                         request_host_name not in normalized_control_hosts
                     )
+            try:
+                platform_control_origin = control_origin(request)
+            except Exception:
+                platform_control_origin = "-"
 
         payload = {
             "timestamp": datetime.now(UTC).isoformat(),
@@ -83,6 +89,7 @@ class JsonFormatter(logging.Formatter):
             "client_ip": client_ip,
             "forwarded_for": forwarded_for,
             "platform_route_on_non_control_host": platform_route_on_non_control_host,
+            "platform_control_origin": platform_control_origin,
         }
         if record.exc_info:
             payload["exception"] = self.formatException(record.exc_info)

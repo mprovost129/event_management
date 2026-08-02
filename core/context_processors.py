@@ -6,11 +6,13 @@ def control_host(request):
     """The platform's own host, for building an absolute URL to a control-app
     route from anywhere - including a tenant subdomain's page, which must
     never assume it can resolve a bare "core:xyz" path against itself."""
-    hosts = list(getattr(settings, "PLATFORM_CONTROL_HOSTS", ()) or ())
+    request_host = request.get_host().split(":", 1)[0].lower().rstrip(".")
+    hosts = [item.lower().rstrip(".") for item in (getattr(settings, "PLATFORM_CONTROL_HOSTS", ()) or ())]
+    if request_host and request_host in hosts:
+        return request_host
     if hosts:
         return hosts[0]
 
-    request_host = request.get_host().split(":", 1)[0].lower().rstrip(".")
     if request_host:
         return request_host
     return settings.PLATFORM_DOMAIN
@@ -18,7 +20,19 @@ def control_host(request):
 
 def control_origin(request):
     host = control_host(request)
+    request_authority = request.get_host().rstrip(".")
+    request_host = request_authority.split(":", 1)[0].lower()
     scheme = "https" if request.is_secure() else "http"
+
+    # If this request is already on a recognized control host, keep the full
+    # authority (including dev port) to avoid redirecting local links to a
+    # production domain/port.
+    control_hosts = {
+        item.lower().rstrip(".")
+        for item in (getattr(settings, "PLATFORM_CONTROL_HOSTS", ()) or ())
+    }
+    if request_host in control_hosts:
+        host = request_authority
 
     # Preserve local development ports when targeting localhost-like hosts.
     if host in {"localhost", "127.0.0.1"}:
