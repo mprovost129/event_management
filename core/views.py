@@ -292,6 +292,11 @@ class HomeView(TemplateView):
         context["base_template"] = "public/site_base.html" if site else "base.html"
         if site and site.accepts_public_traffic and site.is_published:
             context["home_page"] = public_page(site, SitePage.PageType.HOME)
+            context["home_sections"] = (
+                context["home_page"].renderable_sections()
+                if context["home_page"] is not None
+                else []
+            )
             context["upcoming_occurrences"] = (
                 EventOccurrence.objects.for_site(site)
                 .filter(

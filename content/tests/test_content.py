@@ -705,3 +705,51 @@ def test_page_edit_preserves_legacy_body_when_custom_sections_exist(client):
     assert post_response.status_code == 302
     assert page.body == "Legacy body should remain unchanged."
     assert page.status == PublishingStatus.PUBLISHED
+
+
+@pytest.mark.django_db
+def test_public_home_renders_custom_sections_including_uploaded_image(client):
+    _, site = create_site()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    home = SitePage.objects.get(site=site, page_type=SitePage.PageType.HOME)
+    home.status = PublishingStatus.PUBLISHED
+    home.publish_at = timezone.now() - timezone.timedelta(minutes=1)
+    home.save(update_fields=("status", "publish_at", "updated_at"))
+
+    section = PageSection.objects.create(
+        site=site,
+        page=home,
+        section_type=PageSection.SectionType.CONTENT,
+        is_enabled=True,
+        position=1,
+        heading="Welcome to Boot Scooters",
+        rich_text="<p>Lessons every week.</p>",
+    )
+    section.image = section_image_upload("home-content.jpg")
+    section.save(update_fields=("image", "updated_at"))
+
+    response = client.get(reverse("core:home"), headers={"host": "boot-scooters.localhost"})
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Welcome to Boot Scooters" in content
+    assert "Lessons every week." in content
+    assert "home-content" in content
+
+
+@pytest.mark.django_db
+def test_public_home_includes_back_to_workspace_link(client):
+    _, site = create_site()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+
+    response = client.get(reverse("core:home"), headers={"host": "boot-scooters.localhost:8000"})
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert f"/sites/{site.id}/content/" in content
+    assert (
+        f"http://localhost/sites/{site.id}/content/" in content
+        or f"http://127.0.0.1:8000/sites/{site.id}/content/" in content
+    )

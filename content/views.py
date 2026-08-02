@@ -219,6 +219,7 @@ def page_edit(request, site_id, page_type):
 
         if section_action == "save":
             section = _section_for_request()
+            had_existing_image = bool(section.image)
             section.heading = request.POST.get("heading", "").strip()
             section.subheading = request.POST.get("subheading", "").strip()
             section.rich_text = request.POST.get("rich_text", "").strip()
@@ -226,6 +227,7 @@ def page_edit(request, site_id, page_type):
             section.button_url = request.POST.get("button_url", "").strip()
             section.is_enabled = request.POST.get("is_enabled") == "on"
             image_alignment = request.POST.get("image_alignment", "").strip()
+            image_uploaded = False
             if image_alignment in PageSection.ImageAlignment.values:
                 section.image_alignment = image_alignment
             if "image" in request.FILES and request.FILES["image"]:
@@ -233,6 +235,7 @@ def page_edit(request, site_id, page_type):
                     request.FILES["image"],
                     max_dimension=2200,
                 )
+                image_uploaded = True
             try:
                 section.full_clean()
             except ValidationError as exc:
@@ -257,7 +260,15 @@ def page_edit(request, site_id, page_type):
                 )
                 return _section_redirect()
             section.save()
-            messages.success(request, "Section saved.")
+            if image_uploaded:
+                messages.success(request, "Section and image saved.")
+            elif had_existing_image and section.section_type in (
+                PageSection.SectionType.CONTENT,
+                PageSection.SectionType.HERO,
+            ):
+                messages.success(request, "Section saved. Existing image is still attached.")
+            else:
+                messages.success(request, "Section saved.")
             return _section_redirect()
 
         if section_action == "add_strip_image":

@@ -38,7 +38,21 @@
             <h1 class="display-4">{{ site.theme.hero_heading|default:site.display_name }}</h1>
             {% if site.theme.hero_text %}<p class="lead">{{ site.theme.hero_text }}</p>{% endif %}
         </section>
-        {% if home_page.body %}<section class="py-4">{{ home_page.body|linebreaks }}</section>{% endif %}
+        {% if home_sections %}
+        <article class="py-4">
+            {% for section in home_sections %}
+                {% if section.section_type == 'hero' %}
+                    {% include 'public/sections/hero.html' with section=section %}
+                {% elif section.section_type == 'content' %}
+                    {% include 'public/sections/content.html' with section=section %}
+                {% elif section.section_type == 'strip' %}
+                    {% include 'public/sections/strip.html' with section=section %}
+                {% endif %}
+            {% endfor %}
+        </article>
+        {% elif home_page and home_page.body %}
+        <section class="py-4">{{ home_page.body|linebreaks }}</section>
+        {% endif %}
         {% timezone site.timezone %}<section class="py-4">
         <div class="d-flex justify-content-between">
             <h2>Upcoming events</h2><a href="{% url 'events:calendar' %}">View calendar</a></div>
