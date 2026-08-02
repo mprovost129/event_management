@@ -1,4 +1,5 @@
 from io import BytesIO
+from unittest import mock
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -7,6 +8,7 @@ from django.utils import timezone
 from PIL import Image
 
 from contacts.models import ConsentRecord, ConsentStatus, Contact
+from content.forms import BlogPostForm
 from content.images import prepare_image
 from content.models import BlogPost, PublishingStatus, SitePage
 from content.services import public_page
@@ -158,6 +160,43 @@ def test_public_page_hides_a_published_page_with_a_stray_future_publish_at():
     page.save(update_fields=("publish_at", "updated_at"))
     assert public_page(site, SitePage.PageType.ABOUT) == page
     assert page.is_public is True
+
+
+@pytest.mark.django_db
+def test_double_submitted_blog_slug_shows_a_friendly_error_not_a_500(client):
+    owner, site = create_site()
+    BlogPost.objects.create(
+        site=site,
+        title="Existing post",
+        slug="dance-night-update",
+        body="Already here.",
+        status=PublishingStatus.PUBLISHED,
+    )
+    client.force_login(owner)
+
+    # clean_slug()'s uniqueness check and the insert aren't atomic - simulate
+    # the narrow window where a second, identically slugged submission
+    # already passed validation before this one commits.
+    with mock.patch.object(
+        BlogPostForm, "clean_slug", lambda self: self.cleaned_data["slug"].lower()
+    ):
+        response = client.post(
+            reverse("content:blog_create", args=(site.id,)),
+            {
+                "title": "Dance night update",
+                "slug": "dance-night-update",
+                "excerpt": "New details",
+                "body": "Bring your dancing shoes.",
+                "author_display_name": "",
+                "status": PublishingStatus.PUBLISHED,
+                "publish_at": "",
+                "meta_description": "",
+            },
+        )
+
+    assert response.status_code == 200
+    assert "That blog URL is already in use" in response.content.decode()
+    assert BlogPost.objects.filter(site=site, slug="dance-night-update").count() == 1
 
 
 @pytest.mark.django_db

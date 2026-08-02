@@ -558,6 +558,17 @@ def test_relationship_operations_and_insights_are_tenant_scoped():
 
 
 @pytest.mark.django_db
+def test_insights_page_title_uses_the_site_display_name(client):
+    site, owner = create_site("first-group", "first@example.com")
+    client.force_login(owner)
+
+    response = client.get(reverse("workspace:insights", args=(site.id,)))
+
+    assert response.status_code == 200
+    assert f"Organization insights · {site.display_name}" in response.content.decode()
+
+
+@pytest.mark.django_db
 def test_insights_export_uses_display_name_and_neutralizes_formulas(client):
     site, owner = create_site("first-group", "first@example.com")
     site.display_name = '=HYPERLINK("https://example.invalid")'

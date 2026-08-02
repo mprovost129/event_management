@@ -1,7 +1,7 @@
 from django.shortcuts import render
 
 
-def _error_response(request, *, status, title, message):
+def error_response(request, *, status, title, message):
     return render(
         request,
         "core/error.html",
@@ -16,7 +16,7 @@ def _error_response(request, *, status, title, message):
 
 
 def bad_request(request, exception):
-    return _error_response(
+    return error_response(
         request,
         status=400,
         title="We could not process that request",
@@ -25,7 +25,7 @@ def bad_request(request, exception):
 
 
 def permission_denied(request, exception):
-    return _error_response(
+    return error_response(
         request,
         status=403,
         title="You do not have access",
@@ -34,7 +34,7 @@ def permission_denied(request, exception):
 
 
 def page_not_found(request, exception):
-    return _error_response(
+    return error_response(
         request,
         status=404,
         title="Page not found",
@@ -43,7 +43,7 @@ def page_not_found(request, exception):
 
 
 def server_error(request):
-    return _error_response(
+    return error_response(
         request,
         status=500,
         title="Something went wrong",

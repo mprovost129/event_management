@@ -12,6 +12,7 @@ from django.utils import timezone
 from PIL import Image
 
 from contacts.models import Contact
+from events.forms import EventAlbumCreateForm, EventForm
 from events.models import Event, EventAlbum, EventOccurrence, EventPhoto
 from events.services import (
     create_event_series,
@@ -255,6 +256,114 @@ def test_new_event_redirects_to_highlighted_next_actions(client):
     assert "Invite contacts" in content
     assert "Add tickets" in content
     assert "Friday Night Line Dance" in content
+
+
+@pytest.mark.django_db
+def test_double_submitted_event_slug_shows_a_friendly_error_not_a_500(client):
+    owner, site = create_site()
+    Event.objects.create(
+        site=site,
+        created_by=owner,
+        title="Existing event",
+        slug="friday-night-line-dance",
+        status=Event.Status.PUBLISHED,
+    )
+    client.force_login(owner)
+
+    # clean_slug()'s uniqueness check and create_event_series()'s insert
+    # aren't atomic - simulate the narrow window where a second, identically
+    # slugged submission already passed validation before this one commits.
+    with mock.patch.object(
+        EventForm, "clean_slug", lambda self: self.cleaned_data["slug"].lower()
+    ):
+        response = client.post(
+            reverse("events:create", args=(site.id,)),
+            {
+                "title": "Friday Night Line Dance",
+                "slug": "friday-night-line-dance",
+                "description": "A friendly social dance for all levels.",
+                "host_name": site.display_name,
+                "visibility": Event.Visibility.PUBLIC,
+                "status": Event.Status.PUBLISHED,
+                "recurrence": Event.Recurrence.NONE,
+                "recurrence_interval": 1,
+                "recurrence_until": "",
+                "max_guests": 2,
+                "start_date": "2026-09-18",
+                "start_time": "19:00",
+                "end_date": "2026-09-18",
+                "end_time": "21:00",
+                "venue_name": "Town Hall",
+                "venue_address": "100 Main Street",
+                "capacity": 60,
+            },
+        )
+
+    assert response.status_code == 200
+    assert "That event URL is already in use" in response.content.decode()
+    assert Event.objects.filter(site=site, slug="friday-night-line-dance").count() == 1
+
+
+@pytest.mark.django_db
+def test_double_submitted_album_slug_shows_a_friendly_error_not_a_500(client):
+    owner, site = create_site()
+    past_start = timezone.now() - timedelta(days=2)
+    event = create_event_series(
+        site=site,
+        creator=owner,
+        event_values={
+            "title": "Summer social",
+            "slug": "summer-social",
+            "description": "A joyful night with friends.",
+            "host_name": "Pat",
+            "visibility": Event.Visibility.PUBLIC,
+            "status": Event.Status.PUBLISHED,
+            "recurrence": Event.Recurrence.NONE,
+            "recurrence_interval": 1,
+            "recurrence_until": None,
+            "max_guests": 2,
+        },
+        first_start=past_start,
+        first_end=past_start + timedelta(hours=2),
+        venue_name="Town Hall",
+    )
+    occurrence = event.occurrences.get()
+    EventAlbum.objects.create(
+        site=site,
+        occurrence=occurrence,
+        created_by=owner,
+        title="Existing album",
+        slug="summer-social-highlights",
+    )
+    client.force_login(owner)
+
+    # clean_slug()'s uniqueness check and album.save() aren't atomic -
+    # simulate the narrow window where a second, identically slugged
+    # submission already passed validation before this one commits.
+    with mock.patch.object(
+        EventAlbumCreateForm,
+        "clean_slug",
+        lambda self: self.cleaned_data["slug"].lower(),
+    ):
+        response = client.post(
+            reverse("events:album_create", args=(site.id,)),
+            {
+                "occurrence": str(occurrence.id),
+                "title": "Summer Social Highlights",
+                "slug": "summer-social-highlights",
+                "description": "Favorite moments from the dance floor.",
+            },
+        )
+
+    assert response.status_code == 200
+    assert "That album URL is already in use" in response.content.decode()
+    assert (
+        EventAlbum.objects.filter(site=site, slug="summer-social-highlights").count()
+        == 1
+    )
+    # The connection must still be usable after the rolled-back savepoint -
+    # prove it with a real follow-up query rather than just the status code.
+    assert client.get(reverse("events:manage", args=(site.id,))).status_code == 200
 
 
 @pytest.mark.django_db

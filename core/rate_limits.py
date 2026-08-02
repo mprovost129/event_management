@@ -3,7 +3,8 @@ from functools import wraps
 
 from django.conf import settings
 from django.core.cache import cache
-from django.http import HttpResponse
+
+from .error_views import error_response
 
 
 def _client_address(request):
@@ -53,10 +54,11 @@ def public_write_rate_limit(scope):
                 # monitoring report the cache failure independently.
                 return view_func(request, *args, **kwargs)
             if count > limit:
-                response = HttpResponse(
-                    "Too many attempts. Please wait and try again.",
+                response = error_response(
+                    request,
                     status=429,
-                    content_type="text/plain; charset=utf-8",
+                    title="Too many attempts",
+                    message="Please wait a bit and try again.",
                 )
                 response["Retry-After"] = str(window)
                 return response

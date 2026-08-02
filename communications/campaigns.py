@@ -45,6 +45,13 @@ def token_hash(token):
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
+def _ucs2_length(text):
+    # Non-GSM text is billed in UCS-2 code units, not Unicode codepoints:
+    # most emoji sit outside the Basic Multilingual Plane and need a
+    # surrogate pair (2 units) apiece, so plain len() undercounts them.
+    return len(text.encode("utf-16-le")) // 2
+
+
 def sms_segment_count(body):
     gsm_units = 0
     for character in body:
@@ -53,7 +60,8 @@ def sms_segment_count(body):
         elif character in GSM_EXTENDED:
             gsm_units += 2
         else:
-            return 1 if len(body) <= 70 else math.ceil(len(body) / 67)
+            ucs2_length = _ucs2_length(body)
+            return 1 if ucs2_length <= 70 else math.ceil(ucs2_length / 67)
     return 1 if gsm_units <= 160 else math.ceil(gsm_units / 153)
 
 

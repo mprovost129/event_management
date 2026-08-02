@@ -134,8 +134,12 @@ def test_sms_segment_count_handles_gsm_extensions_and_unicode():
     assert sms_segment_count("a" * 161) == 2
     assert sms_segment_count("€" * 80) == 1
     assert sms_segment_count("€" * 81) == 2
-    assert sms_segment_count("🙂" * 70) == 1
-    assert sms_segment_count("🙂" * 71) == 2
+    # Emoji are billed in UCS-2 code units, not Unicode codepoints: most sit
+    # outside the Basic Multilingual Plane and need a surrogate pair (2
+    # units) apiece, so the 70-unit single-segment cap is 35 emoji, not 70.
+    assert sms_segment_count("🙂" * 35) == 1
+    assert sms_segment_count("🙂" * 36) == 2
+    assert sms_segment_count("🙂" * 70) == 3
 
 
 @pytest.mark.django_db

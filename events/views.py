@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.contrib import messages
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Avg, Count, Max, Prefetch, Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -159,16 +159,27 @@ def event_create(request, site_id):
                 "max_guests",
             )
         }
-        event = create_event_series(
-            site=site,
-            creator=request.user,
-            event_values=model_fields,
-            first_start=form.cleaned_data["starts_at"],
-            first_end=form.cleaned_data["ends_at"],
-            venue_name=form.cleaned_data["venue_name"],
-            venue_address=form.cleaned_data["venue_address"],
-            capacity=form.cleaned_data["capacity"],
-        )
+        try:
+            event = create_event_series(
+                site=site,
+                creator=request.user,
+                event_values=model_fields,
+                first_start=form.cleaned_data["starts_at"],
+                first_end=form.cleaned_data["ends_at"],
+                venue_name=form.cleaned_data["venue_name"],
+                venue_address=form.cleaned_data["venue_address"],
+                capacity=form.cleaned_data["capacity"],
+            )
+        except IntegrityError:
+            # clean_slug()'s uniqueness check and this insert aren't atomic -
+            # a near-simultaneous double-submit can pass the check twice and
+            # only collide here, on the database's own constraint.
+            form.add_error(
+                "slug", "That event URL is already in use. Try a different one."
+            )
+            return render(
+                request, "events/event_form.html", {"site": site, "form": form}
+            )
         record_audit_event(
             action="event.created",
             actor=request.user,
@@ -207,7 +218,18 @@ def event_edit(request, site_id, event_id):
         site=site,
     )
     if request.method == "POST" and form.is_valid():
-        event = form.save()
+        try:
+            with transaction.atomic():
+                event = form.save()
+        except IntegrityError:
+            form.add_error(
+                "slug", "That event URL is already in use. Try a different one."
+            )
+            return render(
+                request,
+                "events/event_edit.html",
+                {"site": site, "event": event, "form": form},
+            )
         record_audit_event(
             action="event.updated",
             actor=request.user,
@@ -345,7 +367,16 @@ def album_create(request, site_id):
         album = form.save(commit=False)
         album.site = site
         album.created_by = request.user
-        album.save()
+        try:
+            with transaction.atomic():
+                album.save()
+        except IntegrityError:
+            form.add_error(
+                "slug", "That album URL is already in use. Try a different one."
+            )
+            return render(
+                request, "events/album_form.html", {"site": site, "form": form}
+            )
         record_audit_event(
             action="event.album.created",
             actor=request.user,
@@ -382,7 +413,25 @@ def album_edit(request, site_id, album_id):
             album.published_at = timezone.now()
         elif album.status == EventAlbum.Status.DRAFT:
             album.published_at = None
-        album.save()
+        try:
+            with transaction.atomic():
+                album.save()
+        except IntegrityError:
+            form.add_error(
+                "slug", "That album URL is already in use. Try a different one."
+            )
+            return render(
+                request,
+                "events/album_edit.html",
+                {
+                    "site": site,
+                    "album": album,
+                    "form": form,
+                    "photo_form": EventPhotoUploadForm(album=album),
+                    "photos": album.photos.all(),
+                    "public_hostname": site.domains.get(is_canonical=True).hostname,
+                },
+            )
         record_audit_event(
             action="event.album.updated",
             actor=request.user,

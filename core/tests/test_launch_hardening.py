@@ -384,6 +384,24 @@ def test_unrecognized_tenant_subdomain_404_still_gets_clickjacking_protection(cl
 
 
 @pytest.mark.django_db
+def test_marketing_navbar_variant_falls_back_to_the_authenticated_navbar_when_logged_in():
+    from django.template.loader import render_to_string
+
+    request = RequestFactory().get("/")
+    request.user = User.objects.create_user(
+        email="member@example.com", password="Strong-Test-Pass-2026!"
+    )
+
+    html = render_to_string(
+        "partials/navbar.html", {"navbar_variant": "marketing"}, request=request
+    )
+
+    assert "Start free" not in html
+    assert "gh-navbar-actions" not in html
+    assert reverse("sites:account_dashboard") in html
+
+
+@pytest.mark.django_db
 @override_settings(SUPPORT_EMAIL="support@gatherhqs.com")
 def test_support_contact_is_published_in_policy_and_error_pages(client):
     privacy = client.get(reverse("core:privacy"))

@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db import IntegrityError, transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -149,7 +150,16 @@ def blog_create(request, site_id):
         post = form.save(commit=False)
         post.site = site
         post.author = request.user
-        post.save()
+        try:
+            with transaction.atomic():
+                post.save()
+        except IntegrityError:
+            form.add_error(
+                "slug", "That blog URL is already in use. Try a different one."
+            )
+            return render(
+                request, "content/blog_form.html", {"site": site, "form": form}
+            )
         record_audit_event(
             action="content.blog_post.created",
             actor=request.user,
@@ -172,7 +182,18 @@ def blog_edit(request, site_id, post_id):
         request.POST or None, request.FILES or None, instance=post, site=site
     )
     if request.method == "POST" and form.is_valid():
-        post = form.save()
+        try:
+            with transaction.atomic():
+                post = form.save()
+        except IntegrityError:
+            form.add_error(
+                "slug", "That blog URL is already in use. Try a different one."
+            )
+            return render(
+                request,
+                "content/blog_form.html",
+                {"site": site, "post": post, "form": form},
+            )
         record_audit_event(
             action="content.blog_post.updated",
             actor=request.user,

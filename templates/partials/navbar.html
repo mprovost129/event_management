@@ -36,7 +36,7 @@
             <img src="{% static 'img/logo-mark.png' %}" alt="" height="32">
             {{ platform_name }}
         </a>
-        {% if navbar_variant == "marketing" %}
+        {% if navbar_variant == "marketing" and not user.is_authenticated %}
         <div class="gh-navbar-actions ms-auto d-flex align-items-center gap-2 gap-lg-3">
             <div class="d-none d-md-flex align-items-center gap-3" aria-label="Page sections">
                 <a class="gh-nav-link" href="#features">Features</a>

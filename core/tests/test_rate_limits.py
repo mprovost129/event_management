@@ -26,6 +26,10 @@ def test_public_signup_posts_are_limited_but_reads_remain_available(client):
         assert second.status_code == 200
         assert limited.status_code == 429
         assert limited["Retry-After"] == "90"
+        assert limited["Content-Security-Policy"].startswith("default-src 'self'")
+        limited_content = limited.content.decode()
+        assert "Too many attempts" in limited_content
+        assert "ERROR 429" in limited_content
         assert read.status_code == 200
     finally:
         cache.clear()
