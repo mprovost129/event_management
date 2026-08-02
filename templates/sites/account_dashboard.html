@@ -47,7 +47,7 @@
                 </div>
                 <nav class="d-flex flex-wrap gap-2" aria-label="{{ role.site.display_name }} organization links">
                     {% if role.role == 'subscriber_admin' or role.site.accepts_public_traffic %}
-                    <a class="btn btn-outline-primary" href="{% url 'sites:dashboard' role.site.id %}">Open dashboard</a>
+                    <a class="btn btn-outline-primary" href="{% url 'sites:dashboard' role.site.id %}">Open workspace</a>
                     {% else %}
                     <span class="text-secondary small">This organization is suspended. Ask the owner to sign in and update billing.</span>
                     {% endif %}
