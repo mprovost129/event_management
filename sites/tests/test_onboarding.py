@@ -474,6 +474,7 @@ def test_public_site_shows_dashboard_link_only_to_its_staff(client):
 @pytest.mark.django_db
 @override_settings(
     PLATFORM_DOMAIN="gatherhqs.com",
+    PLATFORM_CANONICAL_HOST="gatherhqs.com",
     PLATFORM_CONTROL_HOSTS=("gatherhqs.com", "www.gatherhqs.com"),
     ALLOWED_HOSTS=("gatherhqs.com", ".gatherhqs.com"),
 )
@@ -493,6 +494,7 @@ def test_gather_hqs_root_and_www_hosts_remain_control_hosts(client):
 @pytest.mark.django_db
 @override_settings(
     PLATFORM_DOMAIN="gatherhqs.com",
+    PLATFORM_CANONICAL_HOST="gatherhqs.com",
     PLATFORM_CONTROL_HOSTS=("gatherhqs.com", "www.gatherhqs.com"),
     ALLOWED_HOSTS=("gatherhqs.com", ".gatherhqs.com"),
 )
@@ -512,6 +514,20 @@ def test_www_redirect_preserves_path_and_leaves_non_get_requests_alone():
     # A server-to-server call (e.g. a webhook) against the alias host must be
     # served directly, never redirected.
     assert posted.status_code != 302
+
+
+@pytest.mark.django_db
+@override_settings(
+    PLATFORM_DOMAIN="gatherhqs.com",
+    PLATFORM_CANONICAL_HOST="",
+    PLATFORM_CONTROL_HOSTS=("gatherhqs.com", "www.gatherhqs.com"),
+    ALLOWED_HOSTS=("gatherhqs.com", ".gatherhqs.com"),
+)
+def test_control_host_alias_is_served_when_canonical_host_not_configured(client):
+    response = client.get("/", headers={"host": "www.gatherhqs.com"})
+
+    assert response.status_code == 200
+    assert "Gather HQs" in response.content.decode()
 
 
 @pytest.mark.django_db
