@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load public_urls %}
 
 {% block title %}Your organizations | {{ platform_name }}{% endblock %}
 {% block content %}
@@ -54,7 +55,7 @@
                     {% if role.site.is_published and role.site.accepts_public_traffic %}
                     {% for domain in role.site.domains.all %}
                     {% if domain.is_canonical and domain.is_verified %}
-                    <a class="btn btn-link" href="//{{ domain.hostname }}" target="_blank" rel="noopener">Visit site</a>
+                    <a class="btn btn-link" href="{{ domain.hostname|site_public_url:request }}" target="_blank" rel="noopener">Visit site</a>
                     {% endif %}
                     {% endfor %}
                     {% endif %}

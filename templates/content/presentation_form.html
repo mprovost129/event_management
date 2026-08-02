@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load public_urls %}
 {% block title %}Website design | {{ site.display_name }}{% endblock %}
 {% block content %}
 <div class="gh-site-builder">
@@ -12,7 +13,7 @@
         <div class="gh-builder-status">
             <span class="gh-status-pill {% if site.is_published %}gh-status-ready{% else %}gh-status-trialing{% endif %}">{% if site.is_published %}Live{% else %}Not published{% endif %}</span>
             {% if canonical_domain %}<span>{{ canonical_domain.hostname }}</span>{% endif %}
-            {% if site.is_published and canonical_domain %}<a href="//{{ canonical_domain.hostname }}">View live site &nearr;</a>{% endif %}
+            {% if site.is_published and canonical_domain %}<a href="{{ canonical_domain.hostname|site_public_url:request }}">View live site &nearr;</a>{% endif %}
         </div>
     </div>
 

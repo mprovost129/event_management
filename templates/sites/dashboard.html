@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load tz %}
+{% load tz public_urls %}
 
 {% block title %}{{ site.display_name }} dashboard | {{ platform_name }}{% endblock %}
 {% block content %}
@@ -28,7 +28,7 @@
                 <a class="btn btn-outline-primary" href="{% url 'content:presentation' site.id %}">Website settings</a>
                 {% endif %}
                 {% if site.is_published and canonical_domain %}
-                <a class="btn btn-primary" href="//{{ canonical_domain.hostname }}">View live site</a>
+                <a class="btn btn-primary" href="{{ canonical_domain.hostname|site_public_url:request }}">View live site</a>
                 {% endif %}
             </div>
             <nav class="gh-dashboard-quicklinks" aria-label="Quick links">

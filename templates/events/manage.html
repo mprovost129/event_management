@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load tz %}
+{% load tz public_urls %}
 {% block title %}Events | {{ site.display_name }}{% endblock %}
 {% block content %}
 <div class="gh-events-hub">
@@ -35,7 +35,7 @@
                 <h2>{{ event.title }}</h2>
                 {% if event.description %}<p>{{ event.description|truncatechars:180 }}</p>{% endif %}
             </div>
-            <div class="gh-event-manage-actions"><a href="{% url 'events:edit' site.id event.id %}">Edit details</a>{% if site.is_published and canonical_domain and event.status == 'published' and event.visibility != 'invite_only' %}<a href="//{{ canonical_domain.hostname }}{% url 'events:detail' event.slug %}">View page &nearr;</a>{% endif %}{% if event.status != 'canceled' %}<form method="post" action="{% url 'events:cancel' site.id event.id %}" data-confirm="Cancel this event and notify affected participants?">{% csrf_token %}<button class="btn btn-link text-danger p-0" type="submit">Cancel event</button></form>{% endif %}</div>
+            <div class="gh-event-manage-actions"><a href="{% url 'events:edit' site.id event.id %}">Edit details</a>{% if site.is_published and canonical_domain and event.status == 'published' and event.visibility != 'invite_only' %}<a href="{{ canonical_domain.hostname|site_public_url:request }}{% url 'events:detail' event.slug %}">View page &nearr;</a>{% endif %}{% if event.status != 'canceled' %}<form method="post" action="{% url 'events:cancel' site.id event.id %}" data-confirm="Cancel this event and notify affected participants?">{% csrf_token %}<button class="btn btn-link text-danger p-0" type="submit">Cancel event</button></form>{% endif %}</div>
         </header>
 
         <div class="gh-occurrence-list">

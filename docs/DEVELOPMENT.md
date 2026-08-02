@@ -60,6 +60,11 @@ The confirmed production brand is Gather HQs, expanded as Gather Headquarters. T
 - `STANDARD_MONTHLY_AMOUNT_CENTS`
 - `STANDARD_YEARLY_AMOUNT_CENTS`
 
+Local development intentionally overrides tenant-host generation to keep subdomains on localhost by default, even if a shared `.env` carries production values:
+
+- `DEV_PLATFORM_DOMAIN` (defaults to `localhost`)
+- `DEV_PLATFORM_CONTROL_HOSTS` (defaults to `DEV_PLATFORM_DOMAIN` and `www.DEV_PLATFORM_DOMAIN`)
+
 The Standard plan is $20 monthly or $220 yearly. Platform billing also requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`; keep those secrets blank in local development when testing non-payment flows. Checkout fails closed with a useful message rather than attempting a provider call when its Stripe secret is unavailable.
 
 ## Phase 1 flows

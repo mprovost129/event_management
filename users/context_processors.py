@@ -1,18 +1,15 @@
 from django.urls import reverse
 
 from core.context_processors import control_origin
+from core.public_urls import build_public_site_url
 from sites.models import SiteRole
-
-
-def _request_scheme(request):
-    return "https" if request.is_secure() else "http"
 
 
 def _site_public_url(request, role):
     canonical = role.site.domains.filter(is_canonical=True, is_verified=True).first()
     if canonical is None:
         return None
-    return f"{_request_scheme(request)}://{canonical.hostname}"
+    return build_public_site_url(request, canonical.hostname)
 
 
 def account_navigation(request):
