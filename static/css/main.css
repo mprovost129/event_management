@@ -351,6 +351,21 @@ header, main, footer {
     font-size: .95rem;
     font-weight: 700;
 }
+.gh-builder-form .form-check {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.gh-builder-form .gh-form-field .form-check .form-check-input {
+    width: 1rem !important;
+    height: 1rem !important;
+    min-height: 1rem;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex: 0 0 auto;
+    border-radius: .2rem;
+    vertical-align: middle;
+}
 
 @media (max-width: 991.98px) {
     .gh-profile-sidecard {
@@ -2097,6 +2112,20 @@ textarea {
 
 .gh-site-preview-nav strong {
     color: var(--preview-primary);
+}
+
+.gh-site-preview-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    min-height: 1.8rem;
+}
+
+.gh-site-preview-brand img {
+    height: 1.65rem;
+    width: auto;
+    border-radius: .2rem;
+    object-fit: contain;
 }
 
 .gh-site-preview-nav span {

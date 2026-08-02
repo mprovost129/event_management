@@ -139,10 +139,12 @@ class SitePresentationForm(forms.Form):
     show_logo_in_header = forms.BooleanField(
         required=False,
         label="Show logo in website header",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
     show_name_in_header = forms.BooleanField(
         required=False,
         label="Show group name in website header",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
     hero_image = forms.FileField(
         required=False,

@@ -18,6 +18,8 @@ document.addEventListener("submit", (event) => {
 
     const field = (name) => form.elements.namedItem(name);
     const nameOutput = preview.querySelector("[data-preview-name]");
+    const logoOutput = preview.querySelector("[data-preview-logo]");
+    const brandOutput = preview.querySelector("[data-preview-brand]");
     const headingOutput = preview.querySelector("[data-preview-heading]");
     const textOutput = preview.querySelector("[data-preview-text]");
     const heroOutput = preview.querySelector("[data-preview-hero]");
@@ -56,6 +58,23 @@ document.addEventListener("submit", (event) => {
         preview.style.fontFamily = fonts[field("typography_key").value] || fonts.system;
     };
 
+    const updateBranding = () => {
+        const showName = Boolean(field("show_name_in_header")?.checked);
+        const showLogo = Boolean(field("show_logo_in_header")?.checked);
+        const hasLogo = Boolean(logoOutput?.getAttribute("src"));
+
+        if (nameOutput) {
+            nameOutput.hidden = !showName;
+        }
+        if (logoOutput) {
+            logoOutput.hidden = !showLogo || !hasLogo;
+        }
+        if (brandOutput) {
+            const visible = showName || (showLogo && hasLogo);
+            brandOutput.hidden = !visible;
+        }
+    };
+
     ["display_name", "hero_heading", "hero_text"].forEach((name) => {
         field(name).addEventListener("input", updateCopy);
     });
@@ -66,6 +85,8 @@ document.addEventListener("submit", (event) => {
         input.addEventListener("change", updateTemplate);
     });
     field("typography_key").addEventListener("change", updateTypography);
+    field("show_logo_in_header")?.addEventListener("change", updateBranding);
+    field("show_name_in_header")?.addEventListener("change", updateBranding);
     field("hero_image").addEventListener("change", (event) => {
         const [image] = event.target.files;
         if (!image) return;
@@ -75,11 +96,25 @@ document.addEventListener("submit", (event) => {
         });
         reader.readAsDataURL(image);
     });
+    field("logo")?.addEventListener("change", (event) => {
+        const [image] = event.target.files;
+        if (!image || !logoOutput) {
+            updateBranding();
+            return;
+        }
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+            logoOutput.setAttribute("src", String(reader.result));
+            updateBranding();
+        });
+        reader.readAsDataURL(image);
+    });
 
     updateCopy();
     updateColors();
     updateTemplate();
     updateTypography();
+    updateBranding();
 })();
 
 (() => {

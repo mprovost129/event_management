@@ -153,7 +153,18 @@
         <aside class="gh-live-preview-wrap" aria-labelledby="preview-heading">
             <div class="gh-live-preview-label"><span id="preview-heading">Homepage preview</span><small>Updates as you type</small></div>
             <div class="gh-site-preview gh-site-preview-{{ form.template_key.value|default:'classic' }}" data-site-preview style="--preview-primary: {{ form.primary_color.value|default:'#0B1D39' }}; --preview-secondary: {{ form.secondary_color.value|default:'#516543' }};">
-                <div class="gh-site-preview-nav"><strong data-preview-name>{{ form.display_name.value|default:site.display_name }}</strong><span>Home&nbsp;&nbsp; Events&nbsp;&nbsp; Blog</span></div>
+                <div class="gh-site-preview-nav">
+                    <div class="gh-site-preview-brand" data-preview-brand>
+                        <img
+                            data-preview-logo
+                            src="{% if site.theme.logo %}{{ site.theme.logo.url }}{% endif %}"
+                            alt=""
+                            {% if not site.theme.logo %}hidden{% endif %}
+                        >
+                        <strong data-preview-name>{{ form.display_name.value|default:site.display_name }}</strong>
+                    </div>
+                    <span>Home&nbsp;&nbsp; Events&nbsp;&nbsp; Blog</span>
+                </div>
                 <div class="gh-site-preview-hero" data-preview-hero{% if site.theme.hero_image %} style="background-image: linear-gradient(rgba(255,255,255,.78), rgba(255,255,255,.78)), url('{{ site.theme.hero_image.url }}')"{% endif %}>
                     <p>WELCOME TO</p>
                     <h2 data-preview-heading>{{ form.hero_heading.value|default:form.display_name.value|default:site.display_name }}</h2>
