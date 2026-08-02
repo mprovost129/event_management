@@ -1,0 +1,10 @@
+<section class="py-4 mb-2">
+    {% if section.heading %}<h2 class="mb-3">{{ section.heading }}</h2>{% endif %}
+    <div class="row g-3">
+        {% for image in section.images.all %}
+        <div class="col-6 col-md-4 col-lg-2">
+            <img class="img-fluid rounded" src="{{ image.image.url }}" alt="{{ image.alt_text }}">
+        </div>
+        {% endfor %}
+    </div>
+</section>

@@ -1,4 +1,21 @@
 {% extends 'public/site_base.html' %}
 {% block title %}{{ page.meta_title|default:page.title }} · {{ site.display_name }}{% endblock %}
 {% block meta_description %}{{ page.meta_description }}{% endblock %}
-{% block content %}<article class="site-theme py-4"><h1>{{ page.title }}</h1><div class="mt-4">{{ page.body|linebreaks }}</div></article>{% endblock %}
+{% block content %}
+<article class="site-theme py-4">
+	{% if sections %}
+		{% for section in sections %}
+			{% if section.section_type == 'hero' %}
+				{% include 'public/sections/hero.html' with section=section %}
+			{% elif section.section_type == 'content' %}
+				{% include 'public/sections/content.html' with section=section %}
+			{% elif section.section_type == 'strip' %}
+				{% include 'public/sections/strip.html' with section=section %}
+			{% endif %}
+		{% endfor %}
+	{% else %}
+	<h1>{{ page.title }}</h1>
+	<div class="mt-4">{{ page.body|linebreaks }}</div>
+	{% endif %}
+</article>
+{% endblock %}

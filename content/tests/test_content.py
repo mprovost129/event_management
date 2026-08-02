@@ -10,7 +10,7 @@ from PIL import Image
 from contacts.models import ConsentRecord, ConsentStatus, Contact
 from content.forms import BlogPostForm
 from content.images import prepare_image
-from content.models import BlogPost, PublishingStatus, SitePage
+from content.models import BlogPost, PageSection, PublishingStatus, SitePage
 from content.services import public_page
 from sites.services import create_subscriber_site
 from users.models import User
@@ -265,6 +265,78 @@ def test_draft_page_is_not_public(client):
     )
 
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_published_page_renders_legacy_body_section(client):
+    _, site = create_site()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    about = SitePage.objects.get(site=site, page_type=SitePage.PageType.ABOUT)
+    about.body = "About our group"
+    about.status = PublishingStatus.PUBLISHED
+    about.publish_at = timezone.now() - timezone.timedelta(minutes=1)
+    about.save(update_fields=("body", "status", "publish_at", "updated_at"))
+
+    PageSection.objects.create(
+        site=site,
+        page=about,
+        section_type=PageSection.SectionType.CONTENT,
+        position=1,
+        is_enabled=True,
+        is_legacy_body=True,
+        heading="About",
+        rich_text=about.body,
+    )
+
+    response = client.get(
+        reverse("content:about"), headers={"host": "boot-scooters.localhost"}
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "About our group" in content
+
+
+@pytest.mark.django_db
+def test_custom_sections_override_legacy_body_rendering(client):
+    _, site = create_site()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+    about = SitePage.objects.get(site=site, page_type=SitePage.PageType.ABOUT)
+    about.body = "Legacy content should be hidden once custom sections exist"
+    about.status = PublishingStatus.PUBLISHED
+    about.publish_at = timezone.now() - timezone.timedelta(minutes=1)
+    about.save(update_fields=("body", "status", "publish_at", "updated_at"))
+
+    PageSection.objects.create(
+        site=site,
+        page=about,
+        section_type=PageSection.SectionType.CONTENT,
+        position=1,
+        is_enabled=True,
+        is_legacy_body=True,
+        heading="Legacy",
+        rich_text=about.body,
+    )
+    PageSection.objects.create(
+        site=site,
+        page=about,
+        section_type=PageSection.SectionType.HERO,
+        position=2,
+        is_enabled=True,
+        heading="Meet Boot Scooters",
+        subheading="Weekly lessons and social dances",
+    )
+
+    response = client.get(
+        reverse("content:about"), headers={"host": "boot-scooters.localhost"}
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Meet Boot Scooters" in content
+    assert "Legacy content should be hidden" not in content
 
 
 def test_uploaded_images_are_validated_and_resized():

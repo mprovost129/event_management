@@ -1,0 +1,7 @@
+<section class="py-5 text-center rounded-3 bg-light mb-4{% if section.image %} site-hero-image{% endif %}"{% if section.image %} style="background-image: linear-gradient(rgba(255,255,255,.78), rgba(255,255,255,.78)), url('{{ section.image.url }}'); background-size: cover; background-position: center;"{% endif %}>
+    {% if section.heading %}<h1 class="display-5">{{ section.heading }}</h1>{% endif %}
+    {% if section.subheading %}<p class="lead">{{ section.subheading }}</p>{% endif %}
+    {% if section.button_text and section.button_url %}
+    <a class="btn btn-primary btn-lg" href="{{ section.button_url }}">{{ section.button_text }}</a>
+    {% endif %}
+</section>

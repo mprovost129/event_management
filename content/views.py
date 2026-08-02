@@ -17,7 +17,13 @@ from .forms import (
     SitePresentationForm,
 )
 from .models import BlogPost, SitePage
-from .services import initialize_site_content, public_blog_posts, public_page
+from .services import (
+    initialize_site_content,
+    page_has_content,
+    public_blog_posts,
+    public_page,
+    sync_legacy_body_section,
+)
 
 
 def _public_site(request):
@@ -58,7 +64,7 @@ def manage_content(request, site_id):
         {
             "label": "Write your homepage",
             "description": "Introduce the group below the welcome banner.",
-            "complete": bool(home_page.body.strip()),
+            "complete": page_has_content(home_page),
             "url": reverse("content:page_edit", args=(site.id, SitePage.PageType.HOME)),
         },
         {
@@ -126,6 +132,7 @@ def page_edit(request, site_id, page_type):
     form = SitePageForm(request.POST or None, instance=page)
     if request.method == "POST" and form.is_valid():
         page = form.save()
+        sync_legacy_body_section(page)
         record_audit_event(
             action="content.page.updated",
             actor=request.user,
@@ -214,7 +221,12 @@ def page_detail(request, page_type):
     page = public_page(site, page_type)
     if page is None:
         raise Http404("Page not found.")
-    return render(request, "public/page.html", {"site": site, "page": page})
+    sections = page.renderable_sections()
+    return render(
+        request,
+        "public/page.html",
+        {"site": site, "page": page, "sections": sections},
+    )
 
 
 def blog_index(request):

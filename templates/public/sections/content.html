@@ -1,0 +1,21 @@
+<section class="py-4 mb-2">
+    <div class="row g-4 align-items-start">
+        {% if section.image and section.image_alignment == 'left' %}
+        <div class="col-md-5">
+            <img class="img-fluid rounded" src="{{ section.image.url }}" alt="">
+        </div>
+        {% endif %}
+
+        <div class="{% if section.image %}col-md-7{% else %}col-12{% endif %}">
+            {% if section.heading %}<h2>{{ section.heading }}</h2>{% endif %}
+            {% if section.subheading %}<p class="site-muted mb-2">{{ section.subheading }}</p>{% endif %}
+            <div>{{ section.rich_text|linebreaks }}</div>
+        </div>
+
+        {% if section.image and section.image_alignment == 'right' %}
+        <div class="col-md-5">
+            <img class="img-fluid rounded" src="{{ section.image.url }}" alt="">
+        </div>
+        {% endif %}
+    </div>
+</section>
