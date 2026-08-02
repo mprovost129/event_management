@@ -388,6 +388,43 @@
             <button class="btn btn-outline-primary" type="submit">Manage billing</button>
         </form>
         {% endif %}
+
+        <hr>
+        <h3 class="h5">Site lifecycle</h3>
+        {% if pending_deletion %}
+        <div class="alert alert-warning" role="status">
+            <p class="mb-1"><strong>Deletion hold is active.</strong></p>
+            <p class="mb-2">This site is canceled and scheduled for permanent deletion after {{ pending_deletion.deletion_eligible_at|date:"M j, Y g:i A" }}.</p>
+            <form method="post" action="{% url 'sites:delete_hold_cancel' site.id %}" class="d-flex flex-wrap gap-2">
+                {% csrf_token %}
+                <label class="visually-hidden" for="delete-cancel-reason">Reason for canceling the deletion hold</label>
+                <input class="form-control" id="delete-cancel-reason" name="reason" required placeholder="Reason for canceling deletion hold">
+                <button class="btn btn-outline-primary" type="submit">Keep site and restore access</button>
+            </form>
+        </div>
+        {% else %}
+            {% if site.accepts_public_traffic %}
+            <form method="post" action="{% url 'sites:suspend' site.id %}" class="d-flex flex-wrap gap-2 mb-2" data-confirm="Suspend this site and hide it from the public web?">
+                {% csrf_token %}
+                <label class="visually-hidden" for="suspend-reason">Reason for suspension</label>
+                <input class="form-control" id="suspend-reason" name="reason" required placeholder="Reason for suspension">
+                <button class="btn btn-outline-warning" type="submit">Suspend site</button>
+            </form>
+            {% else %}
+            <form method="post" action="{% url 'sites:resume' site.id %}" class="mb-2">
+                {% csrf_token %}
+                <button class="btn btn-outline-success" type="submit">Resume site</button>
+            </form>
+            {% endif %}
+
+            <form method="post" action="{% url 'sites:delete_hold_start' site.id %}" class="d-flex flex-wrap gap-2" data-confirm="Start a {{ site_deletion_hold_days }}-day deletion hold and stop this subscription?">
+                {% csrf_token %}
+                <label class="visually-hidden" for="delete-reason">Reason for deleting this site</label>
+                <input class="form-control" id="delete-reason" name="reason" required placeholder="Reason for deleting this site">
+                <button class="btn btn-outline-danger" type="submit">Delete site ({{ site_deletion_hold_days }}-day hold)</button>
+            </form>
+        {% endif %}
+
         <p class="mt-3 mb-0"><a href="{% url 'sites:export_data' site.id %}">Download site data export</a></p>
     </section>
 

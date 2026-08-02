@@ -2,9 +2,11 @@ from datetime import timedelta
 from typing import NamedTuple
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from ops.models import SiteDeletionRequest
 from ops.services import record_audit_event
 from subscriptions.models import PlatformSubscription
 
@@ -18,6 +20,9 @@ class SiteCreationDecision(NamedTuple):
 
 class SiteCreationNotAllowed(Exception):
     pass
+
+
+DEFAULT_SITE_DELETION_HOLD_DAYS = 3
 
 
 def subscriber_site_creation_decision(user):
@@ -167,3 +172,206 @@ def site_setup_progress(site):
         "percent": round(completed * 100 / len(checks)),
         "next": next((check for check in checks if not check["complete"]), None),
     }
+
+
+def _resume_subscription_status(subscription, *, now):
+    if subscription.stripe_customer_id and subscription.stripe_subscription_id:
+        return PlatformSubscription.Status.ACTIVE
+    if subscription.trial_ends_at > now:
+        return PlatformSubscription.Status.TRIALING
+    raise ValidationError(
+        "This trial has ended. Choose a billing plan before resuming the site."
+    )
+
+
+def _apply_site_and_subscription_status(*, site, subscription, status):
+    subscription.status = status
+    site.status = {
+        PlatformSubscription.Status.TRIALING: Site.Status.TRIALING,
+        PlatformSubscription.Status.ACTIVE: Site.Status.ACTIVE,
+        PlatformSubscription.Status.GRACE: Site.Status.GRACE,
+        PlatformSubscription.Status.SUSPENDED: Site.Status.SUSPENDED,
+        PlatformSubscription.Status.CANCELED: Site.Status.CANCELED,
+        PlatformSubscription.Status.ARCHIVED: Site.Status.ARCHIVED,
+    }[status]
+
+
+@transaction.atomic
+def suspend_site_access(*, site, actor, reason, request=None):
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValidationError("A suspension reason is required.")
+    if not site.accepts_public_traffic:
+        raise ValidationError("This site is already not live.")
+
+    now = timezone.now()
+    subscription = site.platform_subscription
+    _apply_site_and_subscription_status(
+        site=site,
+        subscription=subscription,
+        status=PlatformSubscription.Status.SUSPENDED,
+    )
+    subscription.suspended_at = now
+    subscription.save(update_fields=("status", "suspended_at", "updated_at"))
+    site.save(update_fields=("status", "updated_at"))
+    record_audit_event(
+        action="site.lifecycle.suspended",
+        actor=actor,
+        site_id=site.id,
+        target=site,
+        summary={"reason": reason[:200]},
+        request=request,
+    )
+    return site
+
+
+@transaction.atomic
+def resume_site_access(*, site, actor, request=None):
+    subscription = site.platform_subscription
+    if site.accepts_public_traffic:
+        return site
+
+    now = timezone.now()
+    was_canceled = subscription.status == PlatformSubscription.Status.CANCELED
+    status = _resume_subscription_status(subscription, now=now)
+    _apply_site_and_subscription_status(site=site, subscription=subscription, status=status)
+    subscription.suspended_at = None
+    if was_canceled:
+        subscription.canceled_at = None
+    subscription.save(
+        update_fields=(
+            "status",
+            "suspended_at",
+            "canceled_at",
+            "updated_at",
+        )
+    )
+    site.save(update_fields=("status", "updated_at"))
+    record_audit_event(
+        action="site.lifecycle.resumed",
+        actor=actor,
+        site_id=site.id,
+        target=site,
+        summary={"status": status},
+        request=request,
+    )
+    return site
+
+
+def site_deletion_hold_days():
+    return max(
+        1,
+        int(
+            getattr(
+                settings,
+                "SITE_DELETION_HOLD_DAYS",
+                DEFAULT_SITE_DELETION_HOLD_DAYS,
+            )
+        ),
+    )
+
+
+@transaction.atomic
+def start_site_delete_hold(*, site, actor, reason, request=None):
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValidationError("A deletion reason is required.")
+
+    now = timezone.now()
+    hold_days = site_deletion_hold_days()
+    subscription = site.platform_subscription
+    _apply_site_and_subscription_status(
+        site=site,
+        subscription=subscription,
+        status=PlatformSubscription.Status.CANCELED,
+    )
+    subscription.suspended_at = now
+    subscription.canceled_at = now
+    subscription.cancel_at_period_end = True
+    subscription.save(
+        update_fields=(
+            "status",
+            "suspended_at",
+            "canceled_at",
+            "cancel_at_period_end",
+            "updated_at",
+        )
+    )
+    site.save(update_fields=("status", "updated_at"))
+
+    deletion = SiteDeletionRequest.objects.filter(
+        site=site,
+        status__in=(
+            SiteDeletionRequest.Status.REQUESTED,
+            SiteDeletionRequest.Status.APPROVED,
+        ),
+    ).first()
+    if deletion is None:
+        deletion = SiteDeletionRequest.objects.create(
+            site=site,
+            site_id_snapshot=site.id,
+            site_slug=site.slug,
+            site_name=site.display_name,
+            reason=reason,
+            status=SiteDeletionRequest.Status.APPROVED,
+            requested_by=actor,
+            approved_by=actor,
+            approved_at=now,
+            deletion_eligible_at=now + timedelta(days=hold_days),
+        )
+    else:
+        deletion.reason = reason
+        deletion.status = SiteDeletionRequest.Status.APPROVED
+        deletion.requested_by = actor
+        deletion.approved_by = actor
+        deletion.approved_at = now
+        deletion.deletion_eligible_at = now + timedelta(days=hold_days)
+        deletion.save(
+            update_fields=(
+                "reason",
+                "status",
+                "requested_by",
+                "approved_by",
+                "approved_at",
+                "deletion_eligible_at",
+            )
+        )
+    record_audit_event(
+        action="site.lifecycle.delete_hold_started",
+        actor=actor,
+        site_id=site.id,
+        target=deletion,
+        summary={"hold_days": hold_days, "reason": reason[:200]},
+        request=request,
+    )
+    return deletion
+
+
+@transaction.atomic
+def cancel_site_delete_hold(*, site, actor, reason, request=None):
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValidationError("A cancellation reason is required.")
+
+    deletion = SiteDeletionRequest.objects.filter(
+        site=site,
+        status__in=(
+            SiteDeletionRequest.Status.REQUESTED,
+            SiteDeletionRequest.Status.APPROVED,
+        ),
+    ).first()
+    if deletion is None:
+        raise ValidationError("No pending deletion hold is active for this site.")
+
+    deletion.status = SiteDeletionRequest.Status.CANCELED
+    deletion.save(update_fields=("status",))
+    resume_site_access(site=site, actor=actor, request=request)
+    record_audit_event(
+        action="site.lifecycle.delete_hold_canceled",
+        actor=actor,
+        site_id=site.id,
+        target=deletion,
+        summary={"reason": reason[:200]},
+        request=request,
+    )
+    return deletion

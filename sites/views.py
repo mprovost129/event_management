@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError, transaction
 from django.http import JsonResponse
@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from events.models import EventOccurrence
+from ops.models import SiteDeletionRequest
 from ops.services import record_audit_event
 from subscriptions.gateway import billing_options
 
@@ -29,9 +30,14 @@ from .readiness import pilot_readiness
 from .reporting import event_comparison, occurrence_comparison, site_summary
 from .services import (
     SiteCreationNotAllowed,
+    cancel_site_delete_hold,
     create_subscriber_site,
+    resume_site_access,
+    site_deletion_hold_days,
     site_setup_progress,
+    start_site_delete_hold,
     subscriber_site_creation_decision,
+    suspend_site_access,
     user_site_roles,
 )
 
@@ -111,6 +117,12 @@ def onboarding(request):
 def dashboard(request, site_id):
     site = request.authorized_site
     subscription = site.platform_subscription
+    pending_deletion = site.deletion_requests.filter(
+        status__in=(
+            SiteDeletionRequest.Status.REQUESTED,
+            SiteDeletionRequest.Status.APPROVED,
+        )
+    ).first()
     remaining_seconds = max(
         0, (subscription.trial_ends_at - timezone.now()).total_seconds()
     )
@@ -177,6 +189,8 @@ def dashboard(request, site_id):
         "setup": setup,
         "upcoming_occurrence": upcoming_occurrence,
         "album_prompt": album_prompt,
+        "pending_deletion": pending_deletion,
+        "site_deletion_hold_days": site_deletion_hold_days(),
         "workspace_activities": Activity.objects.for_site(site).select_related("actor")[
             :8
         ],
@@ -465,4 +479,74 @@ def remove_manager(request, site_id, role_id):
             request=request,
         )
         messages.success(request, "Site manager access was removed.")
+    return redirect("sites:dashboard", site_id=site_id)
+
+
+@require_POST
+@subscriber_recovery_required
+def suspend(request, site_id):
+    site = request.authorized_site
+    try:
+        suspend_site_access(
+            site=site,
+            actor=request.user,
+            reason=request.POST.get("reason", ""),
+            request=request,
+        )
+    except ValidationError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "Site is now suspended and hidden from the public web.")
+    return redirect("sites:dashboard", site_id=site_id)
+
+
+@require_POST
+@subscriber_recovery_required
+def resume(request, site_id):
+    site = request.authorized_site
+    try:
+        resume_site_access(site=site, actor=request.user, request=request)
+    except ValidationError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "Site is active again and available on the web.")
+    return redirect("sites:dashboard", site_id=site_id)
+
+
+@require_POST
+@subscriber_recovery_required
+def delete_hold_start(request, site_id):
+    site = request.authorized_site
+    try:
+        start_site_delete_hold(
+            site=site,
+            actor=request.user,
+            reason=request.POST.get("reason", ""),
+            request=request,
+        )
+    except ValidationError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(
+            request,
+            "Deletion hold started. The site is canceled and scheduled for deletion after 3 days.",
+        )
+    return redirect("sites:dashboard", site_id=site_id)
+
+
+@require_POST
+@subscriber_recovery_required
+def delete_hold_cancel(request, site_id):
+    site = request.authorized_site
+    try:
+        cancel_site_delete_hold(
+            site=site,
+            actor=request.user,
+            reason=request.POST.get("reason", ""),
+            request=request,
+        )
+    except ValidationError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "Deletion hold canceled and site access restored.")
     return redirect("sites:dashboard", site_id=site_id)

@@ -16,6 +16,26 @@ urlpatterns = [
     ),
     path("sites/<uuid:site_id>/reports/", views.reports, name="reports"),
     path("sites/<uuid:site_id>/export/", views.export_data, name="export_data"),
+    path(
+        "sites/<uuid:site_id>/lifecycle/suspend/",
+        views.suspend,
+        name="suspend",
+    ),
+    path(
+        "sites/<uuid:site_id>/lifecycle/resume/",
+        views.resume,
+        name="resume",
+    ),
+    path(
+        "sites/<uuid:site_id>/lifecycle/delete/",
+        views.delete_hold_start,
+        name="delete_hold_start",
+    ),
+    path(
+        "sites/<uuid:site_id>/lifecycle/delete/cancel/",
+        views.delete_hold_cancel,
+        name="delete_hold_cancel",
+    ),
     path("sites/<uuid:site_id>/managers/", views.add_manager, name="add_manager"),
     path(
         "sites/<uuid:site_id>/managers/<uuid:role_id>/remove/",

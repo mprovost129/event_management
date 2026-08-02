@@ -9,7 +9,7 @@ from django.utils import timezone
 from contacts.models import Contact
 from events.models import Event, EventAlbum
 from events.services import create_event_series
-from ops.models import AuditEvent
+from ops.models import AuditEvent, SiteDeletionRequest
 from payments.models import ConnectedAccount
 from sites.models import Site, SiteDomain, SiteRole, SiteTheme
 from sites.services import (
@@ -576,6 +576,143 @@ def test_suspended_site_exposes_only_owner_recovery_routes(client):
         ).status_code
         == 200
     )
+
+
+@pytest.mark.django_db
+def test_subscriber_admin_can_suspend_and_resume_site_visibility(client):
+    owner = verified_user("owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+    site.is_published = True
+    site.status = Site.Status.ACTIVE
+    site.save(update_fields=("is_published", "status", "updated_at"))
+    subscription = site.platform_subscription
+    subscription.status = PlatformSubscription.Status.ACTIVE
+    subscription.stripe_customer_id = "cus_test"
+    subscription.stripe_subscription_id = "sub_test"
+    subscription.save(
+        update_fields=(
+            "status",
+            "stripe_customer_id",
+            "stripe_subscription_id",
+            "updated_at",
+        )
+    )
+    client.force_login(owner)
+
+    suspended = client.post(
+        reverse("sites:suspend", kwargs={"site_id": site.id}),
+        {"reason": "Summer pause"},
+    )
+    site.refresh_from_db()
+    subscription.refresh_from_db()
+    assert suspended.status_code == 302
+    assert site.status == Site.Status.SUSPENDED
+    assert subscription.status == PlatformSubscription.Status.SUSPENDED
+
+    resumed = client.post(reverse("sites:resume", kwargs={"site_id": site.id}))
+    site.refresh_from_db()
+    subscription.refresh_from_db()
+    assert resumed.status_code == 302
+    assert site.status == Site.Status.ACTIVE
+    assert subscription.status == PlatformSubscription.Status.ACTIVE
+
+    public_home = client.get("/", headers={"host": "boot-scooters.localhost"})
+    assert public_home.status_code == 200
+
+
+@pytest.mark.django_db
+@override_settings(SITE_DELETION_HOLD_DAYS=3)
+def test_subscriber_delete_hold_stops_subscription_and_can_be_canceled(client):
+    owner = verified_user("owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+    site.status = Site.Status.ACTIVE
+    site.save(update_fields=("status", "updated_at"))
+    subscription = site.platform_subscription
+    subscription.status = PlatformSubscription.Status.ACTIVE
+    subscription.stripe_customer_id = "cus_test"
+    subscription.stripe_subscription_id = "sub_test"
+    subscription.save(
+        update_fields=(
+            "status",
+            "stripe_customer_id",
+            "stripe_subscription_id",
+            "updated_at",
+        )
+    )
+    client.force_login(owner)
+
+    start = client.post(
+        reverse("sites:delete_hold_start", kwargs={"site_id": site.id}),
+        {"reason": "Shutting down this chapter"},
+    )
+    site.refresh_from_db()
+    subscription.refresh_from_db()
+    pending = SiteDeletionRequest.objects.get(site=site)
+    pending_status_after_start = pending.status
+    site_status_after_start = site.status
+    subscription_status_after_start = subscription.status
+
+    cancel = client.post(
+        reverse("sites:delete_hold_cancel", kwargs={"site_id": site.id}),
+        {"reason": "We changed our mind"},
+    )
+    site.refresh_from_db()
+    subscription.refresh_from_db()
+    pending.refresh_from_db()
+
+    assert start.status_code == 302
+    assert site_status_after_start == Site.Status.CANCELED
+    assert subscription_status_after_start == PlatformSubscription.Status.CANCELED
+    assert pending_status_after_start == SiteDeletionRequest.Status.APPROVED
+    assert pending.deletion_eligible_at is not None
+    assert site.status == Site.Status.ACTIVE
+    assert subscription.status == PlatformSubscription.Status.ACTIVE
+    assert pending.status == SiteDeletionRequest.Status.CANCELED
+    assert cancel.status_code == 302
+
+
+@pytest.mark.django_db
+def test_resume_requires_active_billing_or_valid_trial(client):
+    owner = verified_user("owner@example.com")
+    site = create_subscriber_site(
+        owner=owner,
+        display_name="Boot Scooters",
+        slug="boot-scooters",
+        timezone_name="America/New_York",
+    )
+    site.status = Site.Status.SUSPENDED
+    site.save(update_fields=("status", "updated_at"))
+    subscription = site.platform_subscription
+    subscription.status = PlatformSubscription.Status.SUSPENDED
+    subscription.trial_started_at = timezone.now() - timedelta(days=30)
+    subscription.trial_ends_at = timezone.now() - timedelta(days=1)
+    subscription.save(
+        update_fields=(
+            "status",
+            "trial_started_at",
+            "trial_ends_at",
+            "updated_at",
+        )
+    )
+    client.force_login(owner)
+
+    response = client.post(reverse("sites:resume", kwargs={"site_id": site.id}))
+    site.refresh_from_db()
+    subscription.refresh_from_db()
+
+    assert response.status_code == 302
+    assert site.status == Site.Status.SUSPENDED
+    assert subscription.status == PlatformSubscription.Status.SUSPENDED
 
 
 @pytest.mark.django_db
