@@ -115,8 +115,28 @@
 
                     {% if section.section_type == 'content' %}
                     <div class="gh-form-field">
-                        <label for="section-rich-text-{{ section.id }}">Content</label>
-                        <textarea id="section-rich-text-{{ section.id }}" name="rich_text" rows="6">{{ section.rich_text }}</textarea>
+                        <label id="section-rich-text-label-{{ section.id }}" for="section-rich-text-{{ section.id }}">Content</label>
+                        <div class="gh-richtext" data-richtext>
+                            <div class="gh-richtext-toolbar" role="toolbar" aria-label="Text formatting">
+                                <button type="button" class="gh-richtext-btn" data-command="formatBlock" data-value="H2">Heading</button>
+                                <button type="button" class="gh-richtext-btn" data-command="formatBlock" data-value="H3">Subheading</button>
+                                <button type="button" class="gh-richtext-btn" data-command="formatBlock" data-value="P">Text</button>
+                                <span class="gh-richtext-divider" aria-hidden="true"></span>
+                                <button type="button" class="gh-richtext-btn" data-command="bold" aria-label="Bold"><strong>B</strong></button>
+                                <button type="button" class="gh-richtext-btn" data-command="italic" aria-label="Italic"><em>I</em></button>
+                                <button type="button" class="gh-richtext-btn" data-command="underline" aria-label="Underline"><u>U</u></button>
+                                <span class="gh-richtext-divider" aria-hidden="true"></span>
+                                <button type="button" class="gh-richtext-btn" data-command="insertUnorderedList" aria-label="Bulleted list">&bull; List</button>
+                                <button type="button" class="gh-richtext-btn" data-command="insertOrderedList" aria-label="Numbered list">1. List</button>
+                                <button type="button" class="gh-richtext-btn" data-command="formatBlock" data-value="BLOCKQUOTE" aria-label="Quote">&ldquo;Quote&rdquo;</button>
+                                <span class="gh-richtext-divider" aria-hidden="true"></span>
+                                <button type="button" class="gh-richtext-btn" data-command="createLink" aria-label="Add link">Link</button>
+                                <button type="button" class="gh-richtext-btn" data-command="unlink" aria-label="Remove link">Unlink</button>
+                            </div>
+                            <div class="gh-richtext-body" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="section-rich-text-label-{{ section.id }}">{{ section.rich_text_html }}</div>
+                            <textarea id="section-rich-text-{{ section.id }}" name="rich_text" class="gh-richtext-fallback" rows="6">{{ section.rich_text }}</textarea>
+                        </div>
+                        <div class="gh-field-help">Select text from the paragraph below, then use the toolbar to turn it into a bulleted or numbered list, or start a new line for each item before listing them.</div>
                     </div>
                     <div class="gh-form-field">
                         <label for="section-image-{{ section.id }}">Image</label>

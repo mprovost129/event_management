@@ -8,6 +8,8 @@ ALLOWED_TAGS = [
     "strong",
     "em",
     "u",
+    "b",
+    "i",
     "ul",
     "ol",
     "li",

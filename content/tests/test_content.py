@@ -526,7 +526,7 @@ def test_public_navbar_can_show_logo_without_site_name(client):
     assert match is not None
     brand_html = match.group(1)
     assert '<img src="' in brand_html
-    assert 'height="64"' in brand_html
+    assert 'class="gh-navbar-logo"' in brand_html
     assert "Boot Scooters" not in brand_html
 
 

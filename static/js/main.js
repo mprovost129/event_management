@@ -117,6 +117,42 @@ document.addEventListener("submit", (event) => {
     updateBranding();
 })();
 
+// Section rich-text editor: a plain textarea is the real form field and
+// stays server-authoritative (see content/sanitization.py), so a browser
+// without JS still gets a working, if unformatted, editor. When JS runs,
+// the textarea is hidden and a contenteditable region takes over, syncing
+// its HTML back into the textarea on every change.
+(() => {
+    document.querySelectorAll("[data-richtext]").forEach((wrapper) => {
+        const body = wrapper.querySelector(".gh-richtext-body");
+        const fallback = wrapper.querySelector(".gh-richtext-fallback");
+        const toolbar = wrapper.querySelector(".gh-richtext-toolbar");
+        if (!body || !fallback || !toolbar) return;
+
+        const sync = () => {
+            fallback.value = body.innerHTML.trim();
+        };
+
+        toolbar.addEventListener("click", (event) => {
+            const button = event.target.closest("[data-command]");
+            if (!button) return;
+            event.preventDefault();
+            body.focus();
+            let value = button.dataset.value || null;
+            if (button.dataset.command === "createLink") {
+                value = window.prompt("Link URL");
+                if (!value) return;
+            }
+            document.execCommand(button.dataset.command, false, value);
+            sync();
+        });
+
+        body.addEventListener("input", sync);
+        wrapper.classList.add("gh-richtext-active");
+        sync();
+    });
+})();
+
 (() => {
     document.querySelectorAll("[data-count-for]").forEach((output) => {
         const input = document.getElementById(output.dataset.countFor);
