@@ -1,6 +1,7 @@
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -124,3 +125,36 @@ class SystemHeartbeat(models.Model):
 
     def __str__(self):
         return f"{self.key}: {self.observed_at}"
+
+
+class PlatformBrandingSettings(models.Model):
+    singleton_key = models.PositiveSmallIntegerField(
+        primary_key=True,
+        default=1,
+        editable=False,
+    )
+    show_logo_in_header = models.BooleanField(default=True)
+    show_name_in_header = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Platform branding settings"
+        verbose_name_plural = "Platform branding settings"
+
+    @classmethod
+    def get_solo(cls):
+        return cls.objects.get_or_create(singleton_key=1)[0]
+
+    def clean(self):
+        super().clean()
+        if not self.show_logo_in_header and not self.show_name_in_header:
+            raise ValidationError(
+                "Choose at least one platform header branding option: logo or name."
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return "Platform branding"

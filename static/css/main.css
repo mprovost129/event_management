@@ -224,11 +224,21 @@ header, main, footer {
 .gh-site-header .navbar-brand {
     color: var(--gh-brand-navy);
     letter-spacing: -.025em;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
-.gh-site-header .navbar-brand:not(.site-theme)::after {
-    color: var(--gh-brand-orange);
-    content: ".";
+.gh-site-header .navbar {
+    min-height: 90px;
+}
+
+.gh-navbar-logo {
+    /* ~2/3 of the navbar's 90px min-height; keep these two in sync. */
+    height: 60px;
+    width: auto;
+    display: block;
 }
 
 .gh-navbar-actions > a:not(.btn) {

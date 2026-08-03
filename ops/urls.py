@@ -7,6 +7,11 @@ app_name = "ops"
 urlpatterns = [
     path("platform-ops/", views.dashboard, name="dashboard"),
     path(
+        "platform-ops/branding/",
+        views.update_branding,
+        name="update_branding",
+    ),
+    path(
         "platform-ops/sites/<uuid:site_id>/support/",
         views.support_grant,
         name="support_grant",

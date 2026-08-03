@@ -3,6 +3,7 @@ from django.test import RequestFactory, override_settings
 from django.urls import reverse
 
 from core.context_processors import platform
+from ops.models import PlatformBrandingSettings
 from sites.services import create_subscriber_site
 from users.models import User
 
@@ -116,3 +117,24 @@ def test_debug_mode_prefers_local_loopback_control_links(client):
 
     assert context["platform_admin_url"] == "http://127.0.0.1:8000/admin/"
     assert context["platform_ops_url"] == "http://127.0.0.1:8000/platform-ops/"
+
+
+@pytest.mark.django_db
+def test_platform_context_includes_branding_flags_from_settings_model():
+    admin = User.objects.create_superuser(
+        email="admin@example.com", password="Strong-Test-Pass-2026!"
+    )
+    branding = PlatformBrandingSettings.get_solo()
+    branding.show_logo_in_header = False
+    branding.show_name_in_header = True
+    branding.save(
+        update_fields=("show_logo_in_header", "show_name_in_header", "updated_at")
+    )
+
+    request = RequestFactory().get("/")
+    request.user = admin
+
+    context = platform(request)
+
+    assert context["platform_show_logo_in_header"] is False
+    assert context["platform_show_name_in_header"] is True

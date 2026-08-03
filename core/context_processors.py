@@ -1,4 +1,7 @@
+from django.apps import apps
 from django.conf import settings
+from django.core.exceptions import AppRegistryNotReady
+from django.db.utils import OperationalError, ProgrammingError
 from django.urls import reverse
 
 
@@ -60,11 +63,25 @@ def control_origin(request):
 def platform(request):
     origin = control_origin(request)
     admin_path = reverse("admin_alias")
+    show_logo_in_header = True
+    show_name_in_header = True
+
+    try:
+        branding_model = apps.get_model("ops", "PlatformBrandingSettings")
+        branding = branding_model.get_solo()
+        show_logo_in_header = branding.show_logo_in_header
+        show_name_in_header = branding.show_name_in_header
+    except (AppRegistryNotReady, LookupError, OperationalError, ProgrammingError):
+        # Migrations may not have run yet in very early startup contexts.
+        pass
+
     return {
         "platform_name": settings.PLATFORM_NAME,
         "platform_long_name": settings.PLATFORM_LONG_NAME,
         "platform_domain": settings.PLATFORM_DOMAIN,
         "support_email": settings.SUPPORT_EMAIL,
+        "platform_show_logo_in_header": show_logo_in_header,
+        "platform_show_name_in_header": show_name_in_header,
         "platform_admin_url": f"{origin}{admin_path}",
         "platform_ops_url": f"{origin}{reverse('ops:dashboard')}",
     }

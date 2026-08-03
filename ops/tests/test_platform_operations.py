@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 
 import pytest
@@ -12,7 +13,7 @@ from attendance.services import set_check_in
 from communications.models import Campaign
 from contacts.models import Contact
 from events.models import Event, EventOccurrence, Participant, Registration
-from ops.models import AuditEvent, SiteDeletionRequest
+from ops.models import AuditEvent, PlatformBrandingSettings, SiteDeletionRequest
 from ops.services import (
     active_support_grant,
     approve_site_deletion,
@@ -329,3 +330,65 @@ def test_platform_operations_controls_have_labels_and_confirmations(client):
     assert "data-confirm=" in content
     assert "onsubmit=" not in content
     assert 'role="region"' in content
+
+
+@pytest.mark.django_db
+def test_platform_branding_can_be_updated_from_operations_dashboard(client):
+    admin = User.objects.create_superuser(
+        email="admin@example.com", password="Strong-Test-Pass-2026!"
+    )
+    client.force_login(admin)
+
+    response = client.post(
+        reverse("ops:update_branding"),
+        {
+            "show_name_in_header": "on",
+        },
+        follow=True,
+    )
+    branding = PlatformBrandingSettings.get_solo()
+
+    assert response.status_code == 200
+    assert branding.show_logo_in_header is False
+    assert branding.show_name_in_header is True
+
+
+@pytest.mark.django_db
+def test_platform_branding_rejects_hiding_logo_and_name_together(client):
+    admin = User.objects.create_superuser(
+        email="admin@example.com", password="Strong-Test-Pass-2026!"
+    )
+    client.force_login(admin)
+
+    response = client.post(reverse("ops:update_branding"), {}, follow=True)
+    branding = PlatformBrandingSettings.get_solo()
+
+    assert response.status_code == 200
+    assert (
+        "Choose at least one platform header branding option"
+        in response.content.decode()
+    )
+    assert branding.show_logo_in_header is True
+    assert branding.show_name_in_header is True
+
+
+@pytest.mark.django_db
+def test_platform_home_navbar_can_render_name_without_logo(client):
+    branding = PlatformBrandingSettings.get_solo()
+    branding.show_logo_in_header = False
+    branding.show_name_in_header = True
+    branding.save(
+        update_fields=("show_logo_in_header", "show_name_in_header", "updated_at")
+    )
+
+    response = client.get(reverse("core:home"), headers={"host": "localhost"})
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    match = re.search(
+        r'<a class="navbar-brand[^>]*>(.*?)</a>', content, flags=re.DOTALL
+    )
+    assert match is not None
+    brand_html = match.group(1)
+    assert "Gather HQs" in brand_html
+    assert "logo-wordmark-short.png" not in brand_html

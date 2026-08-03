@@ -26,6 +26,28 @@
         </div>
     </div>
 </section>
+<section class="mb-4" aria-labelledby="platform-branding-heading">
+    <div class="card">
+        <div class="card-body">
+            <h2 class="h5" id="platform-branding-heading">Platform navbar branding</h2>
+            <p class="text-secondary mb-3">Choose whether the Gather HQs navbar brand shows the logo, the name, or both.</p>
+            <form method="post" action="{% url 'ops:update_branding' %}" class="d-flex flex-column gap-2">
+                {% csrf_token %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="platform-show-logo" name="show_logo_in_header" {% if platform_branding.show_logo_in_header %}checked{% endif %}>
+                    <label class="form-check-label" for="platform-show-logo">Show logo in platform header</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="platform-show-name" name="show_name_in_header" {% if platform_branding.show_name_in_header %}checked{% endif %}>
+                    <label class="form-check-label" for="platform-show-name">Show platform name in platform header</label>
+                </div>
+                <div>
+                    <button class="btn btn-primary btn-sm" type="submit">Save navbar branding</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
 <form method="get" class="row g-2 mb-4" role="search">
     <div class="col-md-6"><label class="visually-hidden" for="operations-search">Search sites and users</label><input class="form-control" id="operations-search" type="search" name="q" value="{{ query }}" placeholder="Search site name, slug, or user email"></div>
     <div class="col-auto"><button class="btn btn-primary" type="submit">Search</button></div>

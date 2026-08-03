@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     AuditEvent,
+    PlatformBrandingSettings,
     SiteDeletionRequest,
     SupportAccessGrant,
     SystemHeartbeat,
@@ -47,3 +48,17 @@ class AuditEventAdmin(admin.ModelAdmin):
 admin.site.register(SupportAccessGrant)
 admin.site.register(SiteDeletionRequest)
 admin.site.register(SystemHeartbeat)
+
+
+@admin.register(PlatformBrandingSettings)
+class PlatformBrandingSettingsAdmin(admin.ModelAdmin):
+    list_display = (
+        "show_logo_in_header",
+        "show_name_in_header",
+        "updated_at",
+    )
+
+    def has_add_permission(self, request):
+        if PlatformBrandingSettings.objects.exists():
+            return False
+        return super().has_add_permission(request)

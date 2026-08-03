@@ -19,7 +19,7 @@ from subscriptions.models import PlatformSubscription, StripeWebhookEvent
 from users.models import User
 
 from .health import operational_alerts
-from .models import AuditEvent, SiteDeletionRequest
+from .models import AuditEvent, PlatformBrandingSettings, SiteDeletionRequest
 from .permissions import platform_admin_required
 from .services import (
     active_support_grant,
@@ -58,6 +58,7 @@ def dashboard(request):
     )
     collected_fee_cents = fee_totals["collected"] or 0
     returned_fee_cents = fee_totals["returned"] or 0
+    branding = PlatformBrandingSettings.get_solo()
     context = {
         "query": query,
         "sites": sites[:50],
@@ -95,8 +96,36 @@ def dashboard(request):
             "orders": settled_orders.count(),
             "sites": settled_orders.values("site_id").distinct().count(),
         },
+        "platform_branding": branding,
     }
     return render(request, "ops/dashboard.html", context)
+
+
+@platform_admin_required
+@require_POST
+def update_branding(request):
+    branding = PlatformBrandingSettings.get_solo()
+    show_logo = request.POST.get("show_logo_in_header") == "on"
+    show_name = request.POST.get("show_name_in_header") == "on"
+
+    if not show_logo and not show_name:
+        messages.error(
+            request,
+            "Choose at least one platform header branding option: logo or name.",
+        )
+        return redirect("ops:dashboard")
+
+    branding.show_logo_in_header = show_logo
+    branding.show_name_in_header = show_name
+    branding.save(
+        update_fields=(
+            "show_logo_in_header",
+            "show_name_in_header",
+            "updated_at",
+        )
+    )
+    messages.success(request, "Platform navbar branding updated.")
+    return redirect("ops:dashboard")
 
 
 @platform_admin_required
