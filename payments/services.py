@@ -161,6 +161,10 @@ def synchronize_connected_account(account, *, site=None):
 
 def start_connected_account(*, site):
     existing = ConnectedAccount.objects.filter(site=site).first()
+    if existing and existing.status == ConnectedAccount.Status.DISCONNECTED:
+        raise CommerceUnavailable(
+            "This Stripe account was disconnected. Contact support to reconnect."
+        )
     if existing:
         return existing
     account = gateway.create_standard_account(site=site)

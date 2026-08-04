@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 
 import stripe
@@ -57,6 +58,8 @@ from .services import (
     ticket_inventory_map,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def _public_site(request):
     site = getattr(request, "site", None)
@@ -77,6 +80,29 @@ def _ticket_application_fee_percent():
 def manage(request, site_id):
     site = request.authorized_site
     connected = ConnectedAccount.objects.filter(site=site).first()
+
+    if connected and request.GET.get("connect") == "returned":
+        try:
+            connected = refresh_connected_account(connected)
+        except (CommerceNotConfigured, stripe.StripeError):
+            messages.warning(
+                request,
+                "We could not confirm your Stripe status just now. "
+                "Try Refresh status in a moment.",
+            )
+        else:
+            if connected.commerce_ready:
+                messages.success(
+                    request,
+                    "Stripe setup is complete. You can start selling tickets.",
+                )
+            else:
+                messages.info(
+                    request,
+                    "Stripe still needs a few details before you can accept payments.",
+                )
+        return redirect("payments:manage", site_id=site.id)
+
     ticket_types = list(
         TicketType.objects.for_site(site)
         .select_related("occurrence__event")
@@ -154,8 +180,12 @@ def connect_start(request, site_id):
     try:
         connected = start_connected_account(site=request.authorized_site)
         link = _account_link(request, connected)
-    except (CommerceNotConfigured, stripe.StripeError) as exc:
-        messages.error(request, f"Stripe onboarding could not start: {exc}")
+    except (CommerceUnavailable, CommerceNotConfigured, stripe.StripeError):
+        logger.exception("Connect onboarding failed for site %s", site_id)
+        messages.error(
+            request,
+            "We could not reach Stripe just now. Please try again in a minute.",
+        )
         return redirect("payments:manage", site_id=site_id)
     return redirect(link.url)
 
@@ -165,8 +195,12 @@ def connect_refresh(request, site_id):
     connected = get_object_or_404(ConnectedAccount, site=request.authorized_site)
     try:
         link = _account_link(request, connected)
-    except (CommerceNotConfigured, stripe.StripeError) as exc:
-        messages.error(request, f"Stripe onboarding could not resume: {exc}")
+    except (CommerceNotConfigured, stripe.StripeError):
+        logger.exception("Connect onboarding resume failed for site %s", site_id)
+        messages.error(
+            request,
+            "We could not reach Stripe just now. Please try again in a minute.",
+        )
         return redirect("payments:manage", site_id=site_id)
     return redirect(link.url)
 
@@ -177,8 +211,12 @@ def connect_sync(request, site_id):
     connected = get_object_or_404(ConnectedAccount, site=request.authorized_site)
     try:
         connected = refresh_connected_account(connected)
-    except (CommerceNotConfigured, stripe.StripeError) as exc:
-        messages.error(request, f"Stripe status could not be refreshed: {exc}")
+    except (CommerceNotConfigured, stripe.StripeError):
+        logger.exception("Connect status sync failed for site %s", site_id)
+        messages.error(
+            request,
+            "We could not reach Stripe just now. Please try again in a minute.",
+        )
     else:
         messages.success(
             request, f"Stripe status refreshed: {connected.get_status_display()}."
@@ -375,8 +413,12 @@ def refund_order(request, site_id, order_id):
         )
         try:
             submit_refund(refund)
-        except (CommerceNotConfigured, stripe.StripeError) as exc:
-            messages.error(request, f"Stripe did not accept the refund request: {exc}")
+        except (CommerceNotConfigured, stripe.StripeError):
+            logger.exception("Refund submission failed for order %s", order_id)
+            messages.error(
+                request,
+                "We could not reach Stripe just now. Please try again in a minute.",
+            )
         else:
             record_audit_event(
                 action="commerce.refund.requested",
