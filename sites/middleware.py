@@ -14,6 +14,9 @@ class SiteResolutionMiddleware(MiddlewareMixin):
         request.site = None
         host = request.get_host().split(":", 1)[0].lower().rstrip(".")
         platform_domain = settings.PLATFORM_DOMAIN.lower().rstrip(".")
+        canonical_control_host = (
+            getattr(settings, "PLATFORM_CANONICAL_HOST", "").lower().rstrip(".")
+        )
 
         control_hosts = {
             *settings.PLATFORM_CONTROL_HOSTS,
@@ -30,11 +33,13 @@ class SiteResolutionMiddleware(MiddlewareMixin):
             # server-to-server integration configured against an alias host never
             # has its request silently redirected.
             if (
-                host != platform_domain
+                canonical_control_host
+                and canonical_control_host in control_hosts
+                and host != canonical_control_host
                 and host in settings.PLATFORM_CONTROL_HOSTS
                 and request.method in ("GET", "HEAD")
             ):
-                return self._redirect_to_canonical_host(request, platform_domain)
+                return self._redirect_to_canonical_host(request, canonical_control_host)
             return None
 
         domain = (

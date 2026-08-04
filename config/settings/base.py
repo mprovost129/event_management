@@ -15,6 +15,9 @@ SECRET_KEY = env("SECRET_KEY")
 PLATFORM_NAME = env("PLATFORM_NAME", "Gather HQs")
 PLATFORM_LONG_NAME = env("PLATFORM_LONG_NAME", "Gather Headquarters")
 PLATFORM_DOMAIN = env("PLATFORM_DOMAIN", "localhost")
+PLATFORM_CANONICAL_HOST = (
+    env("PLATFORM_CANONICAL_HOST", "", allow_blank=True).strip().lower().rstrip(".")
+)
 PLATFORM_CONTROL_HOSTS = env_list(
     "PLATFORM_CONTROL_HOSTS", (PLATFORM_DOMAIN, f"www.{PLATFORM_DOMAIN}")
 )
