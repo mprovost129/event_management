@@ -10,6 +10,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from contacts.services import subscribe_to_newsletter
 from core.rate_limits import public_write_rate_limit
+from core.recaptcha import verify_recaptcha
 from ops.models import AuditEvent
 from ops.services import record_audit_event
 from sites.permissions import site_staff_required
@@ -502,21 +503,26 @@ def newsletter_signup(request):
     page = public_page(site, SitePage.PageType.NEWSLETTER)
     form = NewsletterSignupForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        subscribe_to_newsletter(
-            site=site,
-            email=form.cleaned_data["email"],
-            first_name=form.cleaned_data["first_name"],
-            last_name=form.cleaned_data["last_name"],
-            source="public_newsletter_form",
-        )
-        record_public_engagement(
-            action="public.newsletter_signup",
-            site=site,
-            summary={"source": "public_newsletter_form"},
-            request=request,
-        )
-        messages.success(request, "You're subscribed to email updates.")
-        return redirect(reverse("content:newsletter"))
+        if not verify_recaptcha(request, action="newsletter_signup"):
+            form.add_error(
+                None, "We could not verify this submission. Please try again."
+            )
+        else:
+            subscribe_to_newsletter(
+                site=site,
+                email=form.cleaned_data["email"],
+                first_name=form.cleaned_data["first_name"],
+                last_name=form.cleaned_data["last_name"],
+                source="public_newsletter_form",
+            )
+            record_public_engagement(
+                action="public.newsletter_signup",
+                site=site,
+                summary={"source": "public_newsletter_form"},
+                request=request,
+            )
+            messages.success(request, "You're subscribed to email updates.")
+            return redirect(reverse("content:newsletter"))
     return render(
         request,
         "public/newsletter.html",

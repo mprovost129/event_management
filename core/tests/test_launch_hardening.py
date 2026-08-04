@@ -220,6 +220,37 @@ def test_platform_home_explains_trial_pricing_and_social_preview(client):
 
 
 @pytest.mark.django_db
+def test_ga_and_recaptcha_scripts_are_absent_until_configured(client):
+    response = client.get(reverse("core:home"))
+    content = response.content.decode()
+
+    assert "googletagmanager.com/gtag/js" not in content
+    assert "google.com/recaptcha/api.js" not in content
+    assert 'data-ga-measurement-id=""' in content
+    assert 'data-recaptcha-site-key=""' in content
+
+
+@pytest.mark.django_db
+@override_settings(GA_MEASUREMENT_ID="G-TESTID123")
+def test_ga_script_renders_once_measurement_id_is_configured(client):
+    response = client.get(reverse("core:home"))
+    content = response.content.decode()
+
+    assert "https://www.googletagmanager.com/gtag/js?id=G-TESTID123" in content
+    assert 'data-ga-measurement-id="G-TESTID123"' in content
+
+
+@pytest.mark.django_db
+@override_settings(RECAPTCHA_SITE_KEY="site-key-123", RECAPTCHA_SECRET_KEY="secret")
+def test_recaptcha_script_renders_once_site_key_is_configured(client):
+    response = client.get(reverse("core:home"))
+    content = response.content.decode()
+
+    assert "https://www.google.com/recaptcha/api.js?render=site-key-123" in content
+    assert 'data-recaptcha-site-key="site-key-123"' in content
+
+
+@pytest.mark.django_db
 def test_already_authenticated_user_visiting_platform_home_is_sent_to_dashboard(
     client,
 ):
@@ -298,6 +329,22 @@ def test_production_deployment_warns_when_aws_object_url_is_used_as_endpoint():
     issue_ids = {issue.id for issue in deployment_product_check(None)}
 
     assert "platform.W005" in issue_ids
+
+
+@override_settings(DEBUG=False, RECAPTCHA_SITE_KEY="site-only", RECAPTCHA_SECRET_KEY="")
+def test_production_deployment_warns_on_half_configured_recaptcha_keys():
+    issue_ids = {issue.id for issue in deployment_product_check(None)}
+
+    assert "platform.W006" in issue_ids
+
+
+@override_settings(
+    DEBUG=False, RECAPTCHA_SITE_KEY="site-key", RECAPTCHA_SECRET_KEY="secret-key"
+)
+def test_production_deployment_does_not_warn_when_recaptcha_fully_configured():
+    issue_ids = {issue.id for issue in deployment_product_check(None)}
+
+    assert "platform.W006" not in issue_ids
 
 
 @override_settings(

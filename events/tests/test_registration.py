@@ -1,10 +1,12 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from unittest.mock import patch
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 import pytest
 from django.db import connections
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -249,6 +251,77 @@ def test_public_response_creates_contact_participants_and_confirmation(client):
     assert "An evening of country line dancing." in message.html_body
     assert "going!" in message.html_body
     assert "Manage your response" in message.html_body
+
+
+@pytest.mark.django_db
+@override_settings(RECAPTCHA_SITE_KEY="site", RECAPTCHA_SECRET_KEY="secret")
+def test_public_response_recaptcha_widget_shown_but_manage_link_omits_it(client):
+    _, site, event, occurrence = phase_three_fixture(capacity=5, max_guests=1)
+    public_url = reverse(
+        "events:public_response",
+        kwargs={"slug": event.slug, "occurrence_id": occurrence.id},
+    )
+
+    form_page = client.get(public_url, headers={"host": "boot-scooters.localhost"})
+    assert 'data-recaptcha-action="rsvp"' in form_page.content.decode()
+
+    with patch("core.recaptcha.requests.post") as post:
+        post.return_value.raise_for_status.return_value = None
+        post.return_value.json.return_value = {
+            "success": True,
+            "action": "rsvp",
+            "score": 0.9,
+        }
+        client.post(
+            public_url,
+            {
+                "response": "going",
+                "first_name": "Alex",
+                "last_name": "Dancer",
+                "email": "alex@example.com",
+                "guest_count": "0",
+                "recaptcha_token": "good-token",
+            },
+            headers={"host": "boot-scooters.localhost"},
+        )
+    registration = Registration.objects.get(occurrence=occurrence)
+
+    manage_url = reverse(
+        "events:public_response_manage",
+        kwargs={
+            "slug": event.slug,
+            "occurrence_id": occurrence.id,
+            "token": public_rsvp_manage_token(registration),
+        },
+    )
+    manage_page = client.get(manage_url, headers={"host": "boot-scooters.localhost"})
+    assert "data-recaptcha-action" not in manage_page.content.decode()
+
+    with patch("core.recaptcha.requests.post") as post:
+        post.return_value.raise_for_status.return_value = None
+        post.return_value.json.return_value = {
+            "success": True,
+            "action": "rsvp",
+            "score": 0.1,
+        }
+        blocked = client.post(
+            public_url,
+            {
+                "response": "going",
+                "first_name": "Robin",
+                "last_name": "Dancer",
+                "email": "robin@example.com",
+                "guest_count": "0",
+                "recaptcha_token": "low-score-token",
+            },
+            headers={"host": "boot-scooters.localhost"},
+        )
+
+    assert blocked.status_code == 200
+    assert "We could not verify this submission" in blocked.content.decode()
+    assert not Registration.objects.filter(
+        occurrence=occurrence, contact__normalized_email="robin@example.com"
+    ).exists()
 
 
 @pytest.mark.django_db

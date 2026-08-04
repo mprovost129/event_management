@@ -5,12 +5,12 @@
 {% block legal_content %}
 <section>
     <h2>1. Current cookie approach</h2>
-    <p>Gather HQs currently uses cookies and similar browser storage that are necessary to provide, protect, and remember the Service. We do not currently use third-party advertising cookies or cross-site behavioral advertising trackers.</p>
-    <p>Because the current first-party cookies are essential rather than optional advertising or analytics cookies, disabling them may prevent sign-in, forms, checkout handoffs, or other features from working.</p>
+    <p>Gather HQs uses cookies and similar browser storage that are necessary to provide, protect, and remember the Service, plus a limited set of Google-provided analytics and abuse-prevention cookies described in Section 3. We do not use third-party advertising cookies or cross-site behavioral advertising trackers.</p>
+    <p>Because the first-party cookies described in Section 2 are essential rather than optional, disabling them may prevent sign-in, forms, checkout handoffs, or other features from working.</p>
 </section>
 
 <section>
-    <h2 id="browser-storage-heading">2. Browser storage used by Gather HQs</h2>
+    <h2 id="browser-storage-heading">2. Essential browser storage used by Gather HQs</h2>
     <div class="table-responsive" role="region" aria-labelledby="browser-storage-heading" tabindex="0">
         <table class="table gh-legal-table">
             <thead>
@@ -47,22 +47,51 @@
 </section>
 
 <section>
-    <h2>3. Subscriber sites</h2>
-    <p>Subscriber subdomains use the same essential platform protections when a visitor registers, responds, submits a form, or uses another interactive feature. Subscriber page content itself does not authorize a subscriber to add independent tracking code through the standard Gather HQs editor.</p>
+    <h2 id="analytics-heading">3. Google Analytics and reCAPTCHA</h2>
+    <p>Gather HQs uses Google Analytics (GA4) to understand how the Service is used, and Google reCAPTCHA to reduce automated abuse of public forms such as account signup, newsletter signup, RSVPs, and public intake forms. Both are provided by Google and may set their own cookies or use similar browser signals on any Gather HQs or subscriber page where they are active.</p>
+    <div class="table-responsive" role="region" aria-labelledby="analytics-heading" tabindex="0">
+        <table class="table gh-legal-table">
+            <thead>
+                <tr>
+                    <th scope="col">Provider</th>
+                    <th scope="col">Purpose</th>
+                    <th scope="col">What it does</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Google Analytics</td>
+                    <td>Usage analytics</td>
+                    <td>Measures page views and general usage patterns so the product can be improved. Not used for cross-site behavioral advertising.</td>
+                </tr>
+                <tr>
+                    <td>Google reCAPTCHA</td>
+                    <td>Bot and abuse prevention</td>
+                    <td>Scores a form submission's likelihood of being automated before it is accepted. Runs invisibly; most people never see a challenge.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Google's use of information collected through these services is governed by <a href="https://policies.google.com/privacy" rel="noopener">Google's Privacy Policy</a>. You can review or opt out of Google Analytics tracking using Google's <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">Analytics opt-out browser add-on</a>.</p>
 </section>
 
 <section>
-    <h2>4. Stripe and other hosted pages</h2>
+    <h2>4. Subscriber sites</h2>
+    <p>Subscriber subdomains use the same essential platform protections, and the same platform-level Google Analytics and reCAPTCHA integrations described in Section 3, when a visitor registers, responds, submits a form, or uses another interactive feature. Subscriber page content itself does not authorize a subscriber to add independent tracking code through the standard Gather HQs editor.</p>
+</section>
+
+<section>
+    <h2>5. Stripe and other hosted pages</h2>
     <p>When you continue to a Stripe-hosted checkout, billing portal, or connected-account onboarding page, Stripe may set its own cookies for payment processing, fraud prevention, security, and service operation. Those cookies are controlled by Stripe and governed by Stripe’s notices. An independent link outside Gather HQs is governed by that provider’s practices.</p>
 </section>
 
 <section>
-    <h2>5. Browser controls and privacy signals</h2>
-    <p>Most browsers let you view, delete, or block cookies. Blocking essential storage may sign you out, discard an in-progress form, or prevent protected requests from completing. Browser “Do Not Track” settings are not consistently defined. Gather HQs does not currently sell or share information for cross-context behavioral advertising, so there is no advertising sale or sharing to opt out of through a Global Privacy Control signal.</p>
+    <h2>6. Browser controls and privacy signals</h2>
+    <p>Most browsers let you view, delete, or block cookies. Blocking essential storage may sign you out, discard an in-progress form, or prevent protected requests from completing; blocking Google Analytics or reCAPTCHA storage may cause form submissions to take slightly longer to verify but will not block them outright. Browser “Do Not Track” settings are not consistently defined. Gather HQs does not currently sell or share information for cross-context behavioral advertising, so there is no advertising sale or sharing to opt out of through a Global Privacy Control signal.</p>
 </section>
 
 <section>
-    <h2>6. Future changes</h2>
-    <p>If optional analytics, advertising, or other non-essential technologies are introduced, this notice will be updated and any consent or opt-out controls required by applicable law will be provided before those technologies are used.</p>
+    <h2>7. Future changes</h2>
+    <p>If additional analytics, advertising, or other non-essential technologies are introduced beyond what Section 3 already describes, this notice will be updated and any consent or opt-out controls required by applicable law will be provided before those technologies are used.</p>
 </section>
 {% endblock %}

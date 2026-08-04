@@ -11,9 +11,15 @@
     <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
     <link rel="stylesheet" href="{% static 'vendor/bootstrap-5.3.3/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% if ga_measurement_id %}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_measurement_id }}"></script>
+    {% endif %}
+    {% if recaptcha_site_key %}
+    <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}" defer></script>
+    {% endif %}
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body data-ga-measurement-id="{{ ga_measurement_id }}" data-recaptcha-site-key="{{ recaptcha_site_key }}">
     <a class="skip-link" href="#main-content">Skip to main content</a>
     {% block navbar %}{% include "partials/navbar.html" %}{% endblock %}
 

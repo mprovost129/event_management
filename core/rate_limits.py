@@ -7,7 +7,7 @@ from django.core.cache import cache
 from .error_views import error_response
 
 
-def _client_address(request):
+def client_address(request):
     remote_address = request.META.get("REMOTE_ADDR", "unknown")
     trusted_proxies = settings.RATE_LIMIT_TRUSTED_PROXY_COUNT
     if trusted_proxies <= 0:
@@ -25,7 +25,7 @@ def _client_address(request):
 def _rate_limit_key(request, scope):
     site = getattr(request, "site", None)
     site_key = str(site.id) if site is not None else "control"
-    material = f"{scope}:{site_key}:{_client_address(request)}"
+    material = f"{scope}:{site_key}:{client_address(request)}"
     digest = hashlib.sha256(material.encode("utf-8")).hexdigest()
     return f"public-write-rate:{digest}"
 

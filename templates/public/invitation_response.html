@@ -6,5 +6,5 @@
 <h1>{{ invitation.occurrence.event.title }}</h1>
 <p>{{ invitation.occurrence.starts_at|date:"F j, Y · g:i A" }}</p>
 <p><strong>No account required.</strong> Use this secure invitation to respond Going, Maybe, or Not going.</p>
-<form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary btn-lg" type="submit">Save response</button></form>
+<form method="post" data-recaptcha-action="invitation_rsvp">{% csrf_token %}{% include 'includes/recaptcha_field.html' %}{{ form.as_p }}<button class="btn btn-primary btn-lg" type="submit">Save response</button></form>
 </section>{% endtimezone %}{% endblock %}

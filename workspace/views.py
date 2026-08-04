@@ -17,6 +17,7 @@ from contacts.models import Contact
 from core.exports import spreadsheet_safe_cell
 from core.pagination import paginate
 from core.rate_limits import public_write_rate_limit
+from core.recaptcha import verify_recaptcha
 from sites.models import SiteRole
 from sites.permissions import site_staff_required
 
@@ -735,85 +736,90 @@ def intake_public(request, form_id, slug):
         )
     form = build_public_intake_form(intake_form, request.POST or None)
     if request.method == "POST" and form.is_valid():
-        response_data = {
-            key: value.isoformat() if hasattr(value, "isoformat") else value
-            for key, value in form.cleaned_data.items()
-            if key not in {"signature_name", "agreement_accepted"}
-        }
-        email = str(response_data.get("email", "")).strip()
-        first_name = str(response_data.get("first_name", "")).strip()
-        last_name = str(response_data.get("last_name", "")).strip()
-        contact = None
-        if intake_form.create_or_update_contact and email:
-            contact = (
-                Contact.objects.for_site(intake_form.site)
-                .filter(normalized_email=email.casefold())
-                .first()
+        if not verify_recaptcha(request, action="intake_form"):
+            form.add_error(
+                None, "We could not verify this submission. Please try again."
             )
-            if contact:
-                changed = False
-                if first_name and not contact.first_name:
-                    contact.first_name = first_name
-                    changed = True
-                if last_name and not contact.last_name:
-                    contact.last_name = last_name
-                    changed = True
-                if changed:
-                    contact.save()
-            else:
-                contact = Contact.objects.create(
-                    site=intake_form.site,
-                    first_name=first_name or "Form",
-                    last_name=last_name or "Response",
-                    email=email,
+        else:
+            response_data = {
+                key: value.isoformat() if hasattr(value, "isoformat") else value
+                for key, value in form.cleaned_data.items()
+                if key not in {"signature_name", "agreement_accepted"}
+            }
+            email = str(response_data.get("email", "")).strip()
+            first_name = str(response_data.get("first_name", "")).strip()
+            last_name = str(response_data.get("last_name", "")).strip()
+            contact = None
+            if intake_form.create_or_update_contact and email:
+                contact = (
+                    Contact.objects.for_site(intake_form.site)
+                    .filter(normalized_email=email.casefold())
+                    .first()
                 )
-        submission = IntakeSubmission(
-            site=intake_form.site,
-            intake_form=intake_form,
-            contact=contact,
-            response_data=response_data,
-            submitter_name=f"{first_name} {last_name}".strip(),
-            submitter_email=email,
-            signature_name=form.cleaned_data.get("signature_name", ""),
-            agreed_at=timezone.now() if intake_form.require_signature else None,
-            source_ip=request.META.get("REMOTE_ADDR") or None,
-            user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
-        )
-        submission.full_clean()
-        submission.save()
-        dispatch_automation_trigger(
-            site=intake_form.site,
-            trigger=AutomationRule.Trigger.FORM_SUBMITTED,
-            trigger_data={
-                "form_id": str(intake_form.id),
-                "form_title": intake_form.title,
-                "submitter_name": submission.submitter_name,
-                "submitter_email": submission.submitter_email,
-            },
-            contact=contact,
-        )
-        record_activity(
-            site=intake_form.site,
-            actor=None,
-            verb=f"Received form response: {intake_form.title}",
-            detail=submission.submitter_name or submission.submitter_email,
-            kind="form",
-            target_url=reverse(
-                "workspace:intake_submission_detail",
-                kwargs={
-                    "site_id": intake_form.site_id,
-                    "form_id": intake_form.id,
-                    "submission_id": submission.id,
+                if contact:
+                    changed = False
+                    if first_name and not contact.first_name:
+                        contact.first_name = first_name
+                        changed = True
+                    if last_name and not contact.last_name:
+                        contact.last_name = last_name
+                        changed = True
+                    if changed:
+                        contact.save()
+                else:
+                    contact = Contact.objects.create(
+                        site=intake_form.site,
+                        first_name=first_name or "Form",
+                        last_name=last_name or "Response",
+                        email=email,
+                    )
+            submission = IntakeSubmission(
+                site=intake_form.site,
+                intake_form=intake_form,
+                contact=contact,
+                response_data=response_data,
+                submitter_name=f"{first_name} {last_name}".strip(),
+                submitter_email=email,
+                signature_name=form.cleaned_data.get("signature_name", ""),
+                agreed_at=timezone.now() if intake_form.require_signature else None,
+                source_ip=request.META.get("REMOTE_ADDR") or None,
+                user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
+            )
+            submission.full_clean()
+            submission.save()
+            dispatch_automation_trigger(
+                site=intake_form.site,
+                trigger=AutomationRule.Trigger.FORM_SUBMITTED,
+                trigger_data={
+                    "form_id": str(intake_form.id),
+                    "form_title": intake_form.title,
+                    "submitter_name": submission.submitter_name,
+                    "submitter_email": submission.submitter_email,
                 },
-            ),
-        )
-        return render(
-            request, "workspace/intake_thanks.html", {"intake_form": intake_form}
-        )
+                contact=contact,
+            )
+            record_activity(
+                site=intake_form.site,
+                actor=None,
+                verb=f"Received form response: {intake_form.title}",
+                detail=submission.submitter_name or submission.submitter_email,
+                kind="form",
+                target_url=reverse(
+                    "workspace:intake_submission_detail",
+                    kwargs={
+                        "site_id": intake_form.site_id,
+                        "form_id": intake_form.id,
+                        "submission_id": submission.id,
+                    },
+                ),
+            )
+            return render(
+                request, "workspace/intake_thanks.html", {"intake_form": intake_form}
+            )
     return render(
         request,
         "workspace/intake_public.html",
-        {"intake_form": intake_form, "form": form},
+        {"intake_form": intake_form, "form": form, "recaptcha_action": "intake_form"},
     )
 
 

@@ -56,13 +56,16 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
             "form-action 'self'; "
             "frame-ancestors 'none'; "
             "object-src 'none'; "
-            # Bootstrap is vendored under static/vendor, so no third-party
-            # script, style, or font origin needs to be trusted.
-            "script-src 'self'; "
+            # Bootstrap is vendored under static/vendor, so the only
+            # third-party script origins trusted here are Google's, for the
+            # optional Google Analytics and reCAPTCHA integrations - and
+            # only actually loaded when their settings are configured.
+            "script-src 'self' https://www.googletagmanager.com https://www.google.com https://www.gstatic.com; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: https:; "
             "font-src 'self'; "
-            "connect-src 'self'",
+            "frame-src https://www.google.com; "
+            "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://www.google.com",
         )
         response.setdefault(
             "Permissions-Policy",

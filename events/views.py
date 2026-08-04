@@ -12,6 +12,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 from content.services import record_public_engagement
 from core.pagination import paginate
 from core.rate_limits import public_write_rate_limit
+from core.recaptcha import verify_recaptcha
 from notifications.services import notify_registration_response
 from ops.services import record_audit_event
 from payments.services import registration_checkout_token, ticket_inventory
@@ -997,54 +998,64 @@ def public_response(request, slug, occurrence_id):
     )
     form = RSVPForm(request.POST or None, occurrence=occurrence)
     if request.method == "POST" and form.is_valid():
-        try:
-            registration, history = save_public_response(
-                site=site,
-                occurrence=occurrence,
-                response=form.cleaned_data["response"],
-                first_name=form.cleaned_data["first_name"],
-                last_name=form.cleaned_data["last_name"],
-                email=form.cleaned_data["email"],
-                guests=form.guest_data(),
+        if not verify_recaptcha(request, action="rsvp"):
+            form.add_error(
+                None, "We could not verify this submission. Please try again."
             )
-        except PublicResponseAlreadyExists as exc:
-            existing_registration = get_object_or_404(
-                Registration.objects.for_site(site).select_related(
-                    "contact", "occurrence__event"
-                ),
-                pk=exc.registration_id,
-                occurrence=occurrence,
-            )
-            queue_rsvp_manage_link(existing_registration)
-            return render(
-                request,
-                "public/rsvp_access_sent.html",
-                {"site": site, "occurrence": occurrence},
-            )
-        except (CapacityExceeded, RegistrationUnavailable) as exc:
-            form.add_error(None, str(exc))
         else:
-            queue_confirmation(registration, history)
-            notify_registration_response(registration, history)
-            return render(
-                request,
-                "public/rsvp_complete.html",
-                {
-                    "site": site,
-                    "registration": registration,
-                    "event_url": public_occurrence_url(registration.occurrence),
-                    "checkout_token": (
-                        registration_checkout_token(registration)
-                        if registration.payment_status
-                        == Registration.PaymentStatus.PENDING
-                        else ""
+            try:
+                registration, history = save_public_response(
+                    site=site,
+                    occurrence=occurrence,
+                    response=form.cleaned_data["response"],
+                    first_name=form.cleaned_data["first_name"],
+                    last_name=form.cleaned_data["last_name"],
+                    email=form.cleaned_data["email"],
+                    guests=form.guest_data(),
+                )
+            except PublicResponseAlreadyExists as exc:
+                existing_registration = get_object_or_404(
+                    Registration.objects.for_site(site).select_related(
+                        "contact", "occurrence__event"
                     ),
-                },
-            )
+                    pk=exc.registration_id,
+                    occurrence=occurrence,
+                )
+                queue_rsvp_manage_link(existing_registration)
+                return render(
+                    request,
+                    "public/rsvp_access_sent.html",
+                    {"site": site, "occurrence": occurrence},
+                )
+            except (CapacityExceeded, RegistrationUnavailable) as exc:
+                form.add_error(None, str(exc))
+            else:
+                queue_confirmation(registration, history)
+                notify_registration_response(registration, history)
+                return render(
+                    request,
+                    "public/rsvp_complete.html",
+                    {
+                        "site": site,
+                        "registration": registration,
+                        "event_url": public_occurrence_url(registration.occurrence),
+                        "checkout_token": (
+                            registration_checkout_token(registration)
+                            if registration.payment_status
+                            == Registration.PaymentStatus.PENDING
+                            else ""
+                        ),
+                    },
+                )
     return render(
         request,
         "public/rsvp_form.html",
-        {"site": site, "occurrence": occurrence, "form": form},
+        {
+            "site": site,
+            "occurrence": occurrence,
+            "form": form,
+            "recaptcha_action": "rsvp",
+        },
     )
 
 
@@ -1061,35 +1072,40 @@ def invitation_response(request, token):
         contact=invitation.contact,
     )
     if request.method == "POST" and form.is_valid():
-        try:
-            registration, history = save_response(
-                occurrence=invitation.occurrence,
-                contact=invitation.contact,
-                response=form.cleaned_data["response"],
-                guests=form.guest_data(),
-                source=Registration.Source.INVITATION,
-                invitation=invitation,
+        if not verify_recaptcha(request, action="invitation_rsvp"):
+            form.add_error(
+                None, "We could not verify this submission. Please try again."
             )
-        except (CapacityExceeded, RegistrationUnavailable) as exc:
-            form.add_error(None, str(exc))
         else:
-            queue_confirmation(registration, history)
-            notify_registration_response(registration, history)
-            return render(
-                request,
-                "public/rsvp_complete.html",
-                {
-                    "site": site,
-                    "registration": registration,
-                    "event_url": public_occurrence_url(registration.occurrence),
-                    "checkout_token": (
-                        registration_checkout_token(registration)
-                        if registration.payment_status
-                        == Registration.PaymentStatus.PENDING
-                        else ""
-                    ),
-                },
-            )
+            try:
+                registration, history = save_response(
+                    occurrence=invitation.occurrence,
+                    contact=invitation.contact,
+                    response=form.cleaned_data["response"],
+                    guests=form.guest_data(),
+                    source=Registration.Source.INVITATION,
+                    invitation=invitation,
+                )
+            except (CapacityExceeded, RegistrationUnavailable) as exc:
+                form.add_error(None, str(exc))
+            else:
+                queue_confirmation(registration, history)
+                notify_registration_response(registration, history)
+                return render(
+                    request,
+                    "public/rsvp_complete.html",
+                    {
+                        "site": site,
+                        "registration": registration,
+                        "event_url": public_occurrence_url(registration.occurrence),
+                        "checkout_token": (
+                            registration_checkout_token(registration)
+                            if registration.payment_status
+                            == Registration.PaymentStatus.PENDING
+                            else ""
+                        ),
+                    },
+                )
     return render(
         request,
         "public/invitation_response.html",

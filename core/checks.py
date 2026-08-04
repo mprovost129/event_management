@@ -400,4 +400,12 @@ def deployment_product_check(app_configs, **kwargs):
                 id="platform.E035",
             )
         )
+    if bool(settings.RECAPTCHA_SITE_KEY) != bool(settings.RECAPTCHA_SECRET_KEY):
+        issues.append(
+            Warning(
+                "RECAPTCHA_SITE_KEY and RECAPTCHA_SECRET_KEY must both be set "
+                "together, or reCAPTCHA silently stays disabled on public forms.",
+                id="platform.W006",
+            )
+        )
     return issues

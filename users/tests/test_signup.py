@@ -1,7 +1,9 @@
+from unittest.mock import patch
 from urllib.parse import urlsplit
 
 import pytest
 from django.core import mail
+from django.test import override_settings
 from django.urls import reverse
 
 from users.models import User
@@ -156,6 +158,55 @@ def test_signup_requires_email_verification_before_activation(client):
     assert user.is_active
     assert user.is_email_verified
     assert client.session.get("_auth_user_id") == str(user.pk)
+
+
+@pytest.mark.django_db
+@override_settings(RECAPTCHA_SITE_KEY="site", RECAPTCHA_SECRET_KEY="secret")
+def test_signup_blocked_when_recaptcha_score_is_too_low(client):
+    signup_payload = {
+        "email": "leader@example.com",
+        "first_name": "Dance",
+        "last_name": "Leader",
+        "password1": "Strong-Test-Pass-2026!",
+        "password2": "Strong-Test-Pass-2026!",
+        "recaptcha_token": "low-score-token",
+    }
+    with patch("core.recaptcha.requests.post") as post:
+        post.return_value.raise_for_status.return_value = None
+        post.return_value.json.return_value = {
+            "success": True,
+            "action": "signup",
+            "score": 0.1,
+        }
+        response = client.post(reverse("users:signup"), signup_payload)
+
+    assert response.status_code == 200
+    assert not User.objects.filter(email="leader@example.com").exists()
+    assert "We could not verify this submission" in response.content.decode()
+
+
+@pytest.mark.django_db
+@override_settings(RECAPTCHA_SITE_KEY="site", RECAPTCHA_SECRET_KEY="secret")
+def test_signup_succeeds_when_recaptcha_score_clears_the_threshold(client):
+    signup_payload = {
+        "email": "leader@example.com",
+        "first_name": "Dance",
+        "last_name": "Leader",
+        "password1": "Strong-Test-Pass-2026!",
+        "password2": "Strong-Test-Pass-2026!",
+        "recaptcha_token": "good-token",
+    }
+    with patch("core.recaptcha.requests.post") as post:
+        post.return_value.raise_for_status.return_value = None
+        post.return_value.json.return_value = {
+            "success": True,
+            "action": "signup",
+            "score": 0.9,
+        }
+        response = client.post(reverse("users:signup"), signup_payload)
+
+    assert response.status_code == 302
+    assert User.objects.filter(email="leader@example.com").exists()
 
 
 @pytest.mark.django_db

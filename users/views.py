@@ -8,6 +8,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.views.decorators.http import require_http_methods
 
 from core.rate_limits import public_write_rate_limit
+from core.recaptcha import verify_recaptcha
 from ops.services import record_audit_event
 from subscriptions.gateway import billing_options
 
@@ -24,13 +25,18 @@ def signup(request):
         return redirect("sites:account_dashboard")
     form = SignupForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        user = form.save()
-        send_verification_email(user=user, request=request)
-        messages.success(
-            request,
-            "Check your email to verify your account before signing in.",
-        )
-        return redirect("users:verification_sent")
+        if not verify_recaptcha(request, action="signup"):
+            form.add_error(
+                None, "We could not verify this submission. Please try again."
+            )
+        else:
+            user = form.save()
+            send_verification_email(user=user, request=request)
+            messages.success(
+                request,
+                "Check your email to verify your account before signing in.",
+            )
+            return redirect("users:verification_sent")
     return render(
         request,
         "users/signup.html",

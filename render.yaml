@@ -63,6 +63,12 @@ services:
         sync: false
       - key: RESEND_WEBHOOK_SECRET
         sync: false
+      - key: RECAPTCHA_SITE_KEY
+        sync: false
+      - key: RECAPTCHA_SECRET_KEY
+        sync: false
+      - key: GA_MEASUREMENT_ID
+        sync: false
       - key: AWS_STORAGE_BUCKET_NAME
         sync: false
       - key: AWS_S3_REGION_NAME

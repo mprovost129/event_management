@@ -85,4 +85,6 @@ def platform(request):
         "platform_show_name_in_header": show_name_in_header,
         "platform_admin_url": f"{origin}{admin_path}",
         "platform_ops_url": f"{origin}{reverse('ops:dashboard')}",
+        "recaptcha_site_key": settings.RECAPTCHA_SITE_KEY,
+        "ga_measurement_id": settings.GA_MEASUREMENT_ID,
     }

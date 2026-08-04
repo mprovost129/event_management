@@ -4,6 +4,7 @@ from unittest import mock
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from PIL import Image
@@ -261,6 +262,39 @@ def test_newsletter_signup_creates_contact_and_consent_history(client):
     assert AuditEvent.objects.filter(
         site_id=site.id,
         action="public.newsletter_signup",
+    ).exists()
+
+
+@pytest.mark.django_db
+@override_settings(RECAPTCHA_SITE_KEY="site", RECAPTCHA_SECRET_KEY="secret")
+def test_newsletter_signup_blocked_by_recaptcha_does_not_create_contact(client):
+    _, site = create_site()
+    site.is_published = True
+    site.save(update_fields=("is_published", "updated_at"))
+
+    with mock.patch("core.recaptcha.requests.post") as post:
+        post.return_value.raise_for_status.return_value = None
+        post.return_value.json.return_value = {
+            "success": True,
+            "action": "newsletter_signup",
+            "score": 0.1,
+        }
+        response = client.post(
+            reverse("content:newsletter"),
+            {
+                "first_name": "Pat",
+                "last_name": "Dancer",
+                "email": "pat@example.com",
+                "consent": "on",
+                "recaptcha_token": "low-score-token",
+            },
+            headers={"host": "boot-scooters.localhost"},
+        )
+
+    assert response.status_code == 200
+    assert "We could not verify this submission" in response.content.decode()
+    assert not Contact.objects.filter(
+        site=site, normalized_email="pat@example.com"
     ).exists()
 
 

@@ -86,6 +86,18 @@ CLOUDMERSIVE_API_URL = env(
 )
 CLOUDMERSIVE_TIMEOUT_SECONDS = env_int("CLOUDMERSIVE_TIMEOUT_SECONDS", 20)
 
+# Blank until configured, matching the Stripe price ID convention: an unset
+# key disables the feature rather than silently pointing at a placeholder.
+RECAPTCHA_SITE_KEY = env("RECAPTCHA_SITE_KEY", "", allow_blank=True)
+RECAPTCHA_SECRET_KEY = env("RECAPTCHA_SECRET_KEY", "", allow_blank=True)
+RECAPTCHA_SCORE_THRESHOLD = float(env("RECAPTCHA_SCORE_THRESHOLD", "0.5"))
+if not 0.0 <= RECAPTCHA_SCORE_THRESHOLD <= 1.0:
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured("RECAPTCHA_SCORE_THRESHOLD must be between 0.0 and 1.0.")
+
+GA_MEASUREMENT_ID = env("GA_MEASUREMENT_ID", "", allow_blank=True)
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

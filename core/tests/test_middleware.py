@@ -3,7 +3,7 @@ import uuid
 from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase
 
-from core.middleware import RequestContextMiddleware
+from core.middleware import RequestContextMiddleware, SecurityHeadersMiddleware
 from core.request_context import request_id_var, site_id_var
 
 
@@ -41,3 +41,21 @@ class RequestContextMiddlewareTests(SimpleTestCase):
         self.assertEqual(safe["X-Request-ID"], "request-12345678")
         self.assertNotEqual(unsafe["X-Request-ID"], "unsafe value\nheader")
         uuid.UUID(unsafe["X-Request-ID"])
+
+
+class SecurityHeadersMiddlewareTests(SimpleTestCase):
+    def test_csp_allows_google_analytics_and_recaptcha_origins_only(self):
+        middleware = SecurityHeadersMiddleware(lambda request: HttpResponse())
+
+        csp = middleware(RequestFactory().get("/"))["Content-Security-Policy"]
+
+        self.assertIn("script-src 'self'", csp)
+        self.assertNotIn("unsafe-inline' https://www.google.com", csp)
+        for origin in (
+            "https://www.googletagmanager.com",
+            "https://www.google.com",
+            "https://www.gstatic.com",
+        ):
+            self.assertIn(origin, csp)
+        self.assertIn("frame-src https://www.google.com", csp)
+        self.assertIn("https://www.google-analytics.com", csp)

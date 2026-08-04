@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
 
-from core.rate_limits import _client_address, public_write_rate_limit
+from core.rate_limits import client_address, public_write_rate_limit
 
 
 @pytest.mark.django_db
@@ -43,11 +43,11 @@ def test_client_address_uses_only_the_configured_number_of_trusted_proxies():
     )
 
     with override_settings(RATE_LIMIT_TRUSTED_PROXY_COUNT=0):
-        assert _client_address(request) == "10.0.0.2"
+        assert client_address(request) == "10.0.0.2"
     with override_settings(RATE_LIMIT_TRUSTED_PROXY_COUNT=1):
-        assert _client_address(request) == "198.51.100.8"
+        assert client_address(request) == "198.51.100.8"
     with override_settings(RATE_LIMIT_TRUSTED_PROXY_COUNT=3):
-        assert _client_address(request) == "10.0.0.2"
+        assert client_address(request) == "10.0.0.2"
 
 
 def test_rate_limit_fails_open_when_cache_is_unavailable():

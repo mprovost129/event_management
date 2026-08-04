@@ -11,6 +11,44 @@ document.addEventListener("submit", (event) => {
     }
 });
 
+// Google Analytics (GA4). Loaded only when GA_MEASUREMENT_ID is configured;
+// the config lives in a data attribute rather than an inline script because
+// the CSP does not allow unsafe-inline in script-src.
+(() => {
+    const measurementId = document.body.dataset.gaMeasurementId;
+    if (!measurementId) return;
+    window.dataLayer = window.dataLayer || [];
+    const gtag = (...args) => window.dataLayer.push(args);
+    window.gtag = gtag;
+    gtag("js", new Date());
+    gtag("config", measurementId);
+})();
+
+// reCAPTCHA v3. Any form tagged data-recaptcha-action gets an invisible,
+// per-submission token fetched just before it actually submits. The token
+// is verified server-side in the corresponding view - this only blocks
+// submission long enough to fetch it, never blocks it outright.
+(() => {
+    const siteKey = document.body.dataset.recaptchaSiteKey;
+    if (!siteKey || typeof grecaptcha === "undefined") return;
+
+    document.addEventListener("submit", (event) => {
+        const form = event.target.closest("[data-recaptcha-action]");
+        if (!form || form.dataset.recaptchaReady) return;
+        event.preventDefault();
+        grecaptcha.ready(() => {
+            grecaptcha
+                .execute(siteKey, { action: form.dataset.recaptchaAction })
+                .then((token) => {
+                    const field = form.querySelector('input[name="recaptcha_token"]');
+                    if (field) field.value = token;
+                    form.dataset.recaptchaReady = "true";
+                    form.requestSubmit();
+                });
+        });
+    });
+})();
+
 (() => {
     const form = document.querySelector("[data-site-builder-form]");
     const preview = document.querySelector("[data-site-preview]");
