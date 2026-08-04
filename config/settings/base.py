@@ -238,6 +238,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "payments.tasks.reconcile_connected_accounts",
         "schedule": 21600.0,
     },
+    "sync-subscription-access": {
+        "task": "subscriptions.tasks.sync_subscription_access",
+        "schedule": 3600.0,
+    },
     "dispatch-due-campaigns": {
         "task": "communications.tasks.dispatch_due_campaigns",
         "schedule": 60.0,

@@ -83,6 +83,25 @@ def _set_status(subscription, status, *, now=None, audit_action=None):
         )
 
 
+def synchronize_pending_access():
+    updated = 0
+    ids = PlatformSubscription.objects.filter(
+        status__in=(
+            PlatformSubscription.Status.TRIALING,
+            PlatformSubscription.Status.GRACE,
+        )
+    ).values_list("id", flat=True)
+    checked = 0
+    for subscription_id in ids.iterator():
+        before = PlatformSubscription.objects.values_list("status", flat=True).get(
+            pk=subscription_id
+        )
+        after = synchronize_access(subscription_id)
+        checked += 1
+        updated += before != after.status
+    return {"checked": checked, "updated": updated}
+
+
 @transaction.atomic
 def synchronize_access(subscription_id, *, now=None):
     now = now or timezone.now()
