@@ -1,9 +1,12 @@
 import uuid
 
 from django.conf import settings
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+
+PLATFORM_BRANDING_CACHE_KEY = "ops:platform-branding-settings"
 
 
 class AuditEvent(models.Model):
@@ -145,6 +148,21 @@ class PlatformBrandingSettings(models.Model):
     def get_solo(cls):
         return cls.objects.get_or_create(singleton_key=1)[0]
 
+    @classmethod
+    def header_flags(cls):
+        """Cached (show_logo_in_header, show_name_in_header) for the
+        platform context processor, which runs on every request and must
+        not force a database hit for a value that changes rarely. Callers
+        that need to read-modify-write the row should use get_solo()
+        instead, which always reflects the current database state."""
+        cached = cache.get(PLATFORM_BRANDING_CACHE_KEY)
+        if cached is not None:
+            return cached
+        instance = cls.get_solo()
+        flags = (instance.show_logo_in_header, instance.show_name_in_header)
+        cache.set(PLATFORM_BRANDING_CACHE_KEY, flags)
+        return flags
+
     def clean(self):
         super().clean()
         if not self.show_logo_in_header and not self.show_name_in_header:
@@ -154,7 +172,9 @@ class PlatformBrandingSettings(models.Model):
 
     def save(self, *args, **kwargs):
         self.full_clean()
-        return super().save(*args, **kwargs)
+        result = super().save(*args, **kwargs)
+        cache.delete(PLATFORM_BRANDING_CACHE_KEY)
+        return result
 
     def __str__(self):
         return "Platform branding"

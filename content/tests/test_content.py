@@ -516,7 +516,9 @@ def test_public_navbar_can_show_logo_without_site_name(client):
         )
     )
 
-    response = client.get(reverse("core:home"), headers={"host": "boot-scooters.localhost"})
+    response = client.get(
+        reverse("core:home"), headers={"host": "boot-scooters.localhost"}
+    )
 
     assert response.status_code == 200
     content = response.content.decode()
@@ -788,7 +790,9 @@ def test_public_home_renders_custom_sections_including_uploaded_image(client):
     section.image = section_image_upload("home-content.jpg")
     section.save(update_fields=("image", "updated_at"))
 
-    response = client.get(reverse("core:home"), headers={"host": "boot-scooters.localhost"})
+    response = client.get(
+        reverse("core:home"), headers={"host": "boot-scooters.localhost"}
+    )
 
     assert response.status_code == 200
     content = response.content.decode()
@@ -799,11 +803,14 @@ def test_public_home_renders_custom_sections_including_uploaded_image(client):
 
 @pytest.mark.django_db
 def test_public_home_includes_back_to_workspace_link(client):
-    _, site = create_site()
+    owner, site = create_site()
     site.is_published = True
     site.save(update_fields=("is_published", "updated_at"))
+    client.force_login(owner)
 
-    response = client.get(reverse("core:home"), headers={"host": "boot-scooters.localhost:8000"})
+    response = client.get(
+        reverse("core:home"), headers={"host": "boot-scooters.localhost:8000"}
+    )
 
     assert response.status_code == 200
     content = response.content.decode()

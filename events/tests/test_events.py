@@ -40,7 +40,11 @@ def create_site(slug="boot-scooters"):
 
 
 def create_series(site, owner, *, visibility=Event.Visibility.PUBLIC, slug="lessons"):
-    first_start = datetime(2026, 8, 3, 18, 0, tzinfo=ZoneInfo(site.timezone))
+    first_start = (
+        (timezone.now() + timedelta(days=30))
+        .astimezone(ZoneInfo(site.timezone))
+        .replace(hour=18, minute=0, second=0, microsecond=0)
+    )
     return create_event_series(
         site=site,
         creator=owner,

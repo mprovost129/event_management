@@ -153,9 +153,15 @@ def test_subscription_exempt_subscriber_can_create_multiple_sites(client):
     assert first_site.status_code == 302
     assert second_site.status_code == 302
     assert third_site.status_code == 302
-    assert Site.objects.filter(slug="first-organization", status=Site.Status.ACTIVE).exists()
-    assert Site.objects.filter(slug="second-organization", status=Site.Status.ACTIVE).exists()
-    assert Site.objects.filter(slug="third-organization", status=Site.Status.ACTIVE).exists()
+    assert Site.objects.filter(
+        slug="first-organization", status=Site.Status.ACTIVE
+    ).exists()
+    assert Site.objects.filter(
+        slug="second-organization", status=Site.Status.ACTIVE
+    ).exists()
+    assert Site.objects.filter(
+        slug="third-organization", status=Site.Status.ACTIVE
+    ).exists()
 
 
 @pytest.mark.django_db
@@ -519,7 +525,7 @@ def test_public_site_shows_dashboard_link_only_to_its_staff(client):
         slug="boot-scooters",
         timezone_name="America/New_York",
     )
-    dashboard_url = reverse("sites:dashboard", args=(site.id,))
+    workspace_url = reverse("content:manage", args=(site.id,))
 
     client.force_login(owner)
     owner_view = client.get("/", headers={"host": "boot-scooters.localhost"})
@@ -529,10 +535,10 @@ def test_public_site_shows_dashboard_link_only_to_its_staff(client):
     anonymous_view = client.get("/", headers={"host": "boot-scooters.localhost"})
 
     assert owner_view.status_code == 200
-    assert dashboard_url in owner_view.content.decode()
-    assert "Back to dashboard" in owner_view.content.decode()
-    assert "Back to dashboard" not in outsider_view.content.decode()
-    assert "Back to dashboard" not in anonymous_view.content.decode()
+    assert workspace_url in owner_view.content.decode()
+    assert "Back to workspace" in owner_view.content.decode()
+    assert "Back to workspace" not in outsider_view.content.decode()
+    assert "Back to workspace" not in anonymous_view.content.decode()
 
 
 @pytest.mark.django_db

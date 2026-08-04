@@ -266,7 +266,9 @@ def page_edit(request, site_id, page_type):
                 PageSection.SectionType.CONTENT,
                 PageSection.SectionType.HERO,
             ):
-                messages.success(request, "Section saved. Existing image is still attached.")
+                messages.success(
+                    request, "Section saved. Existing image is still attached."
+                )
             else:
                 messages.success(request, "Section saved.")
             return _section_redirect()

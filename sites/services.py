@@ -181,9 +181,9 @@ def site_setup_progress(site):
             "complete": bool(
                 site_has_subscription_exemption(site)
                 or (
-                subscription.stripe_customer_id
-                and subscription.stripe_subscription_id
-                and subscription.billing_interval
+                    subscription.stripe_customer_id
+                    and subscription.stripe_subscription_id
+                    and subscription.billing_interval
                 )
             ),
         },

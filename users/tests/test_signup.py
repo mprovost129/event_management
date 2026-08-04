@@ -22,6 +22,7 @@ def test_platform_help_url_tracks_the_real_help_route_and_is_live(client):
     assert client.get(help_path).status_code == 200
 
 
+@pytest.mark.django_db
 def test_signup_page_explains_trial_and_configured_pricing(client):
     response = client.get(reverse("users:signup"))
     content = response.content.decode()
@@ -33,6 +34,7 @@ def test_signup_page_explains_trial_and_configured_pricing(client):
     assert "Create my account" in content
 
 
+@pytest.mark.django_db
 def test_account_access_and_recovery_pages_share_clear_form_layout(client):
     for route in (
         "users:login",

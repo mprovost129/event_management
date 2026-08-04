@@ -14,6 +14,7 @@ LEGAL_ROUTES = (
 )
 
 
+@pytest.mark.django_db
 @pytest.mark.parametrize(("route", "heading"), LEGAL_ROUTES)
 def test_legal_center_documents_render_as_prelaunch_drafts(client, route, heading):
     response = client.get(reverse(route))
@@ -25,6 +26,7 @@ def test_legal_center_documents_render_as_prelaunch_drafts(client, route, headin
     assert '<meta name="robots" content="noindex,nofollow">' in content
 
 
+@pytest.mark.django_db
 def test_legal_payment_copy_matches_current_ticket_fee_model(client):
     response = client.get(reverse("core:refunds"))
     content = response.content.decode()
@@ -35,6 +37,7 @@ def test_legal_payment_copy_matches_current_ticket_fee_model(client):
     assert "does not deduct an application fee from membership dues" in content
 
 
+@pytest.mark.django_db
 def test_site_footer_links_to_legal_center_and_payment_policy(client):
     response = client.get(reverse("core:home"))
     content = response.content.decode()

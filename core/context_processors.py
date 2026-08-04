@@ -10,7 +10,10 @@ def control_host(request):
     route from anywhere - including a tenant subdomain's page, which must
     never assume it can resolve a bare "core:xyz" path against itself."""
     request_host = request.get_host().split(":", 1)[0].lower().rstrip(".")
-    hosts = [item.lower().rstrip(".") for item in (getattr(settings, "PLATFORM_CONTROL_HOSTS", ()) or ())]
+    hosts = [
+        item.lower().rstrip(".")
+        for item in (getattr(settings, "PLATFORM_CONTROL_HOSTS", ()) or ())
+    ]
     if request_host and request_host in hosts:
         return request_host
     if hosts:
@@ -68,9 +71,7 @@ def platform(request):
 
     try:
         branding_model = apps.get_model("ops", "PlatformBrandingSettings")
-        branding = branding_model.get_solo()
-        show_logo_in_header = branding.show_logo_in_header
-        show_name_in_header = branding.show_name_in_header
+        show_logo_in_header, show_name_in_header = branding_model.header_flags()
     except (AppRegistryNotReady, LookupError, OperationalError, ProgrammingError):
         # Migrations may not have run yet in very early startup contexts.
         pass

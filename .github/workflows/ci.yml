@@ -66,3 +66,37 @@ jobs:
         run: pytest -q
       - name: Dependency audit
         run: pip-audit
+      - name: Production deployment checks
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.prod
+          PLATFORM_DOMAIN: gatherhqs.com
+          PLATFORM_CONTROL_HOSTS: gatherhqs.com,www.gatherhqs.com
+          ALLOWED_HOSTS: gatherhqs.com,www.gatherhqs.com
+          CSRF_TRUSTED_ORIGINS: https://gatherhqs.com
+          RELEASE_VERSION: ci
+          HEALTHCHECK_REQUIRE_BACKGROUND_WORKERS: "true"
+          MEDIA_STORAGE_BACKEND: s3
+          AWS_STORAGE_BUCKET_NAME: ci-placeholder
+          AWS_S3_ENDPOINT_URL: ""
+          AWS_S3_SIGNATURE_VERSION: s3v4
+          DOCUMENT_UPLOAD_SCAN_BACKEND: cloudmersive
+          CLOUDMERSIVE_API_KEY: ci-placeholder
+          EMAIL_DELIVERY_BACKEND: resend
+          EMAIL_BACKEND: communications.email_backend.ResendEmailBackend
+          RESEND_API_KEY: ci-placeholder
+          RESEND_WEBHOOK_SECRET: ci-placeholder
+          SUPPORT_EMAIL: support@gatherhqs.com
+          SECRET_KEY: ci-only-deploy-check-placeholder-key-not-used-in-production
+          # Real Stripe price IDs are secrets and deliberately absent here;
+          # their absence only raises platform.W002, a warning, not an error.
+          STRIPE_STANDARD_MONTHLY_PRICE_ID: ""
+          STRIPE_STANDARD_YEARLY_PRICE_ID: ""
+        run: python manage.py check --deploy --settings=config.settings.prod
+
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image
+        run: docker build -t gatherhqs-ci-build .

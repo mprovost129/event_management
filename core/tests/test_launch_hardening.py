@@ -203,6 +203,7 @@ def test_global_security_headers_skip_link_and_legal_drafts_are_exposed(client):
         assert b"Pre-launch policy draft" in legal.content
 
 
+@pytest.mark.django_db
 def test_platform_home_explains_trial_pricing_and_social_preview(client):
     response = client.get(reverse("core:home"))
     content = response.content.decode()
@@ -233,6 +234,7 @@ def test_already_authenticated_user_visiting_platform_home_is_sent_to_dashboard(
     assert response.url == reverse("sites:account_dashboard")
 
 
+@pytest.mark.django_db
 def test_help_center_page_is_available_with_feature_guidance(client):
     response = client.get(reverse("core:help"))
     content = response.content.decode()
